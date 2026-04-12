@@ -1,0 +1,206 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-001.webp",
+      "caption": "Figure 2: Overview of Sim2Real-AD. The framework bridges sim-to-real transfer through four components: the Geometric Observation Bridge (GOB), the Physics-Aware Action Mapping (PAM), the Two-Phase Progressive Training strategy (TPT), and the Real-time Deployment Pipeline (RDP). Instantiated here with DriveVLM-RL as the backbone, the framework is reward-agnostic and is demonstrated across multiple RL reward paradigms.",
+      "page": 6,
+      "index": 1,
+      "width": 954,
+      "height": 573
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-002.webp",
+      "caption": "Figure 17: DriveVLM-RL reward mechanism and trajectory in S2. (a) Temporal evolution of DriveVLM-RL’s reward components: static reward, dynamic reward, combined reward, and attentional gate activation value. The gate fires sharply when the obstacle enters the critical detection region, driving the dynamic reward negative and shifting the combined reward polarity to penalize continued forward approach and encourage lateral bypass. (b) Resulting vehicle trajectories: DriveVLM-RL executes a smooth anticipatory lateral bypass while maintaining safe clearance; VLM-RL approaches the obstacle without redirecting and requires safety driver intervention.",
+      "page": 25,
+      "index": 2,
+      "width": 879,
+      "height": 908
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-003.webp",
+      "caption": "Figure 19: Quantitative signal analysis of S3 (stop sign interaction). (a) VLM-RL reward components: static reward provides no signal for stop sign compliance or pedestrian yielding; dynamic pathway remains inactive. (b) DriveVLM-RL reward components: dynamic pathway activates upon pedestrian detection, shifting reward polarity to penalize continued forward motion. (c) Brake pressure profiles: VLM-RL applies abrupt braking only at safety driver takeover; DriveVLM-RL initiates smooth early deceleration. (d) Speed profiles: VLM-RL maintains speed until intervention; DriveVLM-RL progressively decelerates to a complete stop before the crosswalk.",
+      "page": 26,
+      "index": 3,
+      "width": 965,
+      "height": 587
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-004.webp",
+      "caption": "Figure 18: Representative episode in S3 (stop sign interaction with pedestrian). Top row: forward-facing camera view (cam0), used as policy input through the GOB pipeline. Bottom row: elevated camera view (cam1), used for reward analysis in shadow mode. A pedestrian is present at the crosswalk ahead of the stop sign. VLM-RL fails to yield and requires safety driver intervention; DriveVLM-RL decelerates smoothly and stops before the crosswalk.",
+      "page": 26,
+      "index": 4,
+      "width": 975,
+      "height": 287
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-005.webp",
+      "caption": "Figure 6: DriveVLM-RL training curves: Original (dashed, GT-BEV + Direct Action, ±1σ over 3 seeds) vs. Sim2Real-AD (solid, Phase 1: GTBEV + PAM, Phase 2: GOB-BEV + PAM). Vertical dotted line marks Phase 1→2 at 1×106 steps. (a) Collision rate. (b) Average speed. (c) Total distance. (d) Routes completed.",
+      "page": 15,
+      "index": 5,
+      "width": 813,
+      "height": 562
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-006.webp",
+      "caption": "Table 5: Practical setup for real-world deployment on the Ford E-Transit, including platform calibration and route preparation. Vehicle calibration requires approximately 30 min; total practical setup time is approximately 35 min. No training data are required.",
+      "page": 21,
+      "index": 6,
+      "width": 750,
+      "height": 356
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-007.webp",
+      "caption": "Figure 11: Real-world experimental platform and evaluation scenarios. (a) Lab-developed full-scale electric Ford E-Transit autonomous vehicle platform with drive-by-wire control, multimodal perception sensors, onboard computing, and wireless communication infrastructure. (b) Camera configuration: a forward-facing camera and an elevated camera mount, matching the dual-camera setup used in DriveVLM-RL training for reward computation; only the forward-facing camera is used for policy inference. (c) Real-world driving scenarios used for evaluation: routine carfollowing, static obstacle avoidance, and semantic-critical stop sign interaction.",
+      "page": 21,
+      "index": 7,
+      "width": 954,
+      "height": 356
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-008.webp",
+      "caption": "Figure 1: Overview of the sim-to-real challenge and the proposed Sim2Real-AD framework. Direct transfer fails because of the coupled observation and dynamics gaps, while Sim2Real-AD addresses them through GOB, PAM, TPT, and RDP.",
+      "page": 2,
+      "index": 8,
+      "width": 957,
+      "height": 409
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-009.webp",
+      "caption": "Figure 3: Geometric Observation Bridge from monocular front-view images to simulator-compatible BEV observations. Phase 1 uses simulatorprivileged GT-BEV, whereas Phase 2 and real-world deployment use GOB-generated BEV with the same tensor shape and semantic channel layout.",
+      "page": 7,
+      "index": 9,
+      "width": 960,
+      "height": 461
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-010.webp",
+      "caption": "Figure 12: Quantitative real-world evaluation results over 20 trials per scenario. (a) Safety driver interventions across three scenarios. (b) Task success rates over 20 independent trials per scenario. Both algorithms are deployed through the identical Sim2Real-AD pipeline.",
+      "page": 22,
+      "index": 10,
+      "width": 965,
+      "height": 253
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-011.webp",
+      "caption": "Figure 4: ChatScene training curves: Original (dashed, GT-BEV + Direct Action, ±1σ over 3 seeds) vs. Sim2Real-AD (solid, Phase 1: GT-BEV + PAM, Phase 2: GOB-BEV + PAM). Vertical dotted line marks Phase 1→2 at 1×106 steps. (a) Collision rate. (b) Average speed. (c) Total distance. (d) Routes completed.",
+      "page": 14,
+      "index": 11,
+      "width": 813,
+      "height": 562
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-012.webp",
+      "caption": "Figure 5: VLM-RL training curves: Original (dashed, GT-BEV + Direct Action, ±1σ over 3 seeds) vs. Sim2Real-AD (solid, Phase 1: GT-BEV + PAM, Phase 2: GOB-BEV + PAM). Vertical dotted line marks Phase 1→2 at 1×106 steps. (a) Collision rate. (b) Average speed. (c) Total distance. (d) Routes completed.",
+      "page": 14,
+      "index": 12,
+      "width": 813,
+      "height": 562
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-013.webp",
+      "caption": "Figure 8: Quantitative GOB evaluation on 200 CARLA frames. (a) Per-channel IoU between GOB-BEV and GT-BEV: road achieves moderate IoU (0.35) limited by coverage asymmetry; other channels are near-zero due to detection-method differences. (b) Channel activation comparison: GOB-BEV over-activates road (51.1% vs. 31.1%) due to forward-fan projection, while lane and object channels have lower activation than GT, reflecting the single-camera field-of-view limitation.",
+      "page": 18,
+      "index": 13,
+      "width": 968,
+      "height": 369
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-014.webp",
+      "caption": "Figure 7: CARLA GOB evaluation on 4 representative frames (2 per row). Each case shows (left to right): front-view camera input, GOB-BEV, and GT-BEV. The GOB-BEV captures near-field road geometry (green), lane markings (yellow), and vehicles (red) within the forward fan-shaped field of view; the GT-BEV provides full 360◦ coverage.",
+      "page": 18,
+      "index": 14,
+      "width": 959,
+      "height": 268
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-015.webp",
+      "caption": "Figure 14: Qualitative analysis of S1 (routine car-following). (a) Temporal evolution of reward components for VLM-RL. (b) Temporal evolution of reward components for DriveVLM-RL: the dynamic pathway remains inactive throughout, confirming no unnecessary semantic intervention in routine scenarios. (c) Speed profiles: DriveVLM-RL achieves smoother speed regulation than VLM-RL. (d) Steering angle profiles: DriveVLMRL produces more gradual adjustments, indicating more human-like control behavior.",
+      "page": 23,
+      "index": 15,
+      "width": 965,
+      "height": 586
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-016.webp",
+      "caption": "Figure 13: Representative DriveVLM-RL car-following episode (S1). Top row: forward-facing camera view (cam0), used as policy input through the GOB pipeline. Bottom row: elevated camera view (cam1), used for reward analysis in shadow mode. The ego vehicle maintains consistent following distance without triggering the dynamic reward pathway.",
+      "page": 23,
+      "index": 16,
+      "width": 975,
+      "height": 287
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-017.webp",
+      "caption": "Table 7: Per-stage inference latency on NVIDIA RTX A6000 GPU (mean ± std over 1,000 frames). Control budget: 50 ms at 20 Hz.",
+      "page": 28,
+      "index": 17,
+      "width": 667,
+      "height": 277
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-018.webp",
+      "caption": "Figure 21: Real-time feasibility on the Ford E-Transit onboard GPU. Sim2Real-AD satisfies the 20 Hz control budget with an average end-to-end control latency of 17.2 ms, whereas direct VLM-as-control inference is far beyond the real-time limit.",
+      "page": 28,
+      "index": 18,
+      "width": 965,
+      "height": 338
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-019.webp",
+      "caption": "Figure 9: Temporal consistency of the road mask: IoU between adjacent frames on real-world driving data. cam0 (forward-facing) achieves mean IoU = 0.944; cam1 (elevated mount) achieves mean IoU = 0.969. The dashed line marks IoU = 0.90.",
+      "page": 19,
+      "index": 19,
+      "width": 919,
+      "height": 338
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-020.webp",
+      "caption": "Table 3: Module ablation (DriveVLM-RL backbone, Town 2, 10 routes, mean ± std over 3 independent runs). Original and Direct Transfer rows indicate upper and lower performance bounds. Best result per column among real-vehicle-deployable configurations in bold. †PAM only retains GT-BEV (available only in simulation). ∗GOB only retains the original direct action space. Neither † nor ∗ can be deployed on the real vehicle. ‡Direct Transfer: the original policy (GT-BEV + Direct Action) evaluated with GOB-BEV observations and no bridging modules in simulation, serving as a proxy for naive real-vehicle deployment.",
+      "page": 17,
+      "index": 20,
+      "width": 985,
+      "height": 272
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-021.webp",
+      "caption": "Table 1: Training hyperparameters for two-phase progressive training (TPT). Phase 2 warm-starts from the Phase 1 checkpoint with a reduced learning rate.",
+      "page": 12,
+      "index": 21,
+      "width": 579,
+      "height": 415
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-022.webp",
+      "caption": "Figure 20: DriveVLM-RL dynamic pathway reasoning and behavioral profiles in S3. (a) LVLM reasoning process when the attentional gate activates: the input prompt constructed from sequential visual observations, the LVLM’s multi-step reasoning response, and the final selected language description (“A pedestrian is crossing the road ahead”) that drives the dynamic reward. This process (learned entirely in CARLA simulation) transfers zero-shot to real-world conditions through the Sim2Real-AD pipeline. (b) Distance-to-pedestrian and vehicle speed profiles: DriveVLM-RL maintains increasing clearance while progressively reducing speed to a complete stop before the crosswalk; VLM-RL fails to yield and requires safety driver intervention.",
+      "page": 27,
+      "index": 22,
+      "width": 967,
+      "height": 923
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-023.webp",
+      "caption": "Figure 15: Representative VLM-RL failure case in S2 (static obstacle avoidance). Top row: forward-facing camera view (cam0), used as policy input through the GOB pipeline. Bottom row: elevated camera view (cam1), used for reward analysis in shadow mode. VLM-RL continues forward without initiating a bypass maneuver, approaching the obstacle dangerously close and requiring safety driver intervention.",
+      "page": 24,
+      "index": 23,
+      "width": 975,
+      "height": 285
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-024.webp",
+      "caption": "Figure 16: Quantitative signal analysis of S2 (static obstacle avoidance). (a) VLM-RL reward components: dynamic pathway remains inactive throughout, providing no signal to initiate bypass. (b) DriveVLM-RL reward components: dynamic pathway activates when the obstacle enters the critical region. (c) Brake pressure profiles: VLM-RL decelerates but does not redirect, while DriveVLM-RL maintains controlled deceleration before the bypass. (d) Speed profiles: VLM-RL approaches the obstacle without bypass while DriveVLM-RL preserves forward progress through the maneuver.",
+      "page": 24,
+      "index": 24,
+      "width": 963,
+      "height": 599
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03497v1/fig-025.webp",
+      "caption": "Table 4: Cross-map generalization (10 routes per town, trained on Town 2 only, mean ± std over 3 independent runs). ∆SR = SR change from GT-BEV to Sim2Real-AD. Town 2∗ is the in-distribution training town; GT-BEV results from Table 2.",
+      "page": 20,
+      "index": 25,
+      "width": 975,
+      "height": 423
+    }
+  ]
+}

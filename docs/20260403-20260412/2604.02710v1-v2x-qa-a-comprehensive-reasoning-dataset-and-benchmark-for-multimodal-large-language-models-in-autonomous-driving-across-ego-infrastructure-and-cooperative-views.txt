@@ -1,0 +1,787 @@
+Title: V2X-QA: A Comprehensive Reasoning Dataset and Benchmark for Multimodal Large Language Models in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views
+
+URL Source: https://arxiv.org/pdf/2604.02710v1
+
+Published Time: Mon, 06 Apr 2026 00:24:44 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+# V2X-QA: A Comprehensive Reasoning Dataset and Benchmark for Multimodal Large Language Models in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Junwei You a, Pei Li b,∗, Zhuoyu Jiang c, Weizhe Tang a, Zilin Huang a, Rui Gan a, Jiaxi Liu a,Yan Zhao d, Sikai Chen a and Bin Ran a
+
+> a
+
+Department of Civil and Environmental Engineering, University of Wisconsin–Madison, Madison, WI, 53706, USA 
+
+> b
+
+Department of Civil and Architectural Engineering and Construction Management, University of Wyoming, Laramie, WY, 82071, USA 
+
+> c
+
+Kuaishou Technology, Beijing, 100085, China 
+
+> d
+
+School of Transportation, Southeast University, Nanjing, Jiangsu, 211189, China 
+
+A R T I C L E I N F O 
+
+Keywords :Autonomous driving Multimodal large language models Vision-language models Vehicle-infrastructure cooperation Visual question answering bench-mark Cooperative reasoning 
+
+A B S T R A C T 
+
+Multimodal large language models (MLLMs) have shown strong potential for autonomous driving, yet existing benchmarks remain largely ego-centric and therefore cannot systematically assess model performance in infrastructure-centric and cooperative driving conditions. In this work, we introduce V2X-QA, a real-world dataset and benchmark for evaluating MLLMs across vehicle-side, infrastructure-side, and cooperative viewpoints. V2X-QA is built around a view-decoupled evaluation protocol that enables controlled comparison under vehicle-only, infrastructure-only, and cooperative driving conditions within a unified multiple-choice question answering (MCQA) framework. The benchmark is organized into a twelve-task taxonomy spanning perception, prediction, and reasoning and planning, and is constructed through expert-verified MCQA annotation to enable fine-grained diagnosis of viewpoint-dependent capabilities. Benchmark results across ten representative state-of-the-art proprietary and open-source models show that viewpoint accessibility substantially affects performance, and infrastructure-side reasoning supports meaningful macroscopic traffic understanding. Results also indicate that cooperative reasoning remains challenging since it requires cross-view alignment and evidence integration rather than simply additional visual input. To address these challenges, we introduce V2X-MoE, a benchmark-aligned baseline with explicit view routing and viewpoint-specific LoRA experts. The strong performance of V2X-MoE further suggests that explicit viewpoint specialization is a promising direction for multi-view reasoning in autonomous driving. Overall, V2X-QA provides a foundation for studying multi-perspective reasoning, reliability, and co-operative physical intelligence in connected autonomous driving. The dataset and V2X-MoE resources are publicly available at: https://github.com/junwei0001/V2X-QA. 
+
+1. Introduction 
+
+Multimodal large language models (MLLMs) are increasingly considered as a foundation for semantic un-derstanding and high-level reasoning in autonomous driving. Unlike conventional autonomy stacks that primarily output structured representations for perception and motion, such as detected objects and planned trajectories, these models can also answer questions about traffic scenes, generate grounded natural-language descriptions, and provide interpretable explanations that support debugging, human interaction, and decision-relevant reasoning (Sima, Renz, Chitta, Chen, Zhang, Xie, Beißwenger, Luo, Geiger and Li (2024); Xu, Zhang, Xie, Zhao, Guo, Wong, Li and Zhao (2024); Gao, Yang, Chen, Chitta, Qiu, Geiger, Zhang and Li (2024); Tian, Gu, Li, Liu, Wang, Zhao, Zhan, Jia, Lang and Zhao (2024); Hwang, Xu, Lin, Hung, Ji, Choi, Huang, He, Covington, Sapp et al. (2024)). Such reasoning can complement structured outputs by providing contextual semantics and safety-relevant cues that inform downstream decision making (Tang, You, Liu, Wang, Gan, Huang, Wei and Ran (2026); Huang, Sheng, Qu, You and Chen (2025); Gan, Li, Long, An, You, Wu and Ran (2025)). This progress has stimulated rapid development of driving-oriented vision–language datasets and benchmarks, which play a central role in making capability claims comparable and reproducible across model families and evaluation settings. 
+
+> ∗
+
+Corresponding author 
+
+pei.li@uwyo.edu (P. Li) 
+
+> ORCID
+
+(s): 0009-0002-6447-8276 (J. You) 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 1 of 24 
+
+> arXiv:2604.02710v1 [cs.RO] 3 Apr 2026
+
+V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views VS1: Ego_Static_Scene                                                 
+
+> Q: What is the main road scene ahead?
+> A: The main road scene ahead is an
+> intersection area.
+> VS2: Ego_Visible_Agents
+> Q: What is the main road user ahead?
+> A: The main road user ahead is a car -
+> like vehicle .
+> VS3: Ego_Risk
+> Q: What is the main risk ahead?
+> A: The main risk ahead is cross traffic .
+> VS4: Ego_Prediction
+> Q: What is the ego vehicle likely to do
+> next?
+> A: The ego vehicle will likely turn or
+> change lanes next.
+> IS1: RSU_Global_Layout
+> Q: What is the most prominent layout
+> feature in this RSU view?
+> A: The most prominent layout feature in
+> this RSU view is a regular intersection
+> IS3: RSU_Global_Risk
+> Q: What is the main global risk ?
+> A: There is no clear global risk.
+> IS4: RSU_Long_Range_Cues
+> Q: What is the clearest long -range cue ?
+> A: The clearest long -range cue is a far
+> vehicle group .
+> IS2: RSU_Traffic_Agents
+> Q: What best describes the traffic in the
+> RSU view?
+> A: The RSU shows light traffic .
+> CO1: Cooperative_Scene_Understanding
+> Q: With both views, what best
+> describes the ego path ?
+> A: With both views, cross traffic affects
+> the ego path.
+> CO2: Cooperative_Visibility
+> Q: What does cooperation add most?
+> A: Cooperation mainly makes an
+> occluded road user clear.
+> CO3: Cooperative_Prediction
+> Q: With both views, what will the ego
+> vehicle do next ?
+> A: With both views, the ego vehicle will
+> likely make a left turn next.
+> CO4: Cooperative_Planning
+> Q: With both views, what should the
+> ego vehicle do immediately ?
+> A: With both views, the ego vehicle
+> should yield or prepare to stop.
+> Single Vehicle View
+> Single Infrastructure View
+> Cooperative View
+
+(a) Example of VS Annotation 
+
+(b) Example of IS Annotation 
+
+(c) Example of CO Annotation     
+
+> VS3: Ego_Risk
+> Q: Which hazard is most important now?
+> A: Blurred visibility or wet road surface.
+> B: Vehicle conflict.
+> C: Pedestrian or rider conflict.
+> D: No obvious hazard.
+> Canonical Answer:
+> The most important hazard now is blurred
+> visibility or a wet road surface.
+> IS1: RSU_Global_Layout
+> Q: Which intersection feature stands out
+> most in this RSU view?
+> A: A regular intersection shape.
+> B: A curved approach road.
+> C: Clear turn guidance.
+> D: A complex road layout.
+> Canonical Answer:
+> The most prominent feature in this RSU
+> view is clear turn guidance.
+> CO4: Cooperative_Planning
+> Q: With both views, what is the best
+> immediate ego action?
+> A: Accelerate.
+> B: Reduce speed.
+> C: Keep the current speed.
+> D: Yield or prepare to stop.
+> Canonical Answer:
+> With both views, the best immediate ego
+> action is to reduce speed.
+> Cooperative View
+> Single Infrastructure View
+> Single Vehicle View
+> V2X -QA
+> Training Split
+
+V2X -MoE    
+
+> VS Expert IS Expert CO Expert Qwen3 -VL
+> CO1
+> CO2
+> CO3
+> CO4
+> IS1
+> IS2
+> IS3
+> IS4
+> VS1
+> VS2
+> VS3
+> VS4
+> V2X -QA
+> Testing Split
+> Training
+> Evaluation
+
+(d) V2X -MoE Training and Evaluation Pipeline on V2X -QA Dataset 
+
+Figure 1: Overview of V2X-QA. Left: representative examples of the twelve viewpoint-aligned tasks under vehicle-side, infrastructure-side, and cooperative settings. Right: MCQA-based training and evaluation pipeline of V2X-MoE on the V2X-QA training and testing splits. 
+
+Early driving visual question answering (VQA) and vision–language benchmarks largely follow general-purpose VQA conventions, focusing on scene comprehension, object and relation understanding, and basic spatial reasoning from an ego-centric perspective. Representative datasets emphasize driver behavior explanations and scene narration, such as BDD-X (Kim, Rohrbach, Darrell, Canny and Akata (2018)) and DRAMA (Malla, Choi, Dwivedi, Choi and Li (2023)), while subsequent benchmarks expand question diversity and spatial reasoning coverage, including NuScenes-QA (Qian, Chen, Zhuo, Jiao and Jiang (2024)) and NuScenes-SpatialQA (Tian, Mao, Zhang, Jiang, Zhou and Tu (2025)). These resources provide an important foundation for evaluating language-based understanding in realistic driving imagery. However, their task formulations and evaluation protocols often remain generic in the sense that they do not explicitly target safety-critical requirements, such as risk-aware reasoning and decision-relevant interpretation under dynamic and uncertain traffic interactions. As a consequence, strong performance on these benchmarks does not necessarily translate to reliable competence on safety-relevant queries that matter for autonomous driving deployment. Motivated by this gap, recent work has designed benchmarks that more directly emphasize safety, risk, and planning relevance. NuPlanQA (Park, Cui, Ma, Moradipari, Gupta, Han and Wang (2025)) and NuRisk (Gao, Piccinini, Brusnicki, Zhang and Betz (2025)) strengthen evaluation by incorporating planning-aware and risk-aware questions, and datasets such as VRU-Accident (Kim, Abdelrahman and Abdel-Aty (2025)) highlight safety-relevant edge cases involving vulnerable road users. Complementary evaluation suites, including DriveBench (Kharlamova, Liu, Zhang, Yang, Alqasimi, Sun and Xue (2025)), DVBench (Zeng, Wu, Shi, Zhou and Guo (2025)), and ScenePilot-Bench (Wang, Zheng, Fan, Wang, Chu, Tian, Gao, Wang and Chen (2026)), further stress-test models with more challenging settings and diagnostic protocols, aiming to expose brittleness and failure modes that are masked by easier question distributions. These efforts deepen the evaluation focus and better align driving VQA with safety-oriented objectives. Nevertheless, most of them still assume a single-vehicle, ego-only observability regime. In practice, many safety-critical factors are governed by evidence that is partially visible, occluded, or only apparent at a broader spatiotemporal scale, which limits the extent to which ego-view benchmarks can probe long-range risk buildup, intersection-wide interactions, and macroscopic traffic context. In parallel, the vehicle-to-everything (V2X) community has developed a rich ecosystem of cooperative perception datasets that explicitly address observability limitations through connectivity and infrastructure sensing. Datasets such 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 2 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+as V2X-Sim (Li, Ma, An, Wang, Zhong, Chen and Feng (2022)), V2V4Real (Xu, Xia, Li, Li, Zhang, Tu, Meng, Xiang, Dong, Song et al. (2023)), DAIR-V2X (Yu, Luo, Shu, Huo, Yang, Shi, Guo, Li, Hu, Yuan and Nie (2022b)), V2X-Seq (Yu, Yang, Ruan, Yang, Tang, Gao, Hao, Shi, Pan, Sun, Song, Yuan, Luo and Nie (2023)), V2XReal (Xiang, Zheng, Xia, Xu, Gao, Zhou, Han, Ji, Li, Meng et al. (2024)), TUMTraf-V2X (Zimmer, Wardana, Sritharan, Zhou, Song and Knoll (2024)), UrbanIng-V2X (Sekaran, Geisler, Rößle, Mohan, Cremers, Utschick, Botsch, Huber and Schön (2025)), and CATS-V2V (Li, Cao, Liang, Li, Oh, Chen, Liang, Zhou, Ma, Liu et al. (2025)) provide vehicle-side and roadside sensing streams together with synchronization and connectivity metadata, enabling research on cooperative detection, tracking, and related perception tasks. While these resources substantially expand what can be observed and can mitigate occlusion in many cases, they are not designed for language-based evaluation. In particular, they typically lack high-quality question–answer annotations and standardized benchmarking protocols needed to evaluate MLLMs on decision-relevant reasoning grounded in multi-view evidence. Recent cooperative question answering benchmarks have begun to connect language evaluation with V2X sensing, with examples including V2V-QA (Chiu, Hachiuma, Wang, Smith, Wang and Chen (2025a)) and V2V-GoT-QA (Chiu, Hachiuma, Wang, Wang, Chen and Smith (2025b)). These efforts represent an important step toward cooperative understanding, but they remain limited in several respects. First, they primarily focus on vehicle-to-vehicle (V2V) cooperation and do not treat infrastructure sensing as a first-class view. Without a roadside global perspective, cooperative evaluation may resolve certain localized occlusions but cannot consistently provide intersection-level, no-blind-spot macroscopic context. Second, existing setups often evaluate only the cooperative condition and do not support view-decoupled benchmarking that cleanly separates ego-only, infrastructure-only, and cooperative evidence conditions. This limits controlled attribution of performance gains and reduces practical relevance in scenarios where communication is intermittent or unavailable, in which case a model must degrade gracefully to single-view reasoning. To address these limitations, we introduce V2X-QA, a real-world dataset and benchmark for evaluating MLLMs in autonomous driving across three viewpoints: ego view, infrastructure view from roadside units, and a cooperative setting that jointly uses both views. V2X-QA is designed for view-decoupled evaluation, enabling controlled testing with ego-only, infrastructure-only, and cooperative input under a unified protocol. The benchmark is organized into twelve viewpoint-aligned tasks, including four vehicle-side tasks, four infrastructure-side tasks, and four cooperative tasks, spanning perception, prediction, and reasoning and planning. To standardize both annotation and evaluation, we formulate V2X-QA in a multiple-choice question answering (MCQA) format and construct a task bank covering all twelve tasks, with three questions for each task, together with candidate options and canonical answers for each question. Figure 1 presents representative examples from the three viewpoint groups and illustrates how the twelve-task design interfaces with the MCQA-based training and evaluation pipeline of V2X-QA. Within each task, the three questions are assigned to different subsets of visual samples in proportion, so that the question set is used in a balanced manner across the dataset. Based on the corresponding image evidence, a designated multimodal model first selects answers for these task-specific multiple-choice questions, after which the resulting annotations are carefully checked and revised by human experts. The verified data are then split for benchmark construction, and all evaluated models are compared under a unified MCQA prompting protocol. To support controlled studies under this benchmark, we introduce V2X-MoE as a reproducible baseline built upon Qwen3-VL (Bai, Cai, Chen, Chen, Chen et al. (2025b)) with explicit view routing and view-specialized LoRA (Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Wang and Chen (2022)) experts, trained directly for multiple-choice option prediction and further strengthened through targeted cooperative-view and infrastructure-view refinement. We additionally report calibration-based reliability analysis for V2X-MoE to quantify confidence alignment under different observability regimes (Guo, Pleiss, Sun and Weinberger (2017)). Our contributions are summarized as follows: 
+
+• Dataset. We introduce V2X-QA, a real-world multi-view autonomous driving dataset spanning ego, infrastruc-ture, and cooperative viewpoints. The dataset contains 33,216 annotated instances, and is organized into twelve viewpoint-aligned tasks, including four vehicle-side tasks, four infrastructure-side tasks, and four cooperative tasks, which support fine-grained evaluation across perception, prediction, and reasoning and planning. 
+
+• Benchmark. We establish a view-decoupled and standardized MCQA benchmark for controlled evaluation under ego-only, infrastructure-only, and cooperative evidence conditions. The benchmark enables reproducible comparison across 10 proprietary and open-source MLLMs under a unified prompting and evaluation protocol.   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 3 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views
+
+• Baseline. We propose V2X-MoE as a reproducible baseline built upon Qwen3-VL with explicit view routing and view-specialized LoRA experts. It provides a strong and reproducible baseline for viewpoint-aware multiple-choice reasoning under the unified benchmark setting, and we further report calibration-based reliability analysis to quantify confidence alignment across different observability regimes. 
+
+2. Related work 
+
+2.1. Ego-view Language benchmarks for autonomous driving 
+
+A substantial body of work has established language-based evaluation for autonomous driving under an ego-view setting, where questions are grounded in what the onboard platform can directly observe. Early efforts such as BDD-X (Kim et al. (2018)) frame driving understanding through textual justification and explanation, linking visual scenes with natural-language rationales for driver behavior. DRAMA (Malla et al. (2023)) extends this direction by emphasizing richer multimodal grounding for driver attention, action understanding, and scene-aware reasoning. These datasets are important because they introduce the basic paradigm that driving scenes can be evaluated not only through structured outputs, but also through language-mediated interpretation. Subsequent work moves from explanation-oriented supervision toward more explicit visual question answering. NuScenes-QA (Qian et al. (2024)) formulates question answering over large-scale autonomous driving data and broadens the range of scene-level semantic queries that models must answer from ego-view evidence. NuScenes-SpatialQA (Tian et al. (2025)) further emphasizes spatial structure and geometric reasoning, pushing models beyond object naming toward more relation-aware and layout-aware understanding. Together, these works make ego-view driving VQA more systematic and scalable, and they provide a foundation for studying multimodal reasoning in realistic driving imagery. More recent benchmarks bring the evaluation objective closer to safety-critical deployment. NuPlanQA (Park et al. (2025)) introduces planning-oriented question answering and ties language reasoning more directly to downstream driving decisions. NuRisk (Gao et al. (2025)) emphasizes risk-aware understanding, encouraging models to recognize and interpret safety-relevant factors rather than only describe visible content. VRU-Accident (Kim et al. (2025)) highlights scenarios involving vulnerable road users and accident-related edge cases, thereby making the evaluation distribution more safety-sensitive. In parallel, DriveBench (Kharlamova et al. (2025)) focuses on diagnostic stress testing, DVBench (Zeng et al. (2025)) examines more demanding visual reasoning behavior, and ScenePilot-Bench (Wang et al. (2026)) further enlarges the benchmark scope for driving-oriented multimodal evaluation. Considered together, these datasets show a clear evolution from generic scene description toward planning relevance, risk awareness, and stronger diagnosis of model failure modes. Despite their differences, these vehicle-centric resources share the same underlying evidence regime: the question is answered from ego-view observations alone. This design is natural for many onboard reasoning problems, but it also imposes a common limitation. Occluded participants, long-range traffic evolution, and intersection-level context may not be fully recoverable from a single vehicle perspective, even when the language question itself is well posed. Consequently, these benchmarks are highly valuable for ego-view multimodal reasoning, yet they do not allow viewpoint accessibility itself to be treated as an experimental variable. From the perspective of benchmark design, this is the key gap left by the vehicle-centric line of work. 
+
+2.2. Cooperative perception corpora 
+
+In parallel with language-based driving benchmarks, the cooperative autonomous driving community has devel-oped a large family of datasets aimed at overcoming the observability limits of ego-only sensing (Yu, Li, Wang, Chen and Zhou (2022a)). V2X-Sim (Li et al. (2022)) provides an early benchmark for collaborative perception in a simulated setting and helps establish the value of shared multi-agent evidence. DAIR-V2X (Yu et al. (2022b)) marks an important step toward real-world vehicle–infrastructure cooperation by providing synchronized roadside and vehicle-side sensing for cooperative perception tasks. V2V4Real (Xu et al. (2023)) emphasizes real-world vehicle-to-vehicle collaboration, while V2X-Seq (Yu et al. (2023)) extends the cooperative setting to sequential perception and forecasting, making temporal context more explicit. More recent datasets, including V2XReal (Xiang et al. (2024)), TUMTraf-V2X (Zimmer et al. (2024)), UrbanIng-V2X (Sekaran et al. (2025)), and CATS-V2V (Li et al. (2025)), continue to broaden the diversity of sensing configurations, traffic scenarios, and collaboration modes. This line of work has made cooperative perception a mature and technically rich area by demonstrating how connectivity and infrastructure sensing can expand what is observable in real traffic scenes.   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 4 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views
+
+However, these datasets are primarily designed for structured perception rather than language-based reasoning. Their main tasks focus on detection, tracking, forecasting, and related predictive outputs, which are essential for cooperative driving but conceptually different from evaluating MLLMs through question answering. As a result, they expand the available evidence for cooperative sensing, but do not provide a benchmark for multi-view reasoning, safety-aware interpretation, and planning-relevant understanding in natural language. Early cooperative QA benchmarks begin to close this gap. V2V-QA (Chiu et al. (2025a)) demonstrates that question answering can be extended from ego-view driving to a cooperative vehicle-to-vehicle setting, thereby showing that multi-view language reasoning is both feasible and meaningful. V2V-GoT-QA (Chiu et al. (2025b)) pushes this direction further by introducing a more structured reasoning perspective for cooperative question answering. These efforts are important because they shift cooperative autonomous driving from purely structured prediction toward language-based evaluation. At the same time, they still leave two benchmark-level limitations unresolved. First, their cooperative setting is centered on V2V interaction, so infrastructure sensing is not treated as an explicit first-class viewpoint with its own independent reasoning value. Second, they do not provide a fully view-decoupled protocol that evaluates vehicle-only, infrastructure-only, and cooperative conditions under the same task interface. As a result, they do not yet support controlled comparison among different observability regimes. V2X-QA is designed to extend this emerging direction by combining real-world cooperative data, infrastructure participation, language-based question answering, and explicit viewpoint decoupling within a unified benchmark. 
+
+3. Methodology 
+
+3.1. V2X-QA dataset: views and task taxonomy 
+
+3.1.1. View-decoupled problem setup 
+
+V2X-QA is designed to evaluate language-based driving reasoning under heterogeneous observability. Each data sample is associated with three viewpoint configurations: a vehicle-side view (VS) captured from the ego platform, an infrastructure-side view (IS) captured from roadside units, and a cooperative view (CO) that jointly leverages both VS and IS evidence. Rather than treating multi-view inputs as an implicit upgrade, V2X-QA makes viewpoint accessibility explicit through a view-decoupled formulation. Specifically, we evaluate models under three evidence conditions corresponding to vehicle-only, infrastructure-only, and cooperative input, while keeping the task interface and benchmark protocol consistent. This design enables controlled attribution of performance differences, separating failures caused by missing evidence from those caused by deficient grounding or reasoning. It also reflects practical operating regimes in which communication or infrastructure availability may vary, requiring models to remain comparable across evidence conditions. Table 1 summarizes how existing resources relate to this objective. Driving QA benchmarks provide language supervision and reasoning-oriented evaluation but typically lack infrastructure sensing and controlled degradation to infrastructure-only evidence. V2X cooperative perception datasets provide connectivity and multi-perspective sensing but are not designed for language-based QA and standardized reasoning evaluation. Recent cooperative QA resources begin to connect multi-perspective sensing with QA, yet they often do not treat infrastructure as a first-class view and do not support principled fallback to single-view evidence conditions under the same protocol. These gaps motivate a unified dataset and benchmark that explicitly models viewpoint accessibility and enables controlled and standardized comparisons across comprehensive VS, IS, and CO settings. 
+
+3.1.2. Twelve-task taxonomy 
+
+V2X-QA is organized around a twelve-task taxonomy that serves as the core semantic structure of the dataset and benchmark. Each sample is assigned exactly one task label, so the taxonomy is not an auxiliary categorization after data construction, but an integral part of how V2X-QA is annotated, organized, and evaluated. The twelve tasks are grouped into three viewpoint-aligned sets, corresponding to vehicle-side understanding, infrastructure-side macroscopic understanding, and cooperative cross-view reasoning. Across these viewpoint-aligned groups, the tasks cover three capability dimensions that are central to autonomous driving question answering: perception-oriented scene understanding, short-horizon behavior anticipation, and safety-aware reasoning and planning. For vehicle-side understanding, the taxonomy includes four tasks: Ego Static Scene (VS1), Ego Visible Agents 
+
+(VS2), Ego Risk (VS3), and Ego Prediction (VS4). These tasks focus on evidence naturally available from the ego perspective, including static road structure and traffic control cues, nearby traffic participants and their relative configurations, localized safety risks, and short-horizon anticipation of salient agents or ego-relevant motion.   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 5 of 24
+
+V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Table 1 
+
+Comparison of driving QA benchmarks, V2X cooperative perception datasets, and cooperative QA resources. “Multi-perspective decoupling flexibility” indicates whether the benchmark supports controlled evaluation under different viewpoint accessibility conditions within a consistent protocol.                                                                              
+
+> Category Dataset Year Amount Connectivity & Cooperation Infrastructure Multi-Perspective Decoupling Flexibility Language QA Safety-Critical Reasoning Macroscopic Traffic Insight I. Single-Vehicle QA
+> ("Smart but Blind")
+> BDD-X (Kim et al. (2018)) 2018 26K ✗✗–✓✗✗
+> DRAMA (Malla et al. (2023)) 2022 14K ✗✗–✓✓✗
+> NuScenes-SpatialQA (Tian et al. (2025)) 2022 3.3M+ ✗✗–✓✗✗
+> VRU-Accident (Kim et al. (2025)) 2023 6K ✗✗–✓✓✗
+> NuScenes-QA (Qian et al. (2024)) 2024 460K ✗✗–✓✓✗
+> NuPlanQA (Park et al. (2025)) 2024 1M ✗✗–✓✓✗
+> NuRisk (Gao et al. (2025)) 2024 1.1M ✗✗–✓✓✗
+> DriveBench (Kharlamova et al. (2025)) 2024 20K ✗✗–✓✓✗
+> DriveLM (Sima et al. (2024)) 2024 443K ✗✗–✓✓✗
+> DriveMLM
+
+(Cui et al., 2025) 2024 443K ✗ ✗ – ✓ ✓ ✗        
+
+> DVBench (Zeng et al. (2025)) 2025 10K ✗✗–✓✓✗
+> WaymoQA
+
+(Yu et al., 2025) 2025 35K ✗ ✗ – ✓ ✓ ✗                                                                                                
+
+> ScenePilot-4K (Wang et al. (2026)) 2026 27.7M ✗✗–✓✓✗
+> II. V2X Perception
+> ("All-Seeing but Mute")
+> V2X-Sim (Li et al. (2022)) 2021 –✓✓✓✗✗✗
+> DAIR-V2X (Yu et al. (2022b)) 2022 –✓✓✓✗✗✗
+> V2V4Real (Xu et al. (2023)) 2023 –✓✗✓✗✗✗
+> V2X-Seq (Yu et al. (2023)) 2023 –✓✓✓✗✗✗
+> TUMTraf-V2X (Zimmer et al. (2024)) 2024 –✓✓✓✗✗✗
+> V2XReal (Xiang et al. (2024)) 2024 –✓✓✓✗✗✗
+> UrbanIng-V2X (Sekaran et al. (2025)) 2025 –✓✓✓✗✗✗
+> CATS-V2V (Li et al. (2025)) 2025 –✓✗✓✗✗✗
+> III. Cooperative QA V2V-QA (Chiu et al. (2025a)) 2025 1.45M ✓✗✗✓✓✗
+> V2V-GoT-QA (Chiu et al. (2025b)) 2025 141K ✓✗✗✓✓✗
+> V2X-QA (Ours) 2026 33.2K ✓✓✓✓✓✓
+
+For infrastructure-side macroscopic understanding, the taxonomy includes four tasks: RSU Global Layout (IS1), 
+
+RSU Traffic Agents (IS2), RSU Global Risk (IS3), and RSU Long-Range Cues (IS4). This group leverages the roadside vantage and long-range coverage to emphasize global layout and topology, aggregated agent configuration over a wider field of view, macroscopic risk factors that may be weak or occluded in the ego view, and far-field cues enabled by infrastructure sensing. Importantly, the infrastructure-only setting supports intersection-level and corridor-level analysis, where a roadside view can summarize global traffic state and safety-relevant context even without ego observations. For cooperative cross-view reasoning, the taxonomy includes four tasks: Cooperative Scene Understanding (CO1), 
+
+Cooperative Visibility (CO2), Cooperative Prediction (CO3), and Cooperative Planning (CO4). This group targets evidence integration across viewpoints, including cross-view grounding and reconciliation of partial observations, explicit reasoning about visibility and occlusion, improved short-horizon prediction using complementary cues, and planning-relevant decisions grounded in jointly observed context. This taxonomy enables fine-grained diagnosis that is aligned with viewpoint accessibility. When a model fails under vehicle-only evidence but succeeds under cooperative evidence for the same task family, the failure is likely dominated by missing cues rather than purely linguistic or logical deficits. Conversely, consistent failures across evidence conditions indicate intrinsic limitations in grounding or reasoning. 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 6 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+3.2. Data curation and benchmark protocol 
+
+3.2.1. MCQA-native annotation with human verification CO1                 
+
+> CO2
+> CO3
+> CO4
+> VS1 Ego_Static_Scene
+> VS2 Ego_Visible_Agents
+> VS3 Ego_Risk
+> VS4 Ego_Prediction
+> IS1 RSU_Global_Layout
+> IS2 RSU_Traffic_Agents
+> IS3 RSU_Global_Risk
+> IS4 RSU_Long_Range_Cues
+> Cooperative_Scene_Understanding
+> Cooperative_Visibility
+> Cooperative_Prediction
+> Cooperative_Planning
+> Single Infrastructure View
+> Cooperative View
+> IS Tasks CO Tasks
+> Single Vehicle View VS Tasks
+> Task Definition
+> •Option A
+> •Option B
+> •Option C
+> •Option D
+> Question
+> (Canonical Answer of Option A)
+> (Canonical Answer of Option B)
+> (Canonical Answer of Option C)
+> (Canonical Answer of Option D)
+> MCQA Task Bank
+> Selected Option
+> Human Check
+> Training Set
+> Testing Set
+> Data Split Closed -Source Models:
+> Open -Source Models:
+> Benchmarking
+> CoT Reasoning
+
+Figure 2: Construction pipeline of V2X-QA. The pipeline starts from the twelve viewpoint-aligned tasks under three settings, then proceeds to MCQA task bank construction, model-assisted answer selection with human verification, data split generation, and standardized benchmarking across proprietary and open-source MLLMs. 
+
+V2X-QA is built on real-world vehicle–infrastructure cooperative driving data derived from the V2X-Seq line of datasets (Yu et al. (2023)). We use the V2X-Seq-SPD setting as the underlying source domain, which extends the sequential V2X benchmark with synchronized vehicle-side and roadside observations for cooperative driving and has been adopted in recent end-to-end V2X evaluation pipelines (You, Jiang, Huang, Shi, Gan, Wu, Cheng, Li and Ran (2026); You, Li, Jiang, Huang, Gan, Shi and Ran (2025)). For dataset construction, we sample 6,000 vehicle-side images from V2X-Seq and retain the corresponding matched infrastructure-side views when available. This yields 6,000 vehicle-side scenes and 5,304 synchronized vehicle–infrastructure pairs for infrastructure-side and cooperative annotation, allowing the same scene context to be queried under vehicle-only, infrastructure-only, and cooperative evidence conditions. Based on the twelve-task taxonomy defined in Section 3.1.2, we formulate V2X-QA in an MCQA format. Specifically, we construct an MCQA task bank covering all twelve tasks, where each task is associated with three predefined questions, candidate options, and canonical answers. Within each task, the three questions are assigned to different subsets of samples in roughly balanced proportions, so that the question set is used in a consistent and well-covered manner across the dataset. The complete task bank is provided in Appendix A. For each sample, we use Gemini-2.5-Pro (Comanici et al. (2025)) to select an answer option for the assigned task-specific question based on the corresponding image evidence. The resulting annotations are then carefully checked and revised by human experts. The review process verifies visual grounding, correctness of the selected option, consistency of the canonical answer, and compliance with the intended task and viewpoint setting. Samples that fail these criteria are corrected. After verification, the curated data are partitioned into training and testing sets using a question-aware and pair-consistent split strategy. Specifically, we first select the test subset from the cooperative subset by sampling 10% of synchronized vehicle–infrastructure pairs within each question group, so that all predefined questions remain represented in the test set in a balanced manner. The selected cooperative test pairs are then projected to their corresponding vehicle-side and infrastructure-side image IDs, and the same projected IDs are used to split the VS and IS subsets. In this way, the train or test partition preserves cross-view consistency and avoids leakage caused by matched vehicle-side, infrastructure-side, or cooperative samples appearing across both splits. Figure 2 summarizes the full workflow from task definition and MCQA construction to human verification, data split generation, and final benchmarking. 
+
+3.2.2. Dataset statistics and answer-distribution diagnostics 
+
+Figure 3 summarizes the resulting data distribution. The vehicle-side subset contains 12,000 samples in total, corresponding to 3,000 samples for each of the four VS tasks. Because matched infrastructure-side views are available for a subset of the sampled vehicle-side images, the infrastructure-side subset contains 10,608 samples in total, corresponding to 2,652 samples for each of the four IS tasks. The cooperative subset follows the same matched-pair constraint and likewise contains 10,608 samples, again with 2,652 samples for each of the four CO tasks. Aggregated by functional category, the full benchmark consists of 50.0% perception samples, 17.0% prediction samples, and 33.0% reasoning and planning samples. View-wise composition is also consistent with the task definitions: the VS subset 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 7 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views V2X -QA   
+
+> Figure 3: Statistics of V2X-QA. Left: overall task and functional distribution across the twelve viewpoint-aligned tasks. Right: distribution of perception, prediction, and reasoning & planning samples under vehicle-side, infrastructure-side, and cooperative views.
+> Figure 4: Answer-distribution diagnostics of V2X-QA. Left: distribution of correct option positions across the twelve tasks. Middle: majority-class ratio for each task. Right: answer entropy for each task.
+
+includes perception, prediction, and reasoning and planning samples; the IS subset emphasizes perception together with macroscopic reasoning; and the CO subset covers perception, cooperative prediction, and cooperative planning. Since V2X-QA adopts a fixed-option MCQA formulation, it is also important to characterize answer-distribution bias. Figure 4 reports the distribution of correct option positions across tasks together with two complementary diagnostics: the majority-class ratio and the answer entropy. These statistics show that the option distribution is task-dependent rather than uniformly balanced. This pattern is expected in real-world driving data, because normal traffic scenes are often dominated by common and repeated situations, whereas rarer behaviors, unusual interactions, and long-tail scenarios appear much less frequently. As a result, some tasks naturally exhibit a stronger concentration on particular options, while others show a more diverse answer distribution.   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 8 of 24
+
+V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+3.3. Baseline: V2X-MoE and evaluation setup 
+
+3.3.1. Architecture of V2X-MoE and training and evaluation pipeline VS Images 
+
+> IS Images
+> VS MCQA
+> Prompt
+> IS MCQA
+> Prompt
+> CO Image Pairs
+> CO MCQA
+> Prompt
+
+Memory Caching 
+
+> Annotation Pre -Loading
+> On -Demand Image Loading
+
+Multimodal Processor  
+
+> (Qwen3 -VL AutoProcessor )
+> Tokenization
+> Image Processing
+
+V2X -MoE 
+
+> (Qwen3 -VL Based)
+> Explicit View -Based
+> Router
+
+Qwen3 -VL     
+
+> (4 -Bit Quantized)
+> VS Expert ( LoRA Adapter)
+> IS Expert ( LoRA Adapter)
+> CO Expert ( LoRA Adapter)
+> (Only ONE
+> Expert Activated
+> per Sample)
+> Generated Option
+> Correct Option
+> Loss Calculation
+
+Training Flow          
+
+> Trainable Frozen Standard Flow Selective Routing
+> Stage 1: Full MCQA Training
+> Stage 2: CO -Focused Refinement
+> (Only CO samples are used, and only the
+> CO Expert is updated.)
+> Stage 3: IS -Focused Refinement
+> (Only IS samples are used, and only the
+> IS Expert is updated.)
+
+Figure 5: Overall architecture and staged training pipeline of V2X-MoE. The model takes viewpoint-aligned visual evidence and MCQA prompts as input, uses a Qwen3-VL multimodal processor and a shared frozen backbone, activates one viewpoint-specific LoRA expert through an explicit router, and is trained by full MCQA training followed by CO-focused and IS-focused refinement. 
+
+To support controlled benchmarking under the view-decoupled setting, we introduce V2X-MoE as a reproducible baseline built upon Qwen3-VL (Bai et al. (2025b)). The design follows a simple principle: a shared multimodal backbone is used across all samples, while viewpoint-specific adaptation is introduced through lightweight experts that are explicitly selected according to the evidence condition. Given an input sample, the model receives a viewpoint type signal 𝑣 ∈ {VS , IS , CO} together with the corresponding visual evidence and MCQA prompt. Depending on the benchmark condition defined in Section 3.1.1, the visual input is either a vehicle-side image, an infrastructure-side image, or a paired cooperative input. For cooperative samples, the image order is fixed as vehicle-side first and infrastructure-side second. After multimodal preprocessing with the Qwen3-VL AutoProcessor, the resulting token sequence is passed through a frozen Qwen3-VL backbone, while a viewpoint router activates exactly one expert associated with the current evidence condition. Formally, let 𝑥 denote the tokenized multimodal input and let 𝑓 𝜃 denote the frozen Qwen3-VL backbone parameterized by 𝜃 . We introduce three lightweight expert modules, denoted as VS , IS , and CO , together with a deterministic router 
+
+𝑟 (𝑣 ) ∈ { VS , IS , CO }, (1) which selects the expert that matches the viewpoint condition 𝑣 . The resulting model is therefore conditioned on both the input and the selected expert 
+
+𝑓 Θ(𝑥, 𝑣 ) = 𝑓 𝜃,𝜙 𝑟 (𝑣 ) (𝑥 ), (2) where 𝜙 𝑟 (𝑣 ) denotes the trainable parameters of the selected expert and 
+
+Θ = { 𝜃, 𝜙 VS , 𝜙 IS , 𝜙 CO }. (3) In our implementation, the shared backbone remains frozen and only the expert parameters are optimized. This design keeps the baseline lightweight while making the role of viewpoint specialization explicit and interpretable. V2X-MoE is trained directly for MCQA answer generation, where the target output is the correct option letter itself. For a training sample (𝑥 𝑖 , 𝑣 𝑖 , 𝑠 𝑖 ), let 
+
+𝑠 𝑖 = ( 𝑠 𝑖, 1, … , 𝑠 𝑖,𝑇 𝑖 ) (4) 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 9 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+denote the target answer sequence encoding the correct option. In practice, this is a very short sequence consisting of the gold option letter followed by the end-of-sequence token. The training objective is the standard autoregressive negative log-likelihood: 
+
+MCQA = − 
+
+> 𝑁
+
+∑
+
+> 𝑖 =1
+> 𝑇 𝑖
+
+∑
+
+> 𝑡 =1
+
+log 𝑝 Θ
+
+(𝑠 𝑖,𝑡 ∣ 𝑥 𝑖 , 𝑣 𝑖 , 𝑠 𝑖,<𝑡 
+
+) . (5) In this way, V2X-MoE preserves the causal language modeling interface of Qwen3-VL while aligning supervision directly with the benchmark answer format. To reduce spurious bias toward fixed option positions, the option order is shuffled during training and the gold label is remapped accordingly. We further apply task-balanced sampling during optimization to stabilize learning across the twelve tasks. On top of this general training stage, we adopt two targeted refinement stages. First, we perform CO-focused refinement using only cooperative samples, during which only the cooperative expert is updated and the prompt explicitly encourages joint use of the two views. Second, we perform IS-focused refinement using only infrastructure-side samples, during which only the infrastructure expert is updated and the prompt emphasizes global layout, traffic participants, and long-range roadside cues. This stage-wise design improves viewpoint specialization while preserving the shared backbone and the explicit routing structure. During evaluation, we follow the same prompt-based MCQA protocol used by the benchmark and obtain the model’s answer through generation. For an input sample (𝑥, 𝑣 ), the model generates a short response ̃𝑠 = Generate( 𝑥, 𝑣 ), (6) which is then parsed into a valid option label ̂𝑦 = Parse( ̃𝑠 ),̂ 𝑦 ∈ { 𝐴, 𝐵, 𝐶, 𝐷 }. (7) Accuracy is computed from the resulting parsed option predictions. This evaluation rule matches the actual prompt-and-generation behavior of the model and therefore remains directly comparable with other models benchmarked on V2X-QA. For calibration analysis, we additionally extract the first-step logits over the four candidate option letters under the same prompt context. Let 𝑧 𝐴 , 𝑧 𝐵 , 𝑧 𝐶 , 𝑧 𝐷 denote the corresponding logits. The option probabilities are computed as: 
+
+𝑝 Θ(𝑦 ∣ 𝑥, 𝑣 ) = exp( 𝑧 𝑦 )
+
+∑𝑦 ′∈{ 𝐴,𝐵,𝐶,𝐷 } exp( 𝑧 𝑦 ′ ) , 𝑦 ∈ { 𝐴, 𝐵, 𝐶, 𝐷 }, (8) and the confidence score is defined as: ̂𝑝 = max  
+
+> 𝑦 ∈{ 𝐴,𝐵,𝐶,𝐷 }
+
+𝑝 Θ(𝑦 ∣ 𝑥, 𝑣 ). (9) These probabilities are used only for confidence estimation and reliability analysis; they do not replace the generation-based prediction rule used for benchmark accuracy. Figure 5 illustrates the full V2X-MoE pipeline. The figure highlights three properties that are central to our benchmark setting. First, viewpoint-specific evidence conditions are aligned with viewpoint-specific MCQA prompts at the data interface. Second, the router enforces explicit expert specialization rather than implicit mixture weighting. Third, the training procedure is stage-wise and benchmark-aligned, consisting of full MCQA training followed by targeted refinement for cooperative and infrastructure-side reasoning. 
+
+3.3.2. View-specific LoRA injection with explicit routing 
+
+Viewpoint specialization in V2X-MoE is implemented through LoRA-based adaptation (Hu et al. (2022)), applied to the attention projections of the transformer blocks. Specifically, low-rank updates are injected into the query, key, value, and output projection matrices of self-attention, corresponding to the standard projection operators 𝑊 𝑞 , 𝑊 𝑘 ,
+
+𝑊 𝑣 , and 𝑊 𝑜 . Let 𝑥 ∈ ℝ𝑑 denote an input token representation at a given layer. In a standard transformer block, the attention projections are 
+
+𝑞 = 𝑊 𝑞 𝑥, 𝑘 = 𝑊 𝑘 𝑥, 𝑣 = 𝑊 𝑣 𝑥, (10)   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 10 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views
+
+and the output projection is 
+
+𝑜 = 𝑊 𝑜 𝑧, (11) where 𝑧 is the self-attention output and 𝑊 𝑞 , 𝑊 𝑘 , 𝑊 𝑣 , 𝑊 𝑜 are the base projection matrices. In V2X-MoE, these backbone projection matrices remain frozen, and viewpoint-specific low-rank updates are injected through the selected expert. For viewpoint condition 𝑣 ∈ {VS , IS , CO} , let the corresponding expert parameters be 
+
+Δ𝑊 (𝑣 ) 
+
+> 𝑞
+
+= 𝐵 (𝑣 ) 
+
+> 𝑞
+
+𝐴 (𝑣 ) 
+
+> 𝑞
+
+, Δ𝑊 (𝑣 ) 
+
+> 𝑘
+
+= 𝐵 (𝑣 ) 
+
+> 𝑘
+
+𝐴 (𝑣 ) 
+
+> 𝑘
+
+, Δ𝑊 (𝑣 ) 
+
+> 𝑣
+
+= 𝐵 (𝑣 ) 
+
+> 𝑣
+
+𝐴 (𝑣 ) 
+
+> 𝑣
+
+, Δ𝑊 (𝑣 ) 
+
+> 𝑜
+
+= 𝐵 (𝑣 ) 
+
+> 𝑜
+
+𝐴 (𝑣 ) 
+
+> 𝑜
+
+, (12) where each 𝐴 (𝑣 )∙ ∈ ℝ𝑟 ×𝑑 and 𝐵 (𝑣 )∙ ∈ ℝ𝑑 ×𝑟 defines a rank-𝑟 LoRA update. The viewpoint-conditioned projections become 
+
+𝑞 (𝑣 ) =
+
+(
+
+𝑊 𝑞 + Δ 𝑊 (𝑣 )
+
+> 𝑞
+
+)
+
+𝑥, 𝑘 (𝑣 ) =
+
+(
+
+𝑊 𝑘 + Δ 𝑊 (𝑣 )
+
+> 𝑘
+
+)
+
+𝑥, 𝑣 (𝑣 ) = (𝑊 𝑣 + Δ 𝑊 (𝑣 )
+
+> 𝑣
+
+) 𝑥, (13) and 
+
+𝑜 (𝑣 ) = (𝑊 𝑜 + Δ 𝑊 (𝑣 )
+
+> 𝑜
+
+) 𝑧. (14) Because only one expert is active for each sample, these updates are never mixed across viewpoints within a forward pass. The router therefore induces an explicit hard partition over expert usage 
+
+Δ𝑊 ∙(𝑣 ) = 
+
+⎧⎪⎨⎪⎩
+
+Δ𝑊 (VS) ∙ , 𝑣 = VS ,
+
+Δ𝑊 (IS) ∙ , 𝑣 = IS ,
+
+Δ𝑊 (CO) ∙ , 𝑣 = CO .
+
+(15) This hard-routing mechanism is consistent with the benchmark design, because each sample is evaluated under one evidence condition at a time. It also makes interpretation straightforward: any adaptation applied by the model can be directly attributed to the corresponding viewpoint expert. The rationale for this design is twofold. First, it preserves a common multimodal backbone across all samples, which keeps the baseline comparable across evidence conditions and avoids introducing unnecessary model heterogeneity. Second, it allows the trainable capacity to focus on viewpoint-specific deviations from the shared representation. The VS expert can specialize in ego-centric local semantics and immediate risk cues, the IS expert can emphasize global topology and long-range traffic organization, and the CO expert can specialize in cross-view integration and cooperative reasoning. Because these adaptations are introduced at the attention projection level, they influence how the model forms and propagates viewpoint-specific interactions throughout the transformer stack. The stage-wise training procedure further reinforces this specialization by refining the CO and IS experts on their corresponding subsets after full MCQA training. Figure 6 visualizes this mechanism. The figure shows how the explicit router selects one viewpoint expert, how the corresponding LoRA parameters are injected into the query, key, value, and output projections, and how the frozen backbone computations are preserved elsewhere. In this way, V2X-MoE remains a lightweight and controlled baseline while still exposing a concrete mechanism for viewpoint specialization that aligns naturally with the task structure of V2X-QA. In all experiments, we report standardized MCQA accuracy for both proprietary and open-source MLLMs. In addition, for V2X-MoE we report calibration-based reliability metrics to quantify confidence alignment under different evidence conditions. Given the predicted confidence ̂𝑝 𝑖 for sample 𝑖 and its correctness indicator 𝑐 𝑖 ∈ {0 , 1} , Expected Calibration Error (ECE) (Guo et al. (2017)) is computed as: 
+
+ECE = 
+
+> 𝑀
+
+∑
+
+> 𝑚 =1
+
+|𝐵 𝑚 |
+
+𝑛 ||acc( 𝐵 𝑚 ) − conf( 𝐵 𝑚 )|| , (16) where 𝐵 𝑚 denotes the set of samples falling into confidence bin 𝑚 , acc( 𝐵 𝑚 ) is the empirical accuracy in that bin, 
+
+conf( 𝐵 𝑚 ) is the average confidence, and 𝑛 is the total number of evaluated samples. We additionally report the Brier score ((Brier, 1950)) as a complementary measure of probabilistic prediction quality. Let 
+
+𝐩 𝑖 = [𝑝 Θ(𝑦 = 𝐴 ∣ 𝑥 𝑖 , 𝑣 𝑖 ), 𝑝 Θ(𝑦 = 𝐵 ∣ 𝑥 𝑖 , 𝑣 𝑖 ), 𝑝 Θ(𝑦 = 𝐶 ∣ 𝑥 𝑖 , 𝑣 𝑖 ), 𝑝 Θ(𝑦 = 𝐷 ∣ 𝑥 𝑖 , 𝑣 𝑖 )] (17)   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 11 of 24
+
+V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 𝑊 !
+
+Base Model Attention Projectors 
+
+𝑊 "
+
+𝑊 #
+
+𝑊 $   
+
+> VS Expert ( 𝐴 !" ,𝐵 !" )
+> IS Expert ( 𝐴 #$ ,𝐵 #")
+> CO Expert ( 𝐴 %& ,𝐵 %& )
+> 𝐵 '
+> %& 𝐴 '
+> %& 𝑥
+> 𝐵 (
+> %& 𝐴 (
+> %& 𝑥
+> 𝐵 !
+> %& 𝐴 !
+> %& 𝑥
+> 𝐵 )
+> %& 𝐴 )
+> %& 𝑍
+> 𝑊 '𝑥
+> 𝑊 (𝑥
+> 𝑊 !𝑥
+> 𝑊 )𝑍
+
+Self -
+
+Attention 
+
+Layer 
+
+> 𝑄
+> 𝐾
+> 𝑉
+> 𝑂
+
+Transformer Block N  
+
+> Explicit Router
+> View Type Signal
+> Tokenized Multimodal
+> Input 𝑥
+> 𝑍
+> 𝑍
+
+MLP Layer LayerNorm    
+
+> Trainable Frozen Standard Flow Selective Routing
+
+Figure 6: View-specific LoRA injection with explicit hard routing in V2X-MoE. A viewpoint type signal selects one expert among the vehicle-side, infrastructure-side, and cooperative experts. The selected expert injects low-rank adaptations into the attention projections, while the base transformer parameters remain frozen. 
+
+denote the predicted four-way option probability vector for sample 𝑖 , and let 𝐲 𝑖 ∈ {0 , 1} 4 denote the corresponding one-hot ground-truth label vector. The Brier score is then computed as: 
+
+Brier = 1
+
+𝑛 
+
+> 𝑛
+
+∑
+
+> 𝑖 =1
+
+∑
+
+> 𝑘 ∈{ 𝐴,𝐵,𝐶,𝐷 }
+
+(𝑝 Θ(𝑦 = 𝑘 ∣ 𝑥 𝑖 , 𝑣 𝑖 ) − 𝑦 𝑖,𝑘 
+
+)2. (18) In our implementation, this is computed from the first-step option probabilities over the four candidate letters 𝐴 , 𝐵 , 𝐶 ,and 𝐷 under the same prompt context, by constructing the corresponding one-hot target vector for the correct option and summing the squared differences between the two vectors for each sample. These reliability metrics are used only for V2X-MoE and are intended to complement, rather than replace, the benchmark’s main accuracy-based evaluation. 
+
+4. Experiments 
+
+4.1. Experimental setup 
+
+This section summarizes the common evaluation setting used throughout the benchmark and the implementation details of the V2X-MoE baseline. Unless otherwise noted, all models are evaluated under the same multiple-choice protocol introduced in Section 3.2.2, and all reported results are obtained on the expert-verified V2X-QA test split. 
+
+4.1.1. Evaluated models 
+
+We evaluate a diverse set of proprietary and open-source MLLMs. The evaluated model pool includes both recent frontier systems and representative open-source VLMs, and the complete model list is reported together with the corresponding result tables in Section 4.2. In addition to these general-purpose MLLMs, we include V2X-MoE as a reproducible baseline specifically designed for the view-decoupled setting of V2X-QA. In its current implementation, V2X-MoE is built upon Qwen3-VL-8B-Instruct (Bai et al. (2025b)) with explicit view routing and viewpoint-specific LoRA experts. 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 12 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+4.1.2. Evaluation protocol 
+
+All benchmark comparisons are conducted under the standardized MCQA setting. For each test sample, a model receives the visual evidence associated with the designated viewpoint condition together with the question and four candidate answers. The prompt explicitly specifies the viewpoint condition and instructs the model to return a single uppercase option letter. To ensure standardized and reproducible benchmarking across all evaluated models, we use a unified benchmark prompt template, which is provided in Appendix B. This unified answer interface ensures that benchmark comparisons are not confounded by free-form response style or differences in answer verbosity. For proprietary and open-source MLLMs, we evaluate their option predictions directly under this MCQA formulation and compute accuracy over the selected answer. For V2X-MoE, evaluation is also conducted under the same prompt-based MCQA interface. The model generates a short response, which is then parsed into one of the four valid option labels {𝐴, 𝐵, 𝐶, 𝐷 }. Reported benchmark results are further aggregated by viewpoint group, task label, and the full test set. 
+
+4.1.3. Metrics 
+
+The primary metric of V2X-QA is MCQA accuracy. We report overall accuracy and fine-grained breakdowns across the three viewpoint groups and the twelve task labels. These results form the main benchmark comparison among proprietary models, open-source models, and the V2X-MoE baseline. For V2X-MoE only, we additionally report calibration-based reliability analysis, including ECE and Brier score, to quantify confidence alignment under different evidence conditions. These reliability metrics are used as supplementary diagnostics for the baseline and are not treated as benchmark-wide metrics for all evaluated models. 
+
+4.1.4. Implementation details 
+
+V2X-MoE is implemented on top of Qwen3-VL-8B-Instruct (Bai et al. (2025b)). The base model is loaded with a frozen multimodal backbone, and viewpoint-specific LoRA adapters are attached to the self-attention projections. The implementation uses 4-bit NF4 quantization with bfloat16 computation and FlashAttention-2 for efficient training and inference. Three LoRA experts are defined for the vehicle-side, infrastructure-side, and cooperative conditions, respectively, and each sample activates exactly one expert according to its viewpoint type. For all V2X-MoE experts, the LoRA rank 𝑟 is set to 16, the scaling factor 𝛼 is 32, and the dropout rate is 0.05. Following the viewpoint-specific adaptation mechanism introduced in Section 3.3.2, we inject low-rank updates into the self-attention projections 𝑊 𝑞 , 𝑊 𝑘 , 𝑊 𝑣 , and 𝑊 𝑜 , so that the selected expert can modulate how viewpoint-conditioned information is formed and propagated within the transformer blocks. The shared Qwen3-VL backbone and vision tower remain frozen throughout training, and only the LoRA parameters of the activated expert are updated. V2X-MoE is trained on the V2X-QA training split using MCQA-aligned autoregressive supervision. During training, the prompt includes the question and four candidate options, while the target output is the correct option letter itself. To reduce overfitting to fixed option positions, the option order is shuffled online and the gold label is remapped accordingly. We further apply task-balanced sampling during optimization to reduce task imbalance across the twelve tasks. The full MCQA training stage is performed for 4 epochs with batch size 1, gradient accumulation over 8 steps, learning rate 1 × 10 −4 , weight decay 0.01 , and warmup ratio 0.03 . Images are resized with a maximum side length of 560, and the processor maximum is set to 560 × 560 pixels. After this full training stage, we conduct a CO-focused refinement stage for 2 epochs with learning rate 5 × 10 −5 and warmup ratio 0.05 , during which only the cooperative expert is updated. We then conduct an IS-focused refinement stage, again for 2 epochs with learning rate 5 × 10 −5 and warmup ratio 0.05 , during which only the infrastructure expert is updated. In the IS-focused stage, we additionally place slightly higher sampling weight on the more difficult IS3 and IS4 tasks. During inference, the same viewpoint signal selects the corresponding expert, and evaluation is performed on MCQA samples from the test split. For standard benchmark reporting, the model predicts a single answer option through generation, and accuracy is computed from the parsed option label. For reliability analysis, confidence scores are derived from the first-step probabilities over the candidate option letters under the same prompt context, and ECE is computed using 12 confidence bins. This yields a consistent probabilistic interface for calibration analysis while preserving the same MCQA evaluation protocol used for all models in the benchmark.   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 13 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views
+
+4.2. Main benchmark results 
+
+We now evaluate how current MLLMs perform on V2X-QA under the standardized MCQA protocol. The main benchmark results are reported for the vehicle-side and infrastructure-side tasks in Table 2 and for the cooperative tasks in Table 3. Taken together, these results answer the central benchmark question of this work: how well do current MLLMs reason under vehicle-side, infrastructure-side, and cooperative observability regimes, and to what extent can task- and viewpoint-specific adaptation improve performance under a unified evaluation setting. 
+
+4.2.1. Vehicle-side and infrastructure-side results 
+
+Table 2 summarizes the task-wise accuracy on the four vehicle-side tasks and the four infrastructure-side tasks. A first observation is that off-the-shelf MLLMs remain far from saturated on both single-view regimes. Among the proprietary models, Qwen-3.5-Plus achieves the highest vehicle-side average of 60.8, while Qwen3-VL-Flash reaches the highest proprietary infrastructure-side average of 54.7. Among the open-source models, the best vehicle-side performance comes from Intern-S1 with an average of 58.5, whereas the strongest infrastructure-side average is 59.7, jointly achieved by Intern-S1 and Qwen-2.5-VL-72B-Instruct. These results indicate that even under single-view conditions, V2X-QA is not solved by current general-purpose MLLMs. A second observation is that performance varies substantially across tasks within the same viewpoint group. On the vehicle-side tasks, models are generally stronger on VS1 and VS2 than on VS3 and VS4, suggesting that scene recognition and visible-agent understanding are easier than risk assessment and short-horizon prediction. On the infrastructure-side tasks, several models perform reasonably well on IS1 and IS2 yet remain less stable on IS3 and IS4, which require macroscopic risk interpretation and long-range cue extraction from roadside observations. This pattern confirms that infrastructure-side reasoning is not merely an auxiliary variant of ego-view understanding, but a distinct benchmark regime emphasizing global topology, broader traffic organization, and far-field evidence. The most important result is that V2X-MoE substantially outperforms all compared models on both viewpoint groups. It achieves an average accuracy of 95.3 on the vehicle-side tasks and 94.0 on the infrastructure-side tasks, while also maintaining uniformly strong performance across all individual tasks. The gain is especially notable on the harder reasoning-oriented tasks, including VS3, VS4, IS3, and IS4, where the proposed viewpoint-specific design remains consistently robust rather than excelling only on a subset of cases. This result suggests that explicit view routing, view-specialized LoRA adaptation, and staged refinement are highly effective for learning viewpoint-conditioned reasoning under the V2X-QA benchmark. At the same time, this comparison should be interpreted in light of the evaluation setting. The proprietary and open-source MLLMs are benchmarked under the unified prompt protocol without task-specific adaptation, whereas V2X-MoE is trained on the V2X-QA training split. Its strong performance therefore demonstrates not only the difficulty of the benchmark for general-purpose models, but also the effectiveness of benchmark-aligned specialization when viewpoint structure is modeled explicitly. 
+
+4.2.2. Cooperative results 
+
+Table 3 reports the benchmark results on the four cooperative tasks. Compared with the single-view settings above, cooperative evaluation reveals a much more challenging and unstable performance profile for general-purpose MLLMs. The best average among the proprietary models is only 36.7, achieved by both GPT-5.2 and Gemini-3-Flash-Preview, while the strongest open-source baseline, Intern-S1, reaches 43.5. These values are markedly lower than the corresponding vehicle-side and infrastructure-side averages, showing that cooperative reasoning is not obtained automatically by simply providing two views. The task-level breakdown further illustrates this difficulty. Many models exhibit highly uneven behavior across the four cooperative tasks. For example, Gemini-3-Flash-Preview performs very strongly on CO1 but collapses on CO2 and CO4, Gemini-2.5-Pro reaches its best score on CO2 but remains extremely weak on CO1 and CO4, and Qwen-3.5-Plus attains its strongest result on CO3 while again dropping sharply on CO4. Similar instability is also visible among open-source models. These patterns indicate that cooperative reasoning in V2X-QA is not a single capability, but a compound challenge involving cross-view alignment, visibility reasoning, motion anticipation, and planning-oriented decision making. Against this backdrop, V2X-MoE again achieves the strongest overall result by a large margin. Its cooperative average reaches 86.2, with consistently strong performance across all four cooperative tasks, including 92.1 on CO1, 93.2 on CO2, 83.4 on CO3, and 75.9 on CO4. In contrast to the pronounced task-specific collapses observed in the off-the-shelf models, V2X-MoE remains much more balanced across the cooperative benchmark. This result provides   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 14 of 24
+
+V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Table 2 
+
+Main benchmark results on the vehicle-side and infrastructure-side tasks of V2X-QA. Accuracy (%) is reported for each task and the corresponding average within each viewpoint group. Model VS1 VS2 VS3 VS4 Avg. IS1 IS2 IS3 IS4 Avg. 
+
+Closed-Source Models 
+
+GPT-5.2 (OpenAI (2025b)) 65.3 43.8 26.0 43.0 44.5 69.8 42.6 38.5 47.5 49.6 GPT-5-Mini (OpenAI (2025a)) 78.1 49.8 32.1 44.5 51.1 45.7 52.1 46.4 45.3 47.4 Gemini-3-Flash-Preview (Google (2025)) 69.4 56.2 20.8 38.9 46.3 63.8 44.9 20.8 11.7 35.3 Gemini-2.5-Pro (Comanici et al. (2025)) 87.2 59.2 40.4 46.8 58.4 24.5 43.0 45.3 51.7 41.1 Qwen-3.5-Plus (Qwen Team (2026)) 84.5 55.1 44.5 58.9 60.8 53.2 56.6 44.5 39.6 48.5 Qwen3-VL-Flash (Bai et al. (2025b)) 65.5 49.5 39.0 55.8 52.5 93.8 50.0 27.8 47.2 54.7 
+
+Open-Source Models 
+
+Intern-S1 (Bai, Cai, Cao, Cao, Chen et al. (2025a)) 83.8 63.8 42.3 44.2 58.5 82.3 61.5 60.8 34.3 59.7 Intern-S1-Mini (Bai et al. (2025a)) 47.2 52.1 29.8 43.4 43.1 55.8 55.1 41.9 41.1 48.5 Qwen-3-VL-30B-A3B-Instruct (Bai et al. (2025b)) 72.1 44.2 27.5 43.4 46.8 63.8 45.7 40.8 53.2 50.9 Qwen-2.5-VL-72B-Instruct (Bai et al. (2025c)) 72.1 65.3 51.3 41.9 57.7 71.7 58.1 63.0 46.0 59.7 V2X-MoE-8B (Ours) 98.9 94.3 93.2 94.7 95.3 99.6 95.1 92.1 89.1 94.0 Table 3 
+
+Main benchmark results on the cooperative tasks of V2X-QA. Accuracy (%) is reported for each task and the average over the cooperative viewpoint group. Model CO1 CO2 CO3 CO4 Avg. 
+
+Closed-Source Models 
+
+GPT-5.2 (OpenAI (2025b)) 34.0 36.2 49.4 27.2 36.7 GPT-5-Mini (OpenAI (2025a)) 26.4 9.8 47.2 11.3 23.7 Gemini-3-Flash-Preview (Google (2025)) 86.0 3.8 43.4 13.6 36.7 Gemini-2.5-Pro (Comanici et al. (2025)) 15.8 59.2 45.3 3.4 30.9 Qwen-3.5-Plus (Qwen Team (2026)) 37.7 30.9 64.5 2.8 34.0 Qwen3-VL-Flash (Bai et al. (2025b)) 22.3 47.9 44.9 6.5 30.4 
+
+Open-Source Models 
+
+Intern-S1 (Bai et al. (2025a)) 57.4 70.2 43.0 3.4 43.5 Intern-S1-Mini (Bai et al. (2025a)) 64.5 29.1 43.4 5.3 35.6 Qwen-3-VL-30B-A3B-Instruct (Bai et al. (2025b)) 20.8 32.1 52.1 4.9 27.5 Qwen-2.5-VL-72B-Instruct (Bai et al. (2025c)) 61.9 54.7 42.6 8.7 42.0 V2X-MoE-8B (Ours) 92.1 93.2 83.4 75.9 86.2 
+
+the strongest evidence for the effectiveness of the proposed design, because cooperative reasoning is precisely the regime in which viewpoint-conditioned routing and specialization are most needed. At a higher level, the cooperative results reinforce two conclusions. First, the cooperative setting of V2X-QA is substantially more demanding than either vehicle-side or infrastructure-side reasoning for current general-purpose MLLMs. Second, explicit viewpoint-aware adaptation matters: the large gap between V2X-MoE and the non-specialized baselines suggests that successful cooperative reasoning requires more than raw model capacity or an additional image input. Instead, it benefits from architectural bias and training strategy that are explicitly aligned with cross-view evidence integration. Taken together, Tables 2 and 3 support three main conclusions. First, off-the-shelf proprietary and open-source MLLMs remain far from saturated on V2X-QA, especially under the cooperative setting. Second, viewpoint matters: vehicle-side, infrastructure-side, and cooperative settings expose different capability bottlenecks rather than forming 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 15 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+a simple monotonic difficulty ordering. Third, the proposed V2X-MoE baseline demonstrates that strong benchmark performance can be obtained when the model is explicitly adapted to viewpoint-conditioned MCQA reasoning. In particular, its large margin over the compared baselines on all three viewpoint groups validates the usefulness of explicit view routing, viewpoint-specific expert adaptation, and staged refinement under the V2X-QA benchmark. 
+
+4.3. Diagnostic and reliability analysis 
+
+Beyond the main benchmark tables, V2X-QA is designed to reveal structured differences in model behavior across viewpoints and task families. In this subsection, we first analyze task-level performance patterns and then report supplementary reliability analysis for the V2X-MoE baseline. 
+
+4.3.1. Diagnostic analysis across views and tasks 
+
+Figure 7 visualizes task-level performance patterns for representative proprietary and open-source models, together with viewpoint-group averages. Compared with the aggregated results in Section 4.2, the radar plots make the diagnostic role of V2X-QA more explicit by showing not only which model performs better overall, but also how performance is distributed across the twelve tasks and the three viewpoint groups. Several patterns are immediately visible. First, the task difficulty structure varies substantially across viewpoints rather than shifting uniformly. Vehicle-side tasks emphasize local scene semantics, visible agents, ego-relevant risk, and short-horizon prediction from onboard observations. Infrastructure-side tasks instead emphasize global layout, broader traffic organization, macroscopic risk, and long-range cues available from the roadside perspective. Cooperative tasks impose an additional burden: the model must not only recognize information from each view, but also integrate and reconcile complementary evidence across views. As a result, cooperative tasks exhibit the strongest instability for general-purpose MLLMs, especially on planning-oriented CO4 and, for some models, also on visibility- and occlusion-related CO2. Second, the radar plots reveal pronounced differences in model profile. Many proprietary and open-source MLLMs show highly uneven task-wise behavior, with sharp peaks on some tasks but severe collapses on others. This unevenness is especially clear in the cooperative setting, where several strong off-the-shelf models still fail to maintain stable performance across CO1–CO4. By contrast, V2X-MoE exhibits a much more regular and consistently strong profile across the full twelve-task space. Its gains are not restricted to a single subset, but extend across vehicle-side, infrastructure-side, and cooperative tasks, which is consistent with the intended effect of explicit view routing, view-specialized LoRA adaptation, and staged refinement. Third, the average-view radar plot reinforces the same conclusion at a more compact level. The compared proprietary and open-source models form a relatively clustered band, with limited separation between their VS, IS, and CO averages. V2X-MoE stands clearly outside this band and remains strong under all three evidence conditions, indicating that the proposed benchmark-aligned specialization improves not only a few isolated tasks but also the overall viewpoint-conditioned reasoning profile of the model. 
+
+4.3.2. Reliability analysis for V2X-MoE 
+
+We next report reliability analysis for V2X-MoE as a supplementary diagnostic. This analysis is restricted to the baseline rather than applied uniformly to all benchmarked models, because it relies on a controlled probabilistic interface derived from the V2X-MoE inference pipeline introduced in Section 4.1. The purpose here is not to redefine the benchmark around calibration metrics, but to examine whether confidence quality changes systematically across viewpoint conditions even when the model architecture and evaluation protocol are fixed. Table 4 summarizes ECE and Brier score for the vehicle-side, infrastructure-side, and cooperative subsets. Two patterns are immediately apparent. First, the vehicle-side and infrastructure-side subsets exhibit very similar calibration quality, with ECE values of 0.0386 and 0.0387, respectively. Their Brier scores are also relatively low, indicating that under single-view reasoning the model’s confidence remains broadly aligned with empirical correctness. Second, the cooperative subset is noticeably less reliable, with the highest ECE of 0.0865 and a substantially larger Brier score of 0.2292. This result is consistent with the main benchmark findings: cooperative reasoning is not only more difficult in terms of accuracy, but also more challenging from the perspective of uncertainty estimation. These trends are further illustrated in Figure 8, which plots the reliability diagram together with the confidence distribution. The VS and IS curves remain comparatively close to the diagonal across the occupied confidence range, whereas the CO curve departs more visibly from ideal calibration. The lower panel further shows that confidence mass is concentrated in the high-confidence region across all three viewpoint groups, but the cooperative setting still exhibits   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 16 of 24
+
+V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views (a) Closed -Source Model Performance Comparison (b) Open -Source Model Performance Comparison (c) Average Model Performance Comparison 
+
+Figure 7: Task-level and viewpoint-level model performance comparison on V2X-QA. 
+
+Table 4 
+
+Calibration results of V2X-MoE across viewpoint groups. View ECE Brier No. of Samples VS 0.0386 0.0854 1,060 IS 0.0387 0.0963 1,060 CO 0.0865 0.2292 1,060 All 0.0530 0.1370 3,180 
+
+a larger mismatch between confidence and empirical accuracy. This indicates that the main challenge in the cooperative regime is not merely making the correct selection, but doing so with confidence that faithfully reflects uncertainty. 
+
+5. Discussion 
+
+Experiment results show that V2X-QA captures a substantially broader reasoning problem than conventional driving QA benchmarks. Vehicle-side, infrastructure-side, and cooperative evaluation are not minor variants of the same task, but distinct observability regimes with different reasoning requirements. In particular, the infrastructure-side setting forms an independent regime for macroscopic traffic interpretation, global layout understanding, and long-range cue utilization, while the cooperative setting is more demanding because it requires the model to reconcile complementary evidence across views and convert it into coherent prediction- and planning-oriented reasoning. The strong performance of V2X-MoE further suggests that explicit viewpoint specialization is an effective inductive bias for this benchmark. Taken together, these findings support the central motivation of V2X-QA: conclusions about cooperative autonomous driving reasoning should not be drawn from ego-centric evaluation alone, and viewpoint accessibility should be treated as an explicit experimental variable rather than an implicit assumption. At the same time, several limitations should be noted. Although V2X-QA provides a real-world, expert-verified, and view-decoupled benchmark, it remains an image-based MCQA benchmark rather than a closed-loop driving evaluation framework. The cooperative setting is currently defined over paired vehicle-side and infrastructure-side observations, and therefore does not yet capture richer communication effects such as latency, packet loss, asynchronous sensing, or dynamically changing sensor availability. In addition, the calibration analysis in this work is limited to V2X-MoE and is intended as a supplementary diagnosis rather than a benchmark-wide comparison metric. Future work can extend V2X-QA toward video-based temporal reasoning, more diverse cities and traffic scenarios, communication-aware cooperative settings, and broader reliability analysis across model families. 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 17 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views             
+
+> Figure 8: Reliability diagram and confidence distribution of V2X-MoE across vehicle-side, infrastructure-side, and cooperative viewpoint groups.
+
+6. Conclusion 
+
+This work presents V2X-QA, a novel benchmark for studying multimodal reasoning in autonomous driving under vehicle-side, infrastructure-side, and cooperative viewpoints. Unlike conventional driving QA settings that mainly focus on ego-view evidence, V2X-QA explicitly treats viewpoint accessibility as part of the problem formulation and enables controlled comparison across different evidence conditions within a unified MCQA framework. Through its twelve-task design, the benchmark provides a structured way to examine how current MLLMs handle scene understanding, prediction, and reasoning and planning under heterogeneous observability. Our experiments show that viewpoint changes are not a superficial variation of the same task, but a meaningful source of capability difference. In particular, the infrastructure-side setting captures important macroscopic traffic understanding that is difficult to recover from ego observations alone, while the cooperative setting exposes the unresolved challenge of cross-view alignment and evidence integration. The strong performance of V2X-MoE indicates that explicitly modeling viewpoint structure is an effective direction for this problem. We envision V2X-QA can serve as a useful benchmark for future research on multi-perspective reasoning, cooperative embodied intelligence, and more reliable multimodal systems for connected intelligent driving. 
+
+Appendix A. MCQA task bank used for annotation 
+
+This appendix presents the complete MCQA task bank used during annotation. The task bank is organized into three parts corresponding to VS, IS, and CO tasks. Tables 5, 6, and 7 provide the full task banks for the VS, IS, and CO groups, respectively. Each entry includes the question ID, question text, candidate options, and the corresponding canonical answers.   
+
+> Junwei You et al.: Preprint submitted to Elsevier Page 18 of 24
+
+V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Table 5: Vehicle-side MCQA task bank for VS tasks. 
+
+Task Question ID Question Options Canonical Answers VS1: Ego Static Scene VS1_Q1 What is the main road scene ahead? A. An intersection area. B. A straight road segment. C. A work-zone or barrier area. D. A merge or ramp area. A: The main road scene ahead is an intersection area. B: The main road scene ahead is a straight road segment. C: The main road scene ahead is a work-zone or barrier area. D: The main road scene ahead is a merge or ramp area. VS1_Q2 Which road feature is most important ahead? A. Junction structure. B. Lane-following road. C. Barrier or cone guidance. D. Ramp-like road split. A: The most important road feature ahead is a junction structure. B: The most important road feature ahead is a lane-following road. C: The most important road feature ahead is barrier or cone guidance. D: The most important road feature ahead is a ramp-like road split. VS1_Q3 How should the scene ahead be grouped? A. Intersection-type scene. B. Regular road scene. C. Restricted or guided scene. D. Branching road scene. A: The scene ahead should be grouped as an intersection-type scene. B: The scene ahead should be grouped as a regular road scene. C: The scene ahead should be grouped as a restricted or guided scene. D: The scene ahead should be grouped as a branching road scene. VS2: Ego Visible Agents VS2_Q1 What is the main road user ahead? A. No clear road user ahead. B. A car-like vehicle. C. A large vehicle. D. A person, bike, or motorcycle. A: There is no clear road user ahead. B: The main road user ahead is a car-like vehicle. C: The main road user ahead is a large vehicle. D: The main road user ahead is a person, bike, or motorcycle. VS2_Q2 Which category best fits the key target ahead? A. None is clearly key. B. Passenger vehicle. C. Bus or truck. D. Small or vulnerable user. A: No target is clearly key ahead. B: The key target ahead is a passenger vehicle. C: The key target ahead is a bus or truck. D: The key target ahead is a small or vulnerable road user. VS2_Q3 Who matters most for the ego path ahead? A. No one clearly matters most. B. A car or SUV. C. A truck or bus. D. A rider, cyclist, or pedestrian. A: No road user clearly matters most for the ego path ahead. B: A car or SUV matters most for the ego path ahead. C: A truck or bus matters most for the ego path ahead. D: A rider, cyclist, or pedestrian matters most for the ego path ahead. VS3: Ego Risk VS3_Q1 What is the main risk ahead? A. Cross traffic. B. A leading vehicle. C. A vulnerable road user. D. No clear risk. A: The main risk ahead is cross traffic. B: The main risk ahead is a leading vehicle. C: The main risk ahead is a vulnerable road user. D: There is no clear risk ahead. VS3_Q2 Which hazard is most important now? A. Blurred visibility or wet road surface. B. Vehicle conflict. C. Pedestrian or rider conflict. D. No obvious hazard. A: The most important hazard now is blurred visibility or a wet road surface. B: The most important hazard now is a front or side vehicle conflict. C: The most important hazard now is a pedestrian or rider conflict. D: There is no obvious hazard now. VS3_Q3 What should the ego pay most attention to? A. Traffic from the side. B. Traffic directly ahead. C. People or two-wheelers nearby. D. Nothing stands out strongly. A: The ego should pay most attention to traffic from the side. B: The ego should pay most attention to traffic directly ahead. C: The ego should pay most attention to people or two-wheelers nearby. D: Nothing stands out strongly for the ego to attend to. VS4: Ego Prediction VS4_Q1 What will the ego vehicle likely do next? A. Go straight. B. Slow down. C. Turn or change lanes. D. It is unclear. A: The ego vehicle will likely go straight next. B: The ego vehicle will likely slow down next. C: The ego vehicle will likely turn or change lanes next. D: The next action of the ego vehicle is unclear. VS4_Q2 How is the ego vehicle likely to move? A. Keep moving forward. B. Make a left turn. C. Make a right turn. D. Change lanes. A: The ego vehicle is likely to keep moving forward. B: The ego vehicle is likely to make a left turn. C: The ego vehicle is likely to make a right turn. D: The ego vehicle is likely to change lanes. VS4_Q3 What is the most likely next action of the ego vehicle? A. Go straight. B. Turn left. C. Turn right. D. Change lanes. A: The most likely action is to go straight. B: The most likely action is to turn left. C: The most likely action is to turn right. D: The most likely action is to change lanes. 
+
+Table 6: Infrastructure-side MCQA task bank for IS tasks. 
+
+Task Question ID Question Options Canonical Answers IS1: RSU Global Layout IS1_Q1 What is the most prominent layout feature in this RSU view? A. A regular intersection. B. A curved road approach. C. Strong turn guidance. D. A complex layout. A: The most prominent layout feature in this RSU view is a regular intersection. B: The most prominent layout feature in this RSU view is a curved road approach. C: The most prominent layout feature in this RSU view is strong turn guidance. D: The most prominent layout feature in this RSU view is a complex layout. 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 19 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Task Question ID Question Options Canonical Answers IS1_Q2 Which intersection feature stands out most in this RSU view? A. A regular intersection shape. B. A curved approach road. C. Clear turn guidance. D. A complex road layout. A: The most prominent feature in this RSU view is a regular intersection shape. B: The most prominent feature in this RSU view is a curved approach road. C: The most prominent feature in this RSU view is clear turn guidance. D: The most prominent feature in this RSU view is a complex road layout. IS1_Q3 How should this RSU-view intersection be described? A. A standard intersection. B. An intersection with a curved approach. C. An intersection with strong turn guidance. D. An intersection with a complex layout. A: This RSU-view intersection is best described as a standard intersection. B: This RSU-view intersection is best described as an intersection with a curved approach. C: This RSU-view intersection is best described as an intersection with strong turn guidance. D: This RSU-view intersection is best described as an intersection with a complex layout. IS2: RSU Traffic Agents IS2_Q1 What best describes the traffic in the RSU view? A. Light traffic. B. Many cars close together. C. Mixed traffic with vulnerable users. D. A large vehicle stands out. A: The RSU view shows light traffic. B: The RSU view shows many cars close together. C: The RSU view shows mixed traffic with vulnerable users. D: The RSU view is dominated by a large vehicle. IS2_Q2 Which traffic pattern is most clear? A. Sparse movement. B. Dense vehicle group. C. Mixed road users. D. One large vehicle. A: The clearest traffic pattern is sparse movement. B: The clearest traffic pattern is a dense vehicle group. C: The clearest traffic pattern is mixed road users. D: The clearest traffic pattern is one large vehicle. IS2_Q3 What is the key traffic feature here? A. Few active agents. B. Clustered vehicles. C. Different user types. D. A standout truck or bus. A: The key traffic feature is few active agents. B: The key traffic feature is clustered vehicles. C: The key traffic feature is different user types. D: The key traffic feature is a standout truck or bus. IS3: RSU Global Risk IS3_Q1 What is the main global risk? A. A wet road surface. B. Dense vehicle interaction. C. Vulnerable road users. D. No clear global risk. A: The main global risk is a wet road surface. B: The main global risk is dense vehicle interaction. C: The main global risk is vulnerable road users. D: There is no clear global risk. IS3_Q2 Which risk matters most in the RSU view? A. A wet slippery surface. B. Crowded traffic flow. C. Pedestrian or rider exposure. D. Nothing stands out strongly. A: The most important RSU-view risk is a wet slippery surface. B: The most important RSU-view risk is crowded traffic flow. C: The most important RSU-view risk is pedestrian or rider exposure. D: No risk stands out strongly in the RSU view. IS3_Q3 What deserves the most caution here? A. A wet road surface. B. Heavy interaction among vehicles. C. Nearby vulnerable users. D. No major caution point. A: The main caution point is a wet road surface. B: The main caution point is heavy interaction among vehicles. C: The main caution point is nearby vulnerable users. D: There is no major caution point. IS4: RSU Long-Range Cues IS4_Q1 What is the clearest long-range cue? A. A far large vehicle. B. A far vehicle group. C. A work zone ahead. D. No strong long-range cue. A: The clearest long-range cue is a far large vehicle. B: The clearest long-range cue is a far vehicle group. C: The clearest long-range cue is a work zone ahead. D: There is no strong long-range cue. IS4_Q2 Which distant feature stands out most? A. A distant truck or bus. B. A distant traffic cluster. C. A distant work zone. D. Nothing distant stands out. A: The most salient distant feature is a truck or bus. B: The most salient distant feature is a traffic cluster. C: The most salient distant feature is a work zone. D: No distant feature stands out. IS4_Q3 What useful far-field cue is visible? A. A large far-field agent. B. A far buildup of traffic. C. A far work zone. D. No obvious far-field cue. A: The useful far-field cue is a large far-field agent. B: The useful far-field cue is a far buildup of traffic. C: The useful far-field cue is a far work zone. D: There is no obvious far-field cue. 
+
+Table 7: Cooperative MCQA task bank for CO tasks. 
+
+Task Question ID Question Options Canonical Answers CO1: Cooperative Scene Understanding CO1_Q1 With both views, what best describes the ego path? A. The path looks clear. B. Cross traffic affects the path. C. The path is constrained. D. The path is still unclear. A: With both views, the ego path looks clear. B: With both views, cross traffic affects the ego path. C: With both views, the ego path is constrained. D: With both views, the ego path is still unclear. CO1_Q2 What is the main joint scene result? A. Open path ahead. B. Crossing activity matters. C. The lane area is limited. D. Joint evidence remains weak. A: The main joint scene result is an open path ahead. B: The main joint scene result is that crossing activity matters. C: The main joint scene result is that the lane area is limited. D: The main joint scene result is that the joint evidence remains weak. 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 20 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Task Question ID Question Options Canonical Answers CO1_Q3 How should the cooperative scene be summarized? A. Mostly clear forward scene. B. Cross-view conflict scene. C. Restricted-path scene. D. Uncertain combined scene. A: The cooperative scene is best summarized as a mostly clear forward scene. B: The cooperative scene is best summarized as a cross-view conflict scene. C: The cooperative scene is best summarized as a restricted-path scene. D: The cooperative scene is best summarized as an uncertain combined scene. CO2: Cooperative Visibility CO2_Q1 What does cooperation add most? A. An occluded road user becomes clear. B. A blurred ego-view scene becomes clear. C. A long-range cue becomes clear. D. It adds little new information. A: Cooperation mainly makes an occluded road user clear. B: Cooperation mainly makes a blurred ego-view scene clear. C: Cooperation mainly makes a long-range cue clear. D: Cooperation adds little new information. CO2_Q2 Which missing cue is best recovered by cooperation? A. An occluded road-user cue. B. A cue missing from the blurred ego view. C. A long-range cue. D. No important cue is recovered. A: The best recovered missing cue is an occluded road-user cue. B: The best recovered missing cue is a cue missing from the blurred ego view. C: The best recovered missing cue is a long-range cue. D: No important cue is recovered. CO2_Q3 What is the main value of the second view? A. It reveals an occluded road user. B. It clarifies a blurred ego view. C. It provides a long-range cue. D. Its added value is limited. A: The main value of the second view is that it reveals an occluded road user. B: The main value of the second view is that it clarifies a blurred ego view. C: The main value of the second view is that it provides a long-range cue. D: The added value of the second view is limited. CO3: Cooperative Prediction CO3_Q1 With both views, what will the ego vehicle do next? A. Go straight. B. Make a left turn. C. Make a right turn. D. Change lanes. A: With both views, the ego vehicle will likely go straight next. B: With both views, the ego vehicle will likely make a left turn next. C: With both views, the ego vehicle will likely make a right turn next. D: With both views, the ego vehicle will likely change lanes. CO3_Q2 What motion is most likely for the ego vehicle after combining views? A. Go straight. B. Make a left turn. C. Make a right turn. D. Change lanes. A: After combining views, the ego vehicle is most likely to go straight. B: After combining views, the ego vehicle is most likely to make a left turn. C: After combining views, the ego vehicle is most likely to make a right turn. D: After combining views, the ego vehicle is most likely to change lanes. CO3_Q3 What is the best cooperative prediction for the ego vehicle? A. Go straight. B. Make a left turn. C. Make a right turn. D. Change lanes. A: The best short-term cooperative prediction for the ego vehicle is to go straight. B: The best short-term cooperative prediction for the ego vehicle is to make a left turn. C: The best short-term cooperative prediction for the ego vehicle is to make a right turn. D: The best short-term cooperative prediction for the ego vehicle is to change lanes. CO4: Cooperative Planning CO4_Q1 With both views, what should the ego vehicle do immediately? A. Accelerate. B. Reduce speed. C. Keep the current speed. D. Yield or prepare to stop. A: With both views, the ego vehicle should accelerate. B: With both views, the ego vehicle should reduce speed. C: With both views, the ego vehicle should keep the current speed. D: With both views, the ego vehicle should yield or prepare to stop. CO4_Q2 With both views, what is the best immediate ego action? A. Accelerate. B. Reduce speed. C. Keep the current speed. D. Yield or prepare to stop. A: With both views, the best immediate ego action is to accelerate. B: With both views, the best immediate ego action is to reduce speed. C: With both views, the best immediate ego action is to keep the current speed. D: With both views, the best immediate ego action is to yield or prepare to stop. CO4_Q3 With both views, what is the best immediate planning choice? A. Pick up speed. B. Slow down. C. Maintain the current speed. D. Yield or get ready to stop. A: With both views, the best immediate planning choice is to pick up speed. B: With both views, the best immediate planning choice is to slow down. C: With both views, the best immediate planning choice is to maintain the current speed. D: With both views, the best immediate planning choice is to yield or get ready to stop. 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 21 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Table 8 
+
+Unified benchmark prompt template used for standardized MCQA evaluation across all benchmarked models. Component Content System prompt You are answering a multiple-choice autonomous driving question. Use only the provided image evidence and the question/options. Return exactly one uppercase letter only: A or B or C or D. Do not output any other words, punctuation, or explanation. User prompt template Task: {task_id} Viewpoint: {viewpoint} Image evidence: {image_note} Question: {question} Options: A. {opt_a} B. {opt_b} C. {opt_c} D. {opt_d} Return exactly one uppercase letter only: A, B, C, or D. image_note (VS) One image is provided: vehicle-side (ego) view. image_note (IS) One image is provided: infrastructure-side (RSU) view. image_note (CO) Two images are provided in order: (1) vehicle-side (ego) view, (2) infrastructure-side (RSU) view. 
+
+B. Unified benchmark prompt template for standardized MCQA evaluation 
+
+As described in the main text, all benchmark comparisons in V2X-QA are conducted under a standardized and unified MCQA evaluation protocol to ensure fair, reproducible, and directly comparable benchmarking across different models and viewpoint conditions. To support this protocol, we design a unified benchmark prompt template that is used consistently for all evaluated models, including proprietary MLLMs, open-source MLLMs, and V2X-MoE. Table 8 summarizes the complete prompt structure, including the fixed system prompt, the shared user prompt template, and the viewpoint-specific image notes for the VS, IS, and CO settings. 
+
+References 
+
+Bai, L., Cai, Z., Cao, M., Cao, W., Chen, C., et al., 2025a. Intern-s1: A scientific multimodal foundation model. arXiv preprint arXiv:2508.15763 doi: 10.48550/arXiv.2508.15763 .Bai, S., Cai, Y., Chen, R., Chen, K., Chen, X., et al., 2025b. Qwen3-vl technical report. arXiv preprint arXiv:2511.21631 doi: 10.48550/arXiv. 2511.21631 .Bai, S., et al., 2025c. Qwen2.5-vl technical report. arXiv:2502.13923 .Brier, G.W., 1950. Verification of forecasts expressed in terms of probability. Monthly Weather Review 78, 1–3. Chiu, H.k., Hachiuma, R., Wang, C.Y., Smith, S.F., Wang, Y.C.F., Chen, M.H., 2025a. V2v-llm: Vehicle-to-vehicle cooperative autonomous driving with multi-modal large language models. arXiv preprint arXiv:2502.09980 . Chiu, H.k., Hachiuma, R., Wang, C.Y., Wang, Y.C.F., Chen, M.H., Smith, S.F., 2025b. V2v-got: Vehicle-to-vehicle cooperative autonomous driving with multimodal large language models and graph-of-thoughts. arXiv preprint arXiv:2509.18053 . Comanici, G., et al., 2025. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv:2507.06261 .Cui, E., Wang, W., Li, Z., Xie, J., Zou, H., Deng, H., Luo, G., Lu, L., Zhu, X., Dai, J., 2025. Drivemlm: aligning multi-modal large language models with behavioral planning states for autonomous driving. Visual Intelligence 3, 22. 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 22 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Gan, R., Li, P., Long, K., An, B., You, J., Wu, K., Ran, B., 2025. Planning safety trajectories with dual-phase, physics-informed, and transportation knowledge-driven large language models. arXiv preprint arXiv:2504.04562 . Gao, S., Yang, J., Chen, L., Chitta, K., Qiu, Y., Geiger, A., Zhang, J., Li, H., 2024. Vista: A generalizable driving world model with high fidelity and versatile controllability. Advances in Neural Information Processing Systems 37, 91560–91596. Gao, Y., Piccinini, M., Brusnicki, R., Zhang, Y., Betz, J., 2025. Nurisk: A visual question answering dataset for agent-level risk assessment in autonomous driving. arXiv preprint arXiv:2509.25944 . Google, 2025. Gemini 3 Flash Preview. https://ai.google.dev/gemini-api/docs/models/gemini-3-flash-preview . Google AI for Developers documentation. Accessed: 2026-04-01. Guo, C., Pleiss, G., Sun, Y., Weinberger, K.Q., 2017. On calibration of modern neural networks, in: International conference on machine learning, PMLR. pp. 1321–1330. Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., 2022. Lora: Low-rank adaptation of large language models, in: International Conference on Learning Representations. Huang, Z., Sheng, Z., Qu, Y., You, J., Chen, S., 2025. Vlm-rl: A unified vision language models and reinforcement learning framework for safe autonomous driving. Transportation Research Part C: Emerging Technologies 180, 105321. Hwang, J.J., Xu, R., Lin, H., Hung, W.C., Ji, J., Choi, K., Huang, D., He, T., Covington, P., Sapp, B., et al., 2024. Emma: End-to-end multimodal model for autonomous driving. arXiv preprint arXiv:2410.23262 . Kharlamova, A., Liu, J., Zhang, T., Yang, X., Alqasimi, H., Sun, Y., Xue, C.J., 2025. Llm-driven kernel evolution: Automating driver updates in linux. arXiv preprint arXiv:2511.18924 . Kim, J., Rohrbach, A., Darrell, T., Canny, J., Akata, Z., 2018. Textual explanations for self-driving vehicles, in: Proceedings of the European conference on computer vision (ECCV), pp. 563–578. Kim, Y., Abdelrahman, A.S., Abdel-Aty, M., 2025. Vru-accident: A vision-language benchmark for video question answering and dense captioning for accident scene understanding, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 761–771. Li, H., Cao, B., Liang, Z., Li, W., Oh, J., Chen, Y., Liang, S., Zhou, H., Ma, C., Liu, J., et al., 2025. Cats-v2v: A real-world vehicle-to-vehicle cooperative perception dataset with complex adverse traffic scenarios. arXiv preprint arXiv:2511.11168 . Li, Y., Ma, D., An, Z., Wang, Z., Zhong, Y., Chen, S., Feng, C., 2022. V2x-sim: Multi-agent collaborative perception dataset and benchmark for autonomous driving. IEEE robotics and automation letters 7, 10914–10921. Malla, S., Choi, C., Dwivedi, I., Choi, J.H., Li, J., 2023. Drama: Joint risk localization and captioning in driving, in: Proceedings of the IEEE/CVF winter conference on applications of computer vision, pp. 1043–1052. OpenAI, 2025a. GPT-5 mini Model. https://developers.openai.com/api/docs/models/gpt-5-mini . OpenAI API documentation; snapshot gpt-5-mini-2025-08-07. Accessed: 2026-04-01. OpenAI, 2025b. GPT-5.2 Model. https://developers.openai.com/api/docs/models/gpt-5.2 . OpenAI API documentation; snapshot gpt-5.2-2025-12-11. Accessed: 2026-04-01. Park, S.Y., Cui, C., Ma, Y., Moradipari, A., Gupta, R., Han, K., Wang, Z., 2025. Nuplanqa: A large-scale dataset and benchmark for multi-view driving scene understanding in multi-modal large language models, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 8066–8076. Qian, T., Chen, J., Zhuo, L., Jiao, Y., Jiang, Y.G., 2024. Nuscenes-qa: A multi-modal visual question answering benchmark for autonomous driving scenario, in: Proceedings of the AAAI Conference on Artificial Intelligence, pp. 4542–4550. Qwen Team, 2026. Qwen3.5: Towards Native Multimodal Agents. https://qwen.ai/blog?id=qwen3.5 . Official Qwen release post; the hosted model in this release is Qwen3.5-Plus. Accessed: 2026-04-01. Sekaran, K.C., Geisler, M., Rößle, D., Mohan, A., Cremers, D., Utschick, W., Botsch, M., Huber, W., Schön, T., 2025. Urbaning-v2x: A large-scale multi-vehicle, multi-infrastructure dataset across multiple intersections for cooperative perception. arXiv preprint arXiv:2510.23478 . Sima, C., Renz, K., Chitta, K., Chen, L., Zhang, H., Xie, C., Beißwenger, J., Luo, P., Geiger, A., Li, H., 2024. Drivelm: Driving with graph visual question answering, in: European conference on computer vision, Springer. pp. 256–274. Tang, W., You, J., Liu, J., Wang, Z., Gan, R., Huang, Z., Wei, F., Ran, B., 2026. Hermes: A holistic end-to-end risk-aware multimodal embodied system with vision-language models for long-tail autonomous driving. arXiv preprint arXiv:2602.00993 . Tian, K., Mao, J., Zhang, Y., Jiang, J., Zhou, Y., Tu, Z., 2025. Nuscenes-spatialqa: A spatial understanding and reasoning benchmark for vision-language models in autonomous driving, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 4567–4576. Tian, X., Gu, J., Li, B., Liu, Y., Wang, Y., Zhao, Z., Zhan, K., Jia, P., Lang, X., Zhao, H., 2024. Drivevlm: The convergence of autonomous driving and large vision-language models. arXiv preprint arXiv:2402.12289 . Wang, Y., Zheng, Y., Fan, W., Wang, T., Chu, H., Tian, D., Gao, B., Wang, J., Chen, H., 2026. Scenepilot-bench: A large-scale dataset and benchmark for evaluation of vision-language models in autonomous driving. arXiv preprint arXiv:2601.19582 . Xiang, H., Zheng, Z., Xia, X., Xu, R., Gao, L., Zhou, Z., Han, X., Ji, X., Li, M., Meng, Z., et al., 2024. V2x-real: a largs-scale dataset for vehicle-to-everything cooperative perception, in: European Conference on Computer Vision, Springer. pp. 455–470. Xu, R., Xia, X., Li, J., Li, H., Zhang, S., Tu, Z., Meng, Z., Xiang, H., Dong, X., Song, R., et al., 2023. V2v4real: A real-world large-scale dataset for vehicle-to-vehicle cooperative perception, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 13712–13722. Xu, Z., Zhang, Y., Xie, E., Zhao, Z., Guo, Y., Wong, K.Y.K., Li, Z., Zhao, H., 2024. Drivegpt4: Interpretable end-to-end autonomous driving via large language model. IEEE Robotics and Automation Letters 9, 8186–8193. You, J., Jiang, Z., Huang, Z., Shi, H., Gan, R., Wu, K., Cheng, X., Li, X., Ran, B., 2026. V2x-vlm: End-to-end v2x cooperative autonomous driving through large vision-language models. Transportation Research Part C: Emerging Technologies 183, 105457. You, J., Li, P., Jiang, Z., Huang, Z., Gan, R., Shi, H., Ran, B., 2025. Seal: Vision-language model-based safe end-to-end cooperative autonomous driving with adaptive long-tail modeling. arXiv preprint arXiv:2506.21041 . 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 23 of 24 V2X-QA: A Benchmark for MLLMs in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views 
+
+Yu, G., Li, H., Wang, Y., Chen, P., Zhou, B., 2022a. A review on cooperative perception and control supported infrastructure-vehicle system. Green Energy and Intelligent Transportation 1, 100023. Yu, H., Luo, Y., Shu, M., Huo, Y., Yang, Z., Shi, Y., Guo, Z., Li, H., Hu, X., Yuan, J., Nie, Z., 2022b. Dair-v2x: A large-scale dataset for vehicle-infrastructure cooperative 3d object detection, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 21361–21370. Yu, H., Yang, W., Ruan, H., Yang, Z., Tang, Y., Gao, X., Hao, X., Shi, Y., Pan, Y., Sun, N., Song, J., Yuan, J., Luo, P., Nie, Z., 2023. V2x-seq: A large-scale sequential dataset for vehicle-infrastructure cooperative perception and forecasting, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. Yu, S., Lee, S., Kim, N., Shin, J., Park, J., Ryu, W., Jung, R., Shim, H., 2025. Waymoqa: A multi-view visual question answering dataset for safety-critical reasoning in autonomous driving. arXiv preprint arXiv:2511.20022 . Zeng, T., Wu, L., Shi, L., Zhou, D., Guo, F., 2025. Are vision llms road-ready? a comprehensive benchmark for safety-critical driving video understanding, in: Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 2, pp. 5972–5983. Zimmer, W., Wardana, G.A., Sritharan, S., Zhou, X., Song, R., Knoll, A.C., 2024. Tumtraf v2x cooperative perception dataset, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 22668–22677. 
+
+Junwei You et al.: Preprint submitted to Elsevier Page 24 of 24

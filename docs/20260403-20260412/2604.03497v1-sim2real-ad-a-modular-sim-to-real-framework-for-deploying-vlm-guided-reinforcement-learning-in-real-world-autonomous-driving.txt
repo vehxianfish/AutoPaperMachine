@@ -1,0 +1,2572 @@
+Title: Sim2Real-AD: A Modular Sim-to-Real Framework for Deploying VLM-Guided Reinforcement Learning in Real-World Autonomous Driving
+
+URL Source: https://arxiv.org/pdf/2604.03497v1
+
+Published Time: Tue, 07 Apr 2026 00:19:21 GMT
+
+Number of Pages: 36
+
+Markdown Content:
+# Sim2Real-AD: A Modular Sim-to-Real Framework for Deploying VLM-Guided Reinforcement Learning in Real-World Autonomous Driving 
+
+Zilin Huang a, Zhengyang Wan a, Zihao Sheng a, Boyue Wang a, Junwei You a, Yue Leng b, Sikai Chen a, ∗
+
+> aDepartment of Civil and Environmental Engineering, University of Wisconsin-Madison, Madison, WI, 53706, USA
+> bGoogle, Sunnyvale, CA 94089, USA
+
+Abstract 
+
+Deploying reinforcement learning policies trained in simulation to real autonomous vehicles remains a funda-mental challenge, particularly for VLM-guided RL frameworks whose policies are typically learned with simulator-native observations and simulator-coupled action semantics that are unavailable on physical platforms. This paper presents Sim2Real-AD , a modular framework for zero-shot sim-to-real transfer of CARLA-trained VLM-guided RL policies to full-scale vehicles without any real-world RL training data. The framework decomposes the transfer prob-lem into four components: a Geometric Observation Bridge (GOB) that converts monocular front-view images into simulator-compatible bird’s-eye-view (BEV) observations, a Physics-Aware Action Mapping (PAM) that translates policy outputs into platform-agnostic physical commands, a Two-Phase Progressive Training (TPT) strategy that sta-bilizes adaptation by separating action-space and observation-space transfer, and a Real-time Deployment Pipeline (RDP) that integrates perception, policy inference, control conversion, and safety monitoring for closed-loop execu-tion. Simulation experiments show that the framework preserves the relative performance ordering of representative RL algorithms across different reward paradigms and validate the contribution of each module. Zero-shot deployment on a full-scale Ford E-Transit achieves success rates of 90%, 80%, and 75% in car-following, obstacle avoidance, and stop-sign interaction scenarios, respectively. To the best of our knowledge, this study is among the first to demonstrate zero-shot closed-loop deployment of a CARLA-trained VLM-guided RL policy on a full-scale real vehicle without any real-world RL training data. These results suggest a practical and principled path for transferring simulation-trained VLM-guided RL policies to real-world autonomous driving. The demo video and code are available at: https://zilin-huang.github.io/Sim2Real-AD-website/. 
+
+Keywords: Autonomous Driving, Vision-Language Models, Reinforcement Learning, Reward Design, Real-World Deployment 
+
+1. Introduction 
+
+Autonomous driving has advanced rapidly over the past decade, driven by progress in deep learning, perception, and large-scale simulation (Wang et al., 2025). Nevertheless, reliable operation in open-world traffic remains difficult because real roads contain long-tail events, uncertain human behavior, partial observability, and continuously chang-ing environmental conditions (Tang et al., 2026; Xu et al., 2025; Hu et al., 2025; Qu et al., 2025). Although recent automated driving systems have achieved impressive performance in restricted operational design domains, safe and generalizable deployment across broader real-world settings remains unresolved. This gap between promising algo-rithmic performance and dependable on-road operation continues to be one of the central challenges in autonomous driving research (Alqahtani, 2025; Abdel-Aty and Ding, 2024). For this reason, high-fidelity simulation has become a cornerstone of modern autonomous driving development. Platforms such as CARLA provide scalable and risk-free environments for training and evaluation under diverse road layouts, weather conditions, and traffic configurations (Dosovitskiy et al., 2017). The community has also established a series of widely used closed-loop benchmarks, including NoCrash (Codevilla et al., 2019), the CARLA Leaderboard (CARLA Simulator Team, 2020), and Bench2Drive (Jia et al., 2024), to measure progress in increasingly realistic driving settings. Within this simulation-centered paradigm, two major learning strategies have emerged. Imitation learning (IL) methods, such as TransFuser (Chitta et al., 2022) and InterFuser (Shao et al., 2023), learn policies by mimicking expert demonstrations and have achieved strong benchmark performance. However, their behavior is fundamentally bounded by the quality and coverage of the demonstration data, and they often struggle in situations that are rare or absent in the training set (Codevilla et al., 2019). Reinforcement learning (RL), in contrast, optimizes policies through interaction and reward-driven exploration, offering a pathway to discover behaviors beyond those explicitly present in human data (Kiran et al., 2021).   
+
+> ∗Corresponding author: Sikai Chen.
+> Email address: sikai.chen@wisc.edu (Sikai Chen)
+> arXiv:2604.03497v1 [cs.RO] 3 Apr 2026
+
+Sim2Real -AD Simulation Training  Direct Transfer                              
+
+> Policy Learning in CARLA
+> GT BEV
+> (192*192*14)
+> SAC Policy
+> Network
+> VLM -guided Reward VLM used only
+> during training.
+> Direct Deployment Assumption
+> GT BEV + direct action →real vehicle = FAIL
+> Deploy
+> Directly? Fail
+> Why Direct Transfer Fails
+> (i) Observation Gap
+> (ii) Dynamics Gap
+> Sim Observation: BEV,
+> clean, complete, 360 °
+> Severe distribution shift.
+> No Privileged GT -BEV on real vehicle .
+> Simulation: OK Real -world: Fail
+> Same command →different motion
+> wheelbase, steering ratio, actuator latency mismatch.
+> Two coupled mismatches prevent direct transfer:
+> Obs. gap +Dyn. Gap =Policy collapse
+> Sim2Real -AD
+> Real Observation: partial
+> view, noisy, occluded
+> ①Geometric Observation Bridge (GOB)
+> SegFormer -B0 + IPM →14 -ch
+> BEV. Zero -shot.
+> Obs.
+> Gap
+> ②Physics -Aware Action Mapping (PAM)
+> →bicycle model
+> + PID. ~30 min cal.
+> 𝜅 ,𝑣 𝑑
+> ③Two -Phase Progressive Training (TPT)
+> Phase 1: GT -BEV +PAM →
+> Phase 2: GOB -BEV +PAM
+> GOB
+> Vehicle
+> Policy
+> PAM
+> ④Real -time Deployment Pipeline (RDP)
+> 17.2 ms end -to -end
+> 20 Hz.Safety layer.
+> Algorithm -agnostic:
+> Compatible with standard VLM -guided RL policies
+> Zero -shot:
+> no real -world RL training data required
+> Third -person View First -person View
+> Direct Action
+> (steer, throttle)
+> Dyn.
+> Gap
+> Stable
+> Real
+> -time
+
+Figure 1: Overview of the sim-to-real challenge and the proposed Sim2Real-AD framework. Direct transfer fails because of the coupled observation and dynamics gaps, while Sim2Real-AD addresses them through GOB, PAM, TPT, and RDP. 
+
+A particularly promising direction within RL-based driving is the integration of Vision-Language Models (VLMs) and contrastive vision-language pretraining models such as CLIP (Radford et al., 2021) into reward design, which re-places brittle hand-crafted reward functions with semantically grounded signals (Huang et al., 2025b; Wasif et al., 2025; Qu et al., 2026; Huang et al., 2026). This line of work has progressed along a clear trajectory. VLM-RL (Huang et al., 2025b) first established the Contrasting Language Goal (CLG) paradigm, demonstrating that pairing positive and negative language descriptions with CLIP-based reward computation enables effective end-to-end policy learning in CARLA. DriveVLM-RL (Huang et al., 2026) extended this foundation with a neuroscience-inspired dual-pathway architecture that adds an attention-gated large VLM (LVLM) pathway for context-aware semantic risk reasoning in heterogeneous traffic, achieving state-of-the-art collision avoidance across diverse urban scenarios. Critically, in DriveVLM-RL, all VLM and LVLM components operate exclusively during offline training and are completely re-moved at deployment, so the final driving policy executes as a lightweight neural network with no VLM inference overhead at test time. This training-deployment decoupling is what makes real-time vehicle control feasible despite the high computational cost of foundation models. However, despite these advances in simulation, both works and the broader VLM-guided RL literature validate their methods entirely within CARLA. How to transfer such a policy from simulator-native observations and simulator-coupled control semantics to a full-scale physical vehicle remains an open and largely unaddressed problem. Despite these advances, policies trained in simulation still rarely transfer directly to physical vehicles. The key obstacle is the simulation-to-reality (sim-to-real) gap, which arises because simulator training and real-world deploy-ment differ fundamentally in both observation and control semantics (Salvato et al., 2021; Daza et al., 2023; Li and Okhrin, 2024). In this work, we focus on two dominant and practically decisive components of this gap, as illustrated in Fig. 1. The first is the observation gap . Many RL driving policies in CARLA rely on privileged or simulator-native observations, such as ground-truth bird’s-eye-view (BEV) semantic masks, that are clean, structured, and spatially complete (Dosovitskiy et al., 2017). In contrast, a real vehicle must infer scene structure from camera inputs that are noisy, partially occluded, and restricted by field of view, creating a substantial cross-domain mismatch (Tobin et al., 2017; Zhu et al., 2017; Ganin et al., 2016). The second is the dynamics gap . In simulation, policy outputs are often interpreted directly as low-level control commands, such as steering and throttle/brake. On a physical platform, however, the same commands can induce substantially different vehicle responses because of differences in wheel-base, steering ratio, actuator latency, tire-road interaction, and longitudinal dynamics (Daza et al., 2023; Salvato et al., 2021; Li and Okhrin, 2024). These two gaps compound each other: when a policy trained on perfect BEV receives the noisy, limited-coverage observation produced by a real monocular camera, and its control outputs are simultaneously misinterpreted by a vehicle with different physical dynamics, performance degrades catastrophically. Existing sim-to-real methods address parts of this problem, but they do not provide a practical solution for the deployment setting considered here. On the perception side, image-level domain adaptation approaches, including adversarial translation and style transfer, can reduce appearance mismatch between simulated and real RGB images (Zhu et al., 2017; Ganin et al., 2016). However, such methods typically require substantial real-world data and are not naturally aligned with the structured multi-channel BEV observations used by many autonomous driving policies. Domain randomization improves robustness by exposing the policy to diverse perturbations during training (Tobin et al., 2017), but it does not explicitly resolve the mismatch introduced by a real perception pipeline. Learned BEV methods, such as Lift-Splat-Shoot and BEVFormer, offer powerful camera-to-BEV perception capabilities (Philion and Fidler, 2020; Li et al., 2024), yet they themselves usually depend on large-scale supervised training and may introduce an additional representation gap when deployed across domains. On the control side, system identification 2and controller calibration are widely used for vehicle tracking, but they are typically designed for low-level control modules rather than for simulator-trained RL policies whose outputs are tightly coupled to simulator-specific action semantics (Daza et al., 2023; Salvato et al., 2021). Critically, most existing approaches address either the observation gap or the dynamics gap in isolation, and the few that consider both rely on learned black-box alignment modules that are difficult to debug, require substantial real-world data, and must be retrained when the deployment vehicle changes. Consequently, prior work still lacks a unified, calibration-efficient framework that makes VLM-guided RL policies deployable on real vehicles without real-world policy training or fine-tuning (Li and Okhrin, 2024; Voogd et al., 2023). To address this challenge, we propose Sim2Real-AD , a modular sim-to-real deployment framework for VLM-guided RL autonomous driving. Concretely, for the observation side, we introduce a Geometric Observation Bridge (GOB) that converts front-view monocular images into a unified multi-channel BEV representation using pre-trained semantic segmentation and inverse perspective mapping (IPM). This process removes much of the appearance-level discrepancy between simulated and real images and exposes the policy to a common spatial representation across do-mains without any domain-specific training data. For the action side, we introduce a Physics-Aware Action Mapping (PAM) that redefines policy outputs from simulator-coupled control commands to platform-agnostic physical quanti-ties, namely curvature and desired speed, which are then translated into vehicle-specific actuation through a calibrated bicycle model and a low-level PID controller. To make the transition stable, we design a Two-Phase Progressive Training (TPT) strategy that first adapts the policy to the new action semantics under clean simulator BEV, then fine-tunes it on IPM-generated BEV observations, resolving each gap independently before combining them. Finally, a 
+
+Real-time Deployment Pipeline (RDP) integrates all components into a closed-loop system for real-vehicle operation. The resulting framework has three practical advantages. First, it does not require any real-world RL training data or learned sim-to-real adaptation network. Second, its transfer modules are transparent, modular, and easy to calibrate or debug. Third, moving the policy to a new vehicle platform requires only lightweight platform-specific calibration rather than end-to-end retraining. Building on these properties, we validate Sim2Real-AD through extensive simula-tion experiments in CARLA and zero-shot closed-loop deployment on a full-scale Ford E-Transit autonomous vehicle at the University of Wisconsin-Madison testbed. To the best of our knowledge, this study is among the first to demonstrate zero-shot closed-loop deployment of a CARLA-trained VLM-guided RL policy on a full-scale real vehicle without any real-world RL training data. 
+
+The main contributions of this paper are summarized as follows: • We propose Sim2Real-AD , a modular and reward-agnostic sim-to-real deployment framework for VLM-guided RL autonomous driving that explicitly decomposes transfer into an observation-space bridge and an action-space bridge, enabling real-world deployment without real-world policy training or learning-based domain adaptation. The framework is broadly compatible with RL-based driving policies that use structured simulator-native observations. • We introduce a geometric observation bridge that transforms monocular camera images into a unified BEV semantic representation using pre-trained segmentation and inverse perspective mapping, substantially reducing cross-domain observation discrepancy in a fully interpretable, training-free manner. • We design a physics-aware action mapping together with a two-phase progressive training strategy, which decouple policy learning from platform-specific control semantics and support zero-shot policy transfer through lightweight platform calibration requiring only ∼30 minutes and no real-world driving data. • We implement a complete real-time deployment pipeline and demonstrate zero-shot closed-loop deployment of a CARLA-trained VLM-guided RL policy on a full-scale Ford E-Transit, achieving success rates of 90%, 80%, and 75% in car-following, obstacle avoidance, and stop-sign interaction scenarios, respectively. The remainder of this paper is organized as follows. Section 2 reviews related work. Section 3 introduces the necessary background and problem formulation. Section 4 presents the proposed Sim2Real-AD framework in detail. Section 5 reports simulation studies in CARLA and zero-shot real-vehicle deployment results. Section 6 concludes the paper and discusses limitations and future directions. 
+
+2. Related Work 
+
+2.1. Learning-based Driving Policies in Simulation 
+
+End-to-end autonomous driving has advanced along two main paradigms. IL methods, such as TransFuser (Chitta et al., 2022), InterFuser (Shao et al., 2023), and UniAD (Hu et al., 2023), learn by mimicking expert demonstrations and achieve strong CARLA benchmark performance, but are bounded by demonstration coverage and tend to fail in out-of-distribution scenarios (Codevilla et al., 2019). RL offers a complementary path through reward-driven explo-ration (Sheng et al., 2024b; Huang et al., 2024; Jiang et al., 2025a; Li et al., 2025). However, manually engineered rewards require substantial effort and often fail to generalize (Delavari et al., 2025), motivating the integration of VLMs into RL reward design. By encoding semantic goals through encoders such as CLIP (Radford et al., 2021), 3VLM-guided RL replaces brittle hand-crafted objectives with grounded reward signals. Representative works include VLM-RL (Huang et al., 2025b), DriveMind (Wasif et al., 2025), Found-RL (Qu et al., 2026), and DriveVLM-RL (Huang et al., 2026). A parallel line explores Vision-Language-Action (VLA) models that unify perception, reason-ing, and control end-to-end (Renz et al., 2025; Wang et al., 2025; Qian et al., 2025; Zhou et al., 2025). VLA models face an even more acute deployment challenge as large model inference at test time makes real-time control infeasible without specialized decoupling strategies (Jiang et al., 2025b). Across both lines, the primary focus remains on policy learning and benchmark performance within simulation. How to transfer such policies from simulator-native obser-vations and simulator-coupled control semantics to full-scale real vehicles remains largely unanswered. Our work addresses this gap by providing a principled deployment framework for a CARLA-trained VLM-guided RL policy. 
+
+2.2. Sim-to-Real Methods for Autonomous Driving and Robotics 
+
+Domain randomization (Tobin et al., 2017) improves robustness via diverse perturbations during training, but does not apply to structured multi-channel semantic BEV observations and provides no mechanism for bridging action se-mantics across platforms. Domain adaptation aligns distributions through image translation (CycleGAN (Zhu et al., 2017)) or adversarial feature learning (DANN (Ganin et al., 2016)), but requires substantial real-world data and re-training when the deployment vehicle changes. Canonical representation mapping bridges the observation gap via a shared intermediate space. Learned approaches such as Lift-Splat-Shoot (Philion and Fidler, 2020) and BEVFormer (Li et al., 2024) offer powerful camera-to-BEV perception but require large-scale supervised training. A lightweight alternative is Inverse Perspective Mapping (IPM) (Bertozzi and Broggi, 1998), which projects road-plane pixels into a top-down BEV without training data. Combined with a pre-trained segmentation model (Xie et al., 2021), IPM yields an interpretable, calibration-efficient bridge transferable across platforms via simple camera recalibration — the foundation of our GOB module. System identification and controller calibration (Daza et al., 2023; Salvato et al., 2021; Li and Okhrin, 2024) address the dynamics gap by fitting vehicle models to real behavior, but target low-level tracking controllers rather than the simulator-coupled action semantics of end-to-end RL policies. Curriculum-based adaptation (Bengio et al., 2009; Salvato et al., 2021; Zhao et al., 2020) reduces optimization difficulty by progressively exposing the policy to more realistic distributions. Our TPT strategy applies this principle to the dual-gap setting, de-coupling action-space adaptation from observation-space adaptation. Unlike Rapid Motor Adaptation (RMA) (Kumar et al., 2021), which requires online real-world data, TPT relies entirely on geometry-based and physics-based bridging. Related efforts have explored digital twins, reality-gap modeling, and deployment-oriented pipelines (Voogd et al., 2023; Daza et al., 2023; Li and Okhrin, 2024; Huang et al., 2025c; Tahmina et al., 2025), as well as BEV generation and segmentation systems (Gao et al., 2025; Jun and Lee, 2025). In contrast to these studies, our framework jointly addresses the observation and dynamics gaps through interpretable modules and complements the system design with a transfer-error analysis that links module-level imperfections to sim-to-real performance degradation. 
+
+2.3. Real-World Deployment of Simulation-Trained Driving Policies 
+
+Although simulation-based learning has advanced rapidly, real-world deployment remains limited. Most simulator-trained policies are tightly coupled to their training environment on two levels: their observation interface relies on simulator-native representations (e.g., privileged BEV semantic masks) that are unavailable on real vehicles, and their action semantics are calibrated to simulator dynamics that differ from real platform responses. Without explicit mech-anisms to bridge both couplings, direct deployment fails even when the policy performs well in simulation. Many studies validate only in CARLA or evaluate deployment-oriented ideas through offline replay, shadow-mode analysis, or scaled platforms rather than full-scale closed-loop operation (Delavari et al., 2025; Voogd et al., 2023; Sheng et al., 2024a). Prior sim-to-real work often targets specialized tasks such as drifting or parking (T´ oth et al., 2024) or requires additional real-world adaptation after simulation training (Lin et al., 2025). World-model and generative-simulation approaches (Yang et al., 2025; You et al., 2024; Zhang et al., 2026) strengthen training and evaluation infrastruc-ture but do not demonstrate direct deployment of simulator-trained RL policies on physical vehicles. Foundation model-based methods have shown strong simulation performance, but zero-shot closed-loop deployment on full-scale real vehicles remains very limited (Li and Okhrin, 2024; Voogd et al., 2023). The challenge is particularly acute for VLM-guided RL (Wasif et al., 2025; Huang et al., 2025b, 2026): these policies depend on simulator-privileged BEV observations no real sensor can replicate, and their action spaces are implicitly calibrated to simulator dynamics. To our knowledge, no prior work starts from a CARLA-trained VLM-guided RL policy and deploys it on a real vehicle through a modular observation-and-action bridging framework without any real-world RL training data. Our work addresses this gap by combining GOB, PAM, TPT, and RDP into a complete sim-to-real pipeline for closed-loop operation on a full-scale platform. 
+
+3. Preliminaries and Problem Formulation 
+
+3.1. Preliminaries 
+
+Partially Observable Markov Decision Process. In a closed-loop simulator, autonomous driving is formulated as a Partially Observable Markov Decision Process (POMDP) Msim = ( S, A, T , O, R, ϕ, γ, d 0), where S is the state 4space, A is the action space, T (s′ | s, a ) is the transition dynamics, O is the observation space, R(s, a ) is the reward function, ϕ(o | s) is the observation emission function, γ ∈ (0 , 1) is the discount factor, and d0 is the initial state distribution. Because the agent does not observe the full state s directly, it receives an observation ot ∈ O at each timestep and selects an action at ∈ A according to its policy πθ (at | ot). The policy is trained to maximize the expected discounted return (Sutton et al., 1998; Kiran et al., 2021; Huang et al., 2025a): 
+
+J(πθ ) = Eπθ
+
+" TX
+
+> t=0
+
+γtrt
+
+#
+
+. (1) 
+
+VLM-Guided RL Reward. In recent VLM-guided RL frameworks (Huang et al., 2025b; Wasif et al., 2025), the observation ot is a structured simulator-native representation comprising a BEV semantic tensor, route information, and vehicle states. The reward function combines conventional driving objectives with semantic supervision derived from VLMs or CLIP-style encoders. Following the formulation of DriveVLM-RL (Huang et al., 2026), the reward can be expressed in the general form: 
+
+rt = F(rtask  
+
+> t
+
+, r sem  
+
+> t
+
+, s t), (2) where rtask  
+
+> t
+
+is a sparse task reward (e.g., collision penalty), rsem  
+
+> t
+
+is a dense semantic reward derived from VLM-based visual-language alignment, and st denotes vehicle state information. The function F represents the reward synthesis mechanism, which in DriveVLM-RL takes a multiplicative hierarchical form that integrates both components with vehicle dynamics constraints. Critically, all VLM components used to compute rsem  
+
+> t
+
+operate exclusively during train-ing : once training is complete, the reward computation is discarded entirely, and the deployed policy πθ executes as a lightweight neural network with no VLM inference at test time. This training-deployment decoupling is a funda-mental property that makes real-time vehicle control feasible and is precisely what allows Sim2Real-AD to focus on bridging observation and action interfaces rather than addressing VLM latency. 
+
+3.2. Problem Formulation 
+
+Let πsim  
+
+> θ
+
+denote a driving policy trained entirely in CARLA under the VLM-guided RL setting above, where the observation space Osim consists of simulator-native BEV representations and the action space Asim is calibrated to simulator dynamics. Let Oreal and T real denote the observation space and transition dynamics of the target real vehicle. Direct deployment of πsim  
+
+> θ
+
+fails because two systematic mismatches arise: 
+
+Osim ̸ ≈ O real , T sim ̸ ≈ T real . (3) The observation gap arises because πsim  
+
+> θ
+
+is trained on privileged simulator BEV observations ˆosim  
+
+> t
+
+∈ ˆOsim ⊂
+
+R192 ×192 ×14 that are spatially complete and semantically clean, whereas the real platform can only provide raw monocular front-view images from which BEV-like representations must be reconstructed with inherent noise, limited field of view, and segmentation imperfections. The dynamics gap arises because even the same nominal control command induces substantially different motion in simulation and on a real vehicle due to differences in wheelbase, steering ratio, actuator latency, tire-road interaction, and low-level control response. Importantly, the two gaps interact: a policy receiving unfamiliar observations will generate unreliable action out-puts, which are then further distorted by dynamics it was not trained to account for. As we show in Section 5.1.6, addressing each gap in isolation yields substantially worse performance than addressing them jointly through a prin-cipled sequential curriculum, because the combined distributional shift creates a super-additive optimization difficulty that neither module alone can resolve. The sim-to-real deployment problem is therefore to construct an observation bridge G : Oreal → ˆOsim and an 
+
+action bridge M : ˆA → A real , where ˆOsim ⊂ R192 ×192 ×14 denotes the simulator-compatible BEV observation space and ˆA is a platform-agnostic physical action space, such that the composed policy: 
+
+πreal (areal  
+
+> t
+
+| oreal  
+
+> t
+
+) = M πsim 
+
+> θ
+
+ ˆosim  
+
+> t
+
+, s t, w t
+
+ , (4) where ˆosim  
+
+> t
+
+= G(oreal  
+
+> t
+
+) ∈ ˆOsim denotes the simulator-compatible BEV observation produced by the GOB module, st
+
+denotes the ego vehicle state (speed, steering, throttle), and wt denotes the future waypoint sequence, both available from on-board sensors and a GPS route provider at deployment time. The goal is for this composed policy to achieve safe and stable closed-loop driving on the real vehicle under zero-shot transfer, using only lightweight calibration and without any real-world RL training data. 
+
+4. Framework: Sim2Real-AD 
+
+4.1. Overview 
+
+The role of Sim2Real-AD is not to redesign the VLM-guided RL algorithm itself, but to make such a simulator-trained policy transferable to the real world. In this work, we instantiate the framework using DriveVLM-RL (Huang et al., 2026), a representative and state-of-the-art VLM-guided RL framework for safe autonomous driving in CARLA. 5(a) Phase 1: Action -Space Adaptation 
+
+Training in CARLA                                        
+
+> State
+> RGB I mage
+> GT -BEV
+> (192*192*14)
+> 360 °|14 -ch|
+> semantic |
+> privileged
+> Observation
+> 𝒪 sim ⊂ℝ192 ×192 ×14
+> Policy Network
+> + VLM Reward
+> CLIP
+> Qwen3 -VL
+> VLM used only during training
+> VLM -guided RL Policy Network
+> 𝑟 𝑡 =ℱ𝑟 𝑡
+> task ,𝑟 𝑡
+> sem ,𝑠 𝑡
+> Physics -Aware Action Mapping
+> (PAM)
+> 𝑎 1,𝑡 ,𝑎 2,𝑡 ∈[−1,1]2
+> 𝜅 𝑡 =𝑎 1,𝑡 𝜅 max ,𝑣 𝑡
+> 𝑑 =𝑎 2,𝑡 +1
+> 2𝑣 max
+> Bicycle Model
+> 𝛿 𝑡 =arctan 𝐿 𝜅 𝑡 𝑢 𝑡
+> 𝛿 =𝛿 𝑡
+> 𝛿 max
+> PID Controller
+> 𝑢 𝑡
+> 𝑣 =𝐾 𝑝 𝑒 𝑡 +𝐾 𝑖 ෍𝑒 𝜏 Δ𝑡
+> 𝜏 =0
+> 𝑡
+> +𝐾 𝑑
+> 𝑒 𝑡 −𝑒 𝑡 −1
+> Δ𝑡
+> Θ=𝐿 ,𝛿 max ,𝐾 𝑝 ,𝐾 𝑖 ,𝐾 𝑑
+> Dyn. Gap
+
+(b) Phase 2: Observation -Space Adaptation 
+
+> Geometric Observation Bridge (GOB)
+
+1 × 10 6 steps 
+
+5 × 10 5                      
+
+> Seg Former IPM
+> 𝑆 𝑡 =𝑓 seg 𝐼 𝑡
+> ሚ𝑆 𝑡 =𝑓 ipm 𝑆 𝑡 ;𝐊 ,ℎ,𝛼 ,𝛽
+> ො𝑜 𝑡
+> sim =Encode ሚ𝑆 𝑡 ⊂ℝ192 ×192 ×14
+> Dyn. Gap
+> Front I mage GOB -BEV
+> ~30 min cal .
+> 𝐊 ,𝐡 ,𝛼 ,𝛽
+> Camera params:
+
+𝜃 2 
+
+> 0
+
+= 𝜃 1𝜃 1 → init 𝜃 2Checkpoint        
+
+> Policy
+> (Fine -tune )
+> Policy Network
+> Same CLIP reward
+> Adapt to IPM noise
+> Fine -tune from
+
+𝜃 1 
+
+> PAM
+> (Unchanged)
+> Same action space
+
+መ𝒜  as Phase 1 
+
+> UNCHANGED
+
+steps, warm -start from  𝜃 1
+
+(c) Two -Phase Progressive Training (TPT)           
+
+> Phase 1: GT -BEV + PAM →Phase 2: GOB -BEV + PAM
+> Curriculum ordering guarantee: 𝑑 TV 𝒪 1,𝒪 real ≥𝑑 TV 𝒪 2,𝒪 real Stable
+
+(d) Real -time Deployment Pipeline (RDP) 
+
+Deployment               
+
+> Stage 1: Sensor Input
+> Camera CAN Bus GPS Waypoints
+> Stage 2: GOB Processing
+> SegFormer + IPM →BEV
+> ො𝑜 𝑡
+> sim =𝒢 𝑜 𝑡
+> real ,ො𝑜 𝑡
+> sim ∈෠𝒪 sim ⊂ℝ192 ×192 ×14
+> Stage 3: P olicy Inference
+
+𝑜 𝑡  
+
+> real
+
+→
+
+> 𝒢
+
+ො𝑜 𝑡  
+
+> sim
+
+→ 
+
+> 𝜋 𝜃 2
+
+ො𝑎 𝑡 →
+
+> ℳ
+
+𝑎 𝑡                             
+
+> real
+> ො𝑎 𝑡 =𝜅 𝑡 ,𝑣 𝑡
+> 𝑑 =𝜋 𝜃 2ො𝑜 𝑡
+> sim ,𝑠 𝑡 ,𝑤 𝑡
+> DriveVLM -RL policy 𝜃 2(frozen)
+> Stage 4: PAM Conversion
+> PAM: bicycle +PID →(steer, throttle)
+> 𝑎 𝑡
+> real =ℳ𝜅 𝑡 ,𝑣 𝑡
+> 𝑑 =𝑢 𝑡
+> 𝛿 ,𝑢 𝑡
+> 𝑣
+> Stage 5 : Safety Layer
+> 𝑣 ≤15km /h|lane dev <0.8m
+> E-Stop | geofence | driver override
+> Stage 6: Vehicle Control
+
+→ Steer 𝑢 𝑡  
+
+> 𝛿
+
++ Throttle /Brake 𝑢 𝑡 
+
+> 𝑣
+> Real -time
+> Policy outputs
+
+𝜃 2Trained weights 
+
+(frozen, zero -shot)           
+
+> 𝜋 real 𝑎 𝑡
+> real ∣𝑜 𝑡
+> real
+> =ℳ𝜋 𝜃 2𝒢 𝑜 𝑡
+> real ,𝑠 𝑡 ,𝑤 𝑡
+
+Sim  Real Figure 2: Overview of Sim2Real-AD. The framework bridges sim-to-real transfer through four components: the Geometric Observation Bridge (GOB), the Physics-Aware Action Mapping (PAM), the Two-Phase Progressive Training strategy (TPT), and the Real-time Deployment Pipeline (RDP). Instantiated here with DriveVLM-RL as the backbone, the framework is reward-agnostic and is demonstrated across multiple RL reward paradigms. 
+
+In DriveVLM-RL, the policy is trained using simulator-native observations, including BEV semantic masks, route in-formation, and vehicle states, together with semantic reward supervision derived from VLMs. While this training paradigm enables effective and safety-oriented policy learning in simulation, the resulting policy is not directly de-ployable on a physical vehicle because both its observation interface and its action semantics are tied to the simulator. As illustrated in Fig. 2, the proposed framework consists of four main components: GOB, PAM, TPT, and RDP. The GOB reduces the observation gap by converting real monocular front-view images into a simulator-compatible BEV semantic representation ˆosim 
+
+t ∈ ˆOsim . The PAM reduces the dynamics gap by redefining the policy output in terms of platform-agnostic physical quantities and translating them into executable vehicle commands. The TPT strategy stabilizes transfer by decoupling action-space adaptation from observation-space adaptation. Finally, the RDP integrates all modules into a complete closed-loop system for deployment on a real vehicle. Together, these components form a modular sim-to-real deployment framework that preserves the simulation-training advantages of DriveVLM-RL while replacing its simulator-dependent observation and action interfaces with deployment-oriented bridges. This design enables zero-shot closed-loop deployment of a CARLA-trained VLM-guided RL policy on a real vehicle using only lightweight platform calibration and no additional real-world RL training or policy fine-tuning. Since the four modules operate entirely on the policy’s observation and action interfaces, Sim2Real-AD remains agnostic to the reward design used during simulator training. 
+
+4.2. Geometric Observation Bridge 
+
+The observation gap defined in Section 3.2 prevents direct deployment of πsim 
+
+θ because the policy expects struc-tured BEV observations ˆosim 
+
+t ∈ ˆOsim that are unavailable on a real vehicle. The GOB realizes the mapping G :
+
+Oreal → ˆOsim by converting raw monocular front-view images into this simulator-compatible format through a two-step geometric pipeline. Unlike learned multi-camera BEV pipelines that aim to maximize perception accuracy under richer sensor setups (Philion and Fidler, 2020; Li et al., 2024; Jun and Lee, 2025), our goal is to construct a lightweight simulator-compatible observation interface under the minimal monocular deployment configuration considered in this work. 
+
+4.2.1. Unified BEV Representation 
+
+Rather than letting the policy consume raw RGB images whose appearance differs substantially across domains, we process both simulated and real front-view images through the same deterministic camera-to-BEV pipeline and expose the policy only to the resulting BEV tensor. In this way, the policy always receives observations in the same spatially structured format, even though the underlying image source differs. 6RGB Image                                   
+
+> 𝐼 𝑡 ∈ℝ𝐻 ×𝑊 ×3
+> Semantic Segmentation
+> 𝑆 𝑡 =𝑓 seg 𝐼 𝑡
+> Inverse Perspective Mapping
+> ሚ𝑆 𝑡 =𝑓 ipm 𝑆 𝑡 ;;𝐊 ,ℎ,𝛼 ,𝛽
+> Multi -Channel BEV Tensor
+> ො𝑜 𝑡
+> sim =Encode ሚ𝑆 𝑡 ∈ℝ192 ×192 ×14
+> CARLA
+> (GT -BEV)
+> CARLA
+> (GOB -BEV)
+> Real Vehicle
+> (GOB -BEV)
+> CARLA rendered RGB
+> CARLA rendered RGB
+> (same as Row 1)
+> Real Vehicle RGB
+> (front view)
+> GT semantic mask
+> (pixel -perfect labels)
+> GT -BEV
+> (full coverage, 360 °)
+> GOB -BEV multi -channel
+> (CARLA source, for Phase 2 training )
+> GOB -BEV
+> (CARLA source, front -arc)
+> SegFormer -B0
+> (CARLA source)
+> SegFormer -B0
+> (real source, zero -shot)
+> GOB -BEV
+> (real source, front -arc)
+> GT multi -channel
+> (complete | no noise →Phase 1 training )
+> GOB -BEV multi -channel
+> (real source, for real -world deployment)
+> GT -BEV is simulator -
+> privileged, unavailable
+> on any real vehicle .
+> •Same tensor shape:
+> 192 ×192 ×14
+> •Same semantic
+> channel layout:
+> 14 binary masks
+> •Same input format
+> to 𝜋 𝜃
+
+Figure 3: Geometric Observation Bridge from monocular front-view images to simulator-compatible BEV observations. Phase 1 uses simulator-privileged GT-BEV, whereas Phase 2 and real-world deployment use GOB-generated BEV with the same tensor shape and semantic channel layout. 
+
+Let It ∈ RH×W ×3 denote the monocular RGB image captured at time step t. We first apply a semantic segmen-tation network to obtain a pixel-wise semantic map: 
+
+St = fseg (It), (5) where fseg (·) denotes the segmentation model. In our implementation we use SegFormer-B0 (Xie et al., 2021), which provides a favorable trade-off between segmentation quality and inference efficiency: it achieves competitive mIoU while running at over 30 FPS on a single GPU, satisfying the real-time constraint. No fine-tuning on domain-specific data is performed; the model is applied zero-shot to both simulation and real-world images. The segmentation output contains driving-relevant semantic regions, including road surface, lane markings, vehicles, pedestrians, and traffic-related classes. Next, we apply Inverse Perspective Mapping (IPM) (Bertozzi and Broggi, 1998) to project the segmented front-view image into a top-down BEV space: 
+
+˜St = fipm (St; K, h, α, β ), (6) where K ∈ R3×3 is the camera intrinsic matrix and (h, α, β ) denote the camera mounting height, pitch, and roll. Under the planar-ground assumption, IPM maps image pixels on the road plane into a fixed BEV coordinate system representing a metric crop of 20 m × 20 m centered on the ego vehicle. Camera calibration requires approximately 30 minutes using a standard checkerboard procedure (Zhang, 2000) and is performed once per deployment vehicle. 
+
+4.2.2. Multi-Channel BEV Construction 
+
+The projected semantic map is encoded into a multi-channel BEV tensor: 
+
+ˆosim 
+
+t = Encode( ˜St) = Encode( fipm (fseg (It); K, h, α, β )) , (7) with size 192 ×192 ×14 , where each of the 14 channels corresponds to a binary occupancy mask for a specific semantic category (road surface, lane markings, vehicles, pedestrians, sidewalks, etc.). This 14-channel representation matches exactly the observation format expected by πsim 
+
+θ , ensuring input compatibility without any policy modification. The GOB output is therefore: 
+
+ˆosim 
+
+t = G(oreal 
+
+t ), ˆosim 
+
+t ∈ ˆOsim ⊂ R192 ×192 ×14 , (8) which is fed directly to the policy πsim 
+
+θ (at | ˆosim 
+
+t , s t, w t) at each timestep. Because the same semantic channel layout is preserved across domains, the policy can continue to operate on the same input tensor format without any architectural modification. This compatibility is essential for transferring a simulator-trained policy to a real monocular perception stack. The full GOB pipeline is illustrated in Fig. 3. 
+
+4.2.3. Observation Transfer Properties 
+
+Under the lightweight deployment setting considered in this paper, the real vehicle is equipped only with a single front-view monocular camera. As a result, the generated ˆosim 
+
+t provides reliable information mainly in a front-facing 7region and degrades with distance. In particular, far-field road pixels are heavily compressed in the image plane and become more sensitive to segmentation noise after projection. Nevertheless, this degradation is acceptable because near-field structure is the most critical information for lane keeping, obstacle avoidance, and short-horizon control. More importantly, the observation format remains unchanged: both simulator GT-BEV and IPM-generated ˆosim  
+
+> t
+
+share the same tensor shape and semantic channel layout in ˆOsim , differing mainly in coverage and quality rather than representation structure. This structural consistency is why observation adaptation can be handled through fine-tuning rather than retraining from scratch. To characterize precisely how much the two BEV distributions differ across domains, we introduce the following notion of domain invariance for G, which connects the perceptual gap to the downstream policy performance bound in Theorem 1. 
+
+Definition 1 (Domain-Invariant BEV Representation). A BEV encoding function G : I → ˆOsim is domain-invariant 
+
+with tolerance ϵ > 0 if: 
+
+E I∼D sim 
+
+> I′∼D real
+
+h
+
+G(I) − G (I′) 1 scene( I) = scene( I′)
+
+i
+
+≤ ϵ, (9) 
+
+where scene( ·) denotes the semantic content of an image and the expectation is conditioned on scene-matched pairs. A smaller ϵ means the two domains are more indistinguishable from the policy’s perspective. 
+
+Remark 1. GOB achieves a small ϵ by operating on semantic categories rather than raw pixel values: appearance differences due to lighting, texture, and rendering style are largely absorbed by the segmentation step and therefore do not directly propagate into ˆosim  
+
+> t
+
+. In practice, this tolerance ϵ is influenced primarily by the quality of the percep-tion module, together with geometric approximation, camera calibration error, and projection distortion introduced by IPM, especially in far-field regions. Empirically, the segmentation component remains small on standard road scenes (Xie et al., 2021), which helps keep the overall cross-domain discrepancy low. This tolerance ϵ is the key quantity governing the GOB contribution in Theorem 1: reducing perception and projection errors directly tightens the sim-to-real performance bound, as formalized in Proposition 1 (Appendix B). 4.3. Physics-Aware Action Mapping 
+
+The dynamics gap defined in Section 3.2 persists even after G reduces the observation gap: the policy output 
+
+at = πsim  
+
+> θ
+
+(ˆ osim  
+
+> t
+
+, s t, w t) remains a simulator-calibrated command that produces different path curvatures on a real vehicle, κsim (at)̸ = κreal (at), due to differences in wheelbase, steering ratio, actuator characteristics, and low-level control delay. PAM realizes the mapping M : ˆA → A real by redefining the policy output in terms of platform-agnostic physical quantities rather than simulator-specific commands. 
+
+4.3.1. Platform-Agnostic Action Space 
+
+The key idea is to let the policy predict driving intent , while leaving the final actuation conversion to a cali-brated platform-dependent controller. Instead of predicting direct steering and throttle/brake, the policy outputs two normalized action variables (a1,t , a 2,t ) ∈ [−1, 1] 2, which are mapped to a platform-agnostic action space: 
+
+ˆat = ( κt, v dt ) ∈ ˆA, (10) where κt denotes the desired path curvature and vdt denotes the desired speed. The mapping is defined as: 
+
+κt = a1,t κmax , vdt = a2,t + 1 2 vmax , (11) where κmax and vmax are predefined platform-independent limits. These quantities encode geometric and kinematic driving intent more directly than raw low-level commands, and thus remain more stable across platforms. In this formulation, the policy is responsible for deciding how sharply the vehicle should turn and how fast it should move ,while the platform-specific controller converts this intent into executable actuation. 
+
+4.3.2. Low-Level Control Conversion 
+
+To convert the desired curvature into a steering command, we use a kinematic bicycle model (Rajamani, 2006). Let L denote the wheelbase of the target vehicle. The desired front wheel steering angle is computed as: 
+
+δt = arctan( Lκ t), (12) and the corresponding normalized steering command is: 
+
+uδt = δt
+
+δmax 
+
+, (13) where δmax denotes the maximum steering angle of the target vehicle. The same curvature command can thus be interpreted consistently across different platforms through lightweight calibration rather than policy retraining. 8For longitudinal control, the desired speed vdt is tracked by a low-level PID controller (Astrom and H¨ agglund, 2006). The speed tracking error is: 
+
+et = vdt − vt, (14) and the corresponding longitudinal command is: 
+
+uvt = Kpet + KitX 
+
+> τ=0
+
+eτ ∆t + Kd
+
+et − et−1
+
+∆t , (15) where Kp, Ki, Kd are the controller gains and the integral term is clipped to avoid windup. The final executable vehicle command is: 
+
+areal  
+
+> t
+
+= M(κt, v dt ) = ( uδt , u vt ). (16) 
+
+4.3.3. Cross-Platform Calibration and Transfer Properties 
+
+This design decouples the policy from the low-level actuation details of a particular vehicle platform. The policy no longer needs to implicitly learn a specific steering ratio or throttle response from the simulator; instead, it predicts motion intent in a platform-agnostic form. Deployment-time calibration requires adjusting only a small set of physical parameters: 
+
+Θ = {L, δ max , K p, K i, K d}, (17) without modifying πsim  
+
+> θ
+
+itself. In practice, L and δmax are obtained from vehicle specifications, while the PID gains are calibrated through short step-response tests on the target platform ( ≈30 min). The key structural reason this calibration is so lightweight is that M is not a monolithic mapping from simulator actions to real actuator commands, but a factored one: it routes through a platform-agnostic physical intermediate space P that is independent of both the simulator and the target vehicle. We formalize this property below, as it is also what allows the PAM tracking error to be bounded and connected to the performance guarantee in Theorem 1. 
+
+Definition 2 (Platform-Agnostic Action Interface). An action mapping M : ˆA → A real is platform-agnostic if it factors through a physical intermediate space P = R2 (target curvature κ and desired speed vd): 
+
+M = Mreal ◦ M −1 
+
+> sim
+
+, (18) 
+
+where M−1 
+
+> sim
+
+: ˆA → P depends only on the simulator vehicle’s kinematic parameters and Mreal : P → A real depends only on the real vehicle’s kinematic parameters and PID gains Θ.
+
+Remark 2 (Why platform-agnostic actions improve transfer). The factored structure of Definition 2 has two direct consequences. First, it enables lightweight cross-platform deployment: to transfer to a new vehicle, only Mreal needs to be updated by recalibrating Θ, while M−1 
+
+> sim
+
+and the policy πsim  
+
+> θ
+
+remain entirely unchanged. Second, it makes the dynamics gap quantifiable: because P consists of physical quantities ( κ, vd) with well-defined tracking dynamics, the execution error introduced by imperfect PID control can be bounded analytically. Specifically, the lateral position error accumulated over a control horizon of T steps is bounded by v2max T 2 
+
+> 2
+
+ϵpid , where ϵpid is the per-step curvature tracking error (Assumption 4). This bound is the quantity that controls the PAM error term C2 ϵpid in Theorem 1, and is formalized in Proposition 2 (Appendix B). 4.4. Two-Phase Progressive Training 
+
+In our preliminary implementation, we initially attempted to introduce both changes at once, namely replac-ing simulator ground-truth BEV observations with IPM-generated BEV observations while simultaneously replacing simulator-coupled control outputs with physics-aware actions. However, this one-stage adaptation strategy was found to be unstable. A likely reason is that the policy must simultaneously adapt to two different forms of distribution shift: degraded perceptual inputs on the observation side and a newly defined action semantics on the control side. This substantially increases optimization difficulty and often leads to slow convergence or unstable learning. We therefore adopt a TPT strategy that decomposes sim-to-real adaptation into two sequential stages, as detailed in Algorithm 1. 
+
+4.4.1. Phase 1: Action-Space Adaptation 
+
+In the first phase, the policy is trained from scratch in CARLA for 1 × 10 6 steps using simulator ground-truth BEV observations ˆosim  
+
+> t
+
+∈ ˆOsim , while the original simulator-coupled action interface is replaced by the platform-agnostic action space ˆA. Formally, the policy predicts: 
+
+ˆat = ( κt, v dt ) ∈ ˆA, (19) while receiving clean and spatially complete simulator BEV inputs. The VLM-guided reward signal Eq. (2) provides semantic supervision throughout. Since the observation structure remains unchanged, the policy can focus entirely on learning how curvature and desired speed affect lane keeping, route following, and obstacle avoidance. Phase 1 thus isolates the dynamics-side transfer problem and resolves it before observation adaptation begins. 94.4.2. Phase 2: Observation-Space Adaptation 
+
+In the second phase, the action space ˆA is kept unchanged, but the observation source is replaced by the GOB-generated BEV produced from simulator front-view RGB images. That is, the policy now receives IPM-generated observations ˆosim  
+
+> t
+
+= G(Isim  
+
+> t
+
+) ∈ ˆOsim rather than privileged ground-truth BEV, for 5 × 10 5 additional steps. The same VLM-guided reward signal Eq. (2) continues to supervise training, ensuring that the VLM-guided reward structure is maintained under the new observation interface. Let πθ1 denote the policy learned in Phase 1. Phase 2 training is initialized from the Phase 1 checkpoint: 
+
+θ(0) 2 = θ1, (20) and further optimized under the observation distribution O2 induced by G. This progressive initialization allows the policy to retain already-learned driving behavior and action semantics while specializing to the noisier and more limited observation distribution that better matches real deployment. 
+
+4.4.3. Training Rationale and Deployment Alignment 
+
+By separating the two sources of transfer difficulty, TPT turns sim-to-real adaptation into a curriculum-like process (Bengio et al., 2009; Salvato et al., 2021; Zhao et al., 2020): the IPM-generated BEV distribution O2 used in Phase 2 is designed to be closer to the real deployment distribution Oreal than the ground-truth BEV distribution O1 used in Phase 1. We formalize this distributional ordering below, as it is precisely what determines the TPT residual term 
+
+C3 δ/ (1 − γ)2 in Theorem 1. 
+
+Definition 3 (Progressive Observation Curriculum). A two-phase training schedule (T1, T 2, O1, O2) is a progres-sive observation curriculum if T1 + T2 = T (total training steps) and the observation distributions satisfy: 
+
+dTV 
+
+ O1, Oreal  ≥ dTV 
+
+ O2, Oreal  , (21) 
+
+where dTV denotes total variation distance, O1 is the ground-truth BEV distribution (Phase 1), and O2 is the IPM-generated BEV distribution (Phase 2). In other words, each phase exposes the policy to observations that are no further from real deployment than the previous phase. 
+
+Remark 3 (Motivation for progressive training). TPT satisfies Definition 3 by construction: ground-truth BEV (O1) is further from the real distribution than IPM-generated BEV ( O2), because IPM operates on real camera geometry and already introduces the same class of projection artifacts and limited field of view present at deployment, whereas ground-truth BEV does not. This means Phase 2 reduces the residual distribution gap dTV (O2, Oreal ) rela-tive to what it would be after Phase 1 alone. The significance of this reduction is quantified by Theorem 3 (Appendix B): 
+
+J(πsim  
+
+> θ
+
+, Oreal ) ≥ J(πsim  
+
+> θ
+
+, O2) − 2Rmax dTV (O2, Oreal )(1 − γ)2 ,
+
+showing that the performance gap scales directly with dTV (O2, Oreal ). This is precisely the TPT residual C3 δ/ (1 −
+
+γ)2 in Theorem 1: longer Phase 2 training further reduces dTV (O2, Oreal ), directly tightening this term. A single-stage schedule that skips Phase 1 would instead need dTV (O1, Oreal ) in the bound, a substantially larger quantity, leaving the TPT residual much worse. 4.5. Real-Time Deployment Pipeline 
+
+After training, the final policy πθ2 is integrated into a RDP for closed-loop vehicle operation. The purpose of this pipeline is to connect perception, route input, vehicle-state feedback, policy inference, action conversion, and safety monitoring into a complete execution stack that implements the composed policy Eq. (4) on a physical vehicle. 
+
+4.5.1. Pipeline and Timing 
+
+The deployment loop follows a perception–inference–control structure: 
+
+oreal 
+
+> t
+> G
+
+−−→ ˆosim 
+
+> tπθ2
+
+−−−→ ˆat
+
+> M
+
+−−→ areal  
+
+> t
+
+, (22) where the final command is further checked by the safety layer before execution, as illustrated in Fig. 2(d). The deployment loop consists of image acquisition, GOB processing, policy inference, PAM conversion, and command transmission. In steady-state pipelined execution, GOB processing dominates the critical path, and the average end-to-end control latency is 17.2 ms per cycle, well within the 50 ms budget of the 20 Hz control loop. Policy inference takes approximately 2 ms, while PAM conversion and PID computation take less than 1 ms. 10 4.5.2. Waypoint Generation 
+
+The policy requires route information and vehicle states consistent with the simulator training interface. To provide route input, we use a waypoint provider that supplies a sequence of future path points to the policy. In our primary implementation, the route is obtained from a pre-recorded GPS trajectory: the current vehicle position is matched to the nearest point on the route, and a set of future waypoints is extracted and transformed into the vehicle-relative coordinate frame. This design makes the real-world waypoint input compatible with the route representation used during simulator training. When GPS-based routing is unavailable, a vision-based fallback can also be constructed by extracting a lane centerline from the road surface and lane marking channels of ˆosim  
+
+> t
+
+. A vehicle-state interface provides real-time low-level feedback from the platform, including current speed, steering status, and other controller-relevant signals. In our implementation, these quantities are read from the vehicle through the CAN bus and converted into the normalized format expected by the policy and controller. Camera frames, waypoint updates, and vehicle-state messages are time-aligned before policy inference to ensure stable closed-loop execution. 
+
+4.5.3. Safety Layer 
+
+To improve operational safety, we place a safety layer on top of the learned policy and low-level controller. It enforces hard motion constraints including a maximum speed of 15 km/h during initial testing, consistent with campus low-speed autonomous vehicle testing protocols (Koopman and Wagner, 2017), a lateral deviation limit of 0.8 m from the detected lane center, and a steering-rate limit |δt − δt−1| ≤ ∆δmax to prevent abrupt steering commands. Emergency braking is triggered when any of the following conditions is met: invalid policy outputs (NaN/Inf); camera frame timeout or CAN bus disconnection; emergency-stop button activation; vehicle exit from a predefined geofenced region; or safety driver intervention detected via steering-wheel torque exceeding a threshold. All safety checks execute at higher priority than the policy output and cannot be overridden. The system immediately releases control authority upon safety-driver takeover. 
+
+4.5.4. Real-Time Execution and Modularity 
+
+The observation bridge, route and state interfaces, policy, action mapping, and safety layer are loosely coupled and can be upgraded independently. For example, the IPM-based BEV generation can be replaced by a stronger camera-to-BEV model, or the PID controller replaced by a model predictive controller, without changing πθ2 itself. The same modularity makes calibration lightweight: only the small parameter set Θ specified in Section 4.3 and the camera parameters (K, h, α, β ) must be specified before deployment. Overall, RDP closes the gap between simulator training and physical execution by turning the composed policy: 
+
+πreal (areal  
+
+> t
+
+| oreal  
+
+> t
+
+) = M πθ2
+
+ ˆosim  
+
+> t
+
+, s t, w t
+
+ (23) into a complete real-world driving stack that requires no VLM inference at test time, enabling safe and responsive closed-loop operation on a full-scale vehicle. 
+
+4.6. Theoretical Guarantee 
+
+We conclude the framework section with a simplified statement of the main theoretical guarantee, where the explicit dependence of each error coefficient on Lr , Lπ , Rmax , vmax , T , and γ is absorbed into named constants for readability. The full expressions for these constants and complete proofs are given in Appendix B. 
+
+Theorem 1 (Zero-Shot Transfer Guarantee). Under bounded segmentation error ϵseg , bounded PID tracking error 
+
+ϵpid , and bounded observation distribution gap dTV (O2, Oreal ) ≤ δ, the expected cumulative reward of the Sim2Real-AD policy πreal on the real vehicle satisfies: 
+
+E
+
+" TX
+
+> t=0
+
+γtrreal 
+
+> t
+
+#
+
+≥ E
+
+" TX
+
+> t=0
+
+γtrsim 
+
+> t
+
+#
+
+− C1 ϵseg 
+
+| {z } 
+
+> GOB error
+
+− C2 ϵpid 
+
+| {z } 
+
+> PAM error
+
+− C3 δ
+
+(1 − γ)2
+
+| {z }
+
+> TPT residual
+
+, (24) 
+
+where C1, C 2, C 3 > 0 are constants depending on the policy’s Lipschitz constant Lπ , the reward Lipschitz constant 
+
+Lr , the reward bound Rmax , the maximum speed vmax , the horizon T , and the discount factor γ (see Appendix B.5 for explicit expressions), and rsim  
+
+> t
+
+is the VLM-guided reward Eq. (2) from the RL objective Eq. (1) .
+
+Remark 4. Theorem 1 identifies three independent sources of sim-to-real performance degradation and shows that each is separately controllable: the GOB error decreases with better segmentation, the PAM error decreases with tighter PID calibration, and the TPT residual decreases with longer Phase 2 training or higher-fidelity IPM. When all three error terms vanish, real-vehicle performance converges to simulation performance, as formalized in Corollary 1 (Appendix B). To the best of our knowledge, this is among the first transfer-error decompositions for zero-shot sim-to-real deployment of a VLM-guided RL policy in autonomous driving. 
+
+11 Table 1: Training hyperparameters for two-phase progressive training (TPT). Phase 2 warm-starts from the Phase 1 checkpoint with a reduced learning rate. 
+
+Parameter Phase 1 Phase 2 Observation source GT-BEV GOB-BEV (GOB) Action space Physics (PAM) Physics (PAM) Training steps 1 × 10 6 5 × 10 5
+
+Initialization Random Phase 1 checkpoint Learning rate 1×10 −4 → 5×10 −7 5×10 −5 → 5×10 −7
+
+Replay buffer size 10 5 10 5
+
+Batch size 256 256 Discount γ 0.98 0.98 Soft update τ 0.02 0.02 Train frequency 64 steps 64 steps Gradient steps 64 64 BEV feature extractor CustomCNN → 256-d 
+
+5. Experiments 
+
+The experiments are structured to address the following research questions: RQ1: Does the proposed Sim2Real-AD framework preserve the relative performance ordering of different RL algorithms after sim-to-real transfer? RQ2: 
+
+What is the individual contribution of each module (GOB, PAM, TPT) to overall transfer performance? RQ3: How much observation fidelity does GOB preserve compared to ground-truth BEV? RQ4: Does the transferred policy generalize to unseen maps? RQ5: Can the framework achieve zero-shot deployment on a real vehicle? 
+
+5.1. Simulation Experiments 5.1.1. Experimental Setup 1) Simulation Environment. All simulation experiments are conducted in CARLA 0.9.13 (Dosovitskiy et al., 2017) with synchronous mode at 20 FPS. Consistent with (Huang et al., 2026), models are trained exclusively on Town 2—a compact European-style urban layout with residential districts, commercial zones, single-lane roads, and signalized intersections that provides diverse driving conditions including straight roads, curved segments, T-junctions, and varying road geometries. For generalization testing (RQ4), we evaluate on Towns 1, 3, 4, and 5, which present progressively harder distribution shifts in road topology and traffic patterns. 
+
+2) Traffic Configuration. To evaluate robustness under realistic urban conditions with heterogeneous road users, we construct a complex traffic environment following (Huang et al., 2026). Specifically, the simulation includes: 20 vehicles generating natural traffic flow interactions; 20 pedestrians with randomized walking speeds (0.8–1.5 m/s) moving around sidewalks and crosswalks; 20 motorcycles with short following distances (2.0 m) and ±30% speed variance, frequently producing cut-in behaviors; and 20 bicycles traveling at approximately 80% below the speed limit, requiring safe and patient overtaking maneuvers. 
+
+3) Navigation Routes. We employ dynamic route assignment during both training and evaluation. At each episode reset, two distinct spawn points are randomly selected from the 101 predefined locations in Town 2 and the shortest path is computed via the A* algorithm. Episodes continue until the cumulative driving distance reaches 3,000 m, providing comprehensive coverage of diverse navigation scenarios within a single episode. For evaluation, we use 10 predefined routes not encountered during training. These evaluation routes are defined within Town 2 using held-out spawn-point pairs. 
+
+4) Episode Termination. Each episode terminates upon: (i) collision with static infrastructure, vehicles, pedestri-ans, cyclists, or motorcyclists; (ii) the ego vehicle remaining stationary (speed < 1 km/h) for more than 90 consecutive seconds, indicating a stuck condition; or (iii) lateral deviation from the lane center exceeding 3 m. 
+
+5.1.2. Training Configuration 
+
+All algorithms use Soft Actor-Critic (SAC) (Haarnoja et al., 2018) with automatic entropy tuning as the backbone RL optimizer. Table 1 summarizes the key hyperparameters for the two-phase progressive training. 
+
+1) Observation and Action Spaces. The policy receives a dictionary observation comprising: (i) a 14-channel semantic BEV mask at 192 × 192 resolution encoding road surface, lane markings, vehicles, pedestrians, traffic lights, and other semantic categories; (ii) the next 15 waypoints along the planned route expressed as (x, y ) ego-centric coordinates at 2 m intervals; and (iii) vehicle state measurements (speed in km/h, steering angle, throttle command). In Phase 2 of TPT, the BEV is produced by the GOB module (IPM pipeline from a front-facing monocular camera) rather than the simulator’s ground-truth semantic renderer. 12 For Sim2Real-AD, the policy outputs ˆa = ( aκ, a v ) ∈ [−1, 1] 2, which PAM maps to platform-agnostic quantities: 
+
+κ = aκ · κmax , vdes = av +1 2 · vmax , (25) where κmax = tan( δmax )/L with wheelbase L = 2 .875 m and δmax = 70 ◦ (CARLA default vehicle; Ford E-Transit platform parameters are given in Section 5.2.1), and vmax = 35 km/h. A PID controller ( Kp = 0 .5, Ki = 0 .05 ,
+
+Kd = 0 .1) converts desired speed to throttle/brake commands. 
+
+2) VLM Configuration. For algorithms employing CLIP-based reward shaping (DriveVLM-RL and VLM-RL), we use OpenCLIP’s ViT-bigG-14 (Ilharco et al., 2021) pretrained on LAION-2B, with reward blending coefficient 
+
+α = 0 .5 and CLIP batch size of 64 frames. Since the CLIP reward is computed from first-person camera images rather than BEV observations, the GOB change in Phase 2 does not directly alter the reward computation interface, helping keep the training objective comparable across both phases. For DriveVLM-RL, a Qwen3-VL-4B LVLM with attention-gated YOLOv8s triggering provides dynamic semantic descriptions (Huang et al., 2026). 
+
+5.1.3. Evaluation Metrics 
+
+We report the following metrics, evaluated over 10 predefined routes per town following (Huang et al., 2026, 2025b): • Average Speed (AS, km/h ↑): Mean ego-vehicle speed during the episode. • Route Completion (RC ↑): Fraction of the planned route completed before termination. • Total Distance (TD, m ↑): Cumulative distance traveled per episode. • Collision Speed (CS, km/h ↓): Mean speed at impact; reflects collision severity rather than frequency. • Success Rate (SR ↑): Fraction of routes completed without collision or intervention. • Average Collision (AC ↓): Mean collision count per evaluation route. • Performance Retention (PR, % ↑):
+
+PR m = Msim2real 
+
+Mπθ1
+
+× 100% , (26) where Mπθ1 is the corresponding Stage 1 metric under GT-BEV and direct-action evaluation, and Msim2real is the metric after applying the Sim2Real-AD transfer pipeline. PR measures how much of the Stage 1 reference performance is retained after transfer. 
+
+5.1.4. Baseline Algorithms 
+
+A key design principle of Sim2Real-AD is reward-agnostic generality: the four modules (GOB, PAM, TPT, RDP) operate entirely on the policy’s input and output interfaces, with no dependence on how the reward function is con-structed during training. This means Sim2Real-AD can wrap any RL-based autonomous driving algorithm, whether the reward is hand-crafted, LLM-generated, or VLM-guided, and transfer it to a real vehicle without modification. To validate this claim, we apply the identical Sim2Real-AD pipeline to three algorithms that represent the current state of the art across distinct reward paradigms, selected from the comprehensive 13-method comparison in (Huang et al., 2026) as the top-performing representative of each paradigm: • ChatScene (Zhang et al., 2024): SAC with an expert-designed smoothness-focused reward. Purely static and analytically computed without any VLM component. • VLM-RL (Huang et al., 2025b): SAC with static shaped reward + CLIP reward using Contrastive Language Goals (CLG). Fixed prompts contrast “clear road” vs. “collision” using single-frame BEV images. • DriveVLM-RL (Huang et al., 2026) (our primary backbone, top-performing overall): SAC with a dual-pathway reward — a static pathway (CLIP-based CLG on BEV images) and a dynamic pathway (attention-gated LVLM reasoning). The dynamic pathway captures scene-level semantic risks through multi-frame visual understand-ing, achieving the highest SR and lowest CS among all compared methods. All three algorithms share the same SAC backbone, network architecture, observation space, and environment configuration; only the reward computation differs. Applying the identical four-module Sim2Real-AD pipeline to all three isolates the effect of reward design on transferability, directly answering whether Sim2Real-AD serves as a universal sim-to-real bridge independent of the underlying training objective. 13 0.00 0.25 0.50 0.75 1.00 1.25 1.50 
+
+Steps 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0  
+
+> Collision Rate  Phase 1 2
+> 1e6
+
+(a) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 
+
+Steps 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+> Average Speed (km/h)
+> 1e6
+
+(b) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 
+
+Steps 
+
+0
+
+100 
+
+200 
+
+300 
+
+400 
+
+500 
+
+> Total Distance (m)
+> 1e6
+
+(c) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 
+
+Steps 
+
+0.0 
+
+0.5 
+
+1.0 
+
+1.5 
+
+2.0 
+
+> Routes Completed
+> 1e6
+
+(d) 
+
+ChatScene  
+
+> Original (GT-BEV + Direct Action) Sim2Real-AD (Phase 1 + Phase 2)
+
+Figure 4: ChatScene training curves: Original (dashed, GT-BEV + Direct Action, ±1σ over 3 seeds) vs. Sim2Real-AD (solid, Phase 1: GT-BEV + PAM, Phase 2: GOB-BEV + PAM). Vertical dotted line marks Phase 1 →2 at 1×10 6 steps. (a) Collision rate. (b) Average speed. (c) Total distance. (d) Routes completed. 0.00 0.25 0.50 0.75 1.00 1.25 1.50 
+
+Steps 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0  
+
+> Collision Rate  Phase 1 2
+> 1e6
+
+(a) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 
+
+Steps 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+> Average Speed (km/h)
+> 1e6
+
+(b) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 
+
+Steps 
+
+0
+
+100 
+
+200 
+
+300 
+
+400 
+
+500 
+
+> Total Distance (m)
+> 1e6
+
+(c) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 
+
+Steps 
+
+0.0 
+
+0.5 
+
+1.0 
+
+1.5 
+
+2.0 
+
+> Routes Completed
+> 1e6
+
+(d) 
+
+VLMRL  
+
+> Original (GT-BEV + Direct Action) Sim2Real-AD (Phase 1 + Phase 2)
+
+Figure 5: VLM-RL training curves: Original (dashed, GT-BEV + Direct Action, ±1σ over 3 seeds) vs. Sim2Real-AD (solid, Phase 1: GT-BEV + PAM, Phase 2: GOB-BEV + PAM). Vertical dotted line marks Phase 1 →2 at 1×10 6 steps. (a) Collision rate. (b) Average speed. (c) Total distance. (d) Routes completed. 
+
+14 0.00 0.25 0.50 0.75 1.00 1.25 1.50                    
+
+> Steps
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Collision Rate  Phase 1 2
+> 1e6
+> (a)
+> 0.00 0.25 0.50 0.75 1.00 1.25 1.50
+> Steps
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> Average Speed (km/h)
+> 1e6
+> (b)
+> 0.00 0.25 0.50 0.75 1.00 1.25 1.50
+> Steps
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> Total Distance (m)
+> 1e6
+> (c)
+> 0.00 0.25 0.50 0.75 1.00 1.25 1.50
+> Steps
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> Routes Completed
+> 1e6
+> (d)
+
+DriveVLMRL (Ours)      
+
+> Original (GT-BEV + Direct Action) Sim2Real-AD (Phase 1 + Phase 2) Figure 6: DriveVLM-RL training curves: Original (dashed, GT-BEV + Direct Action, ±1σover 3 seeds) vs. Sim2Real-AD (solid, Phase 1: GT-BEV + PAM, Phase 2: GOB-BEV + PAM). Vertical dotted line marks Phase 1 →2 at 1×10 6steps. (a) Collision rate. (b) Average speed. (c) Total distance. (d) Routes completed.
+
+5.1.5. Main Results: Sim-to-Real Transfer across Algorithms (RQ1) 
+
+We evaluate all three algorithms in two phases: a training phase that examines convergence stability under the TPT curriculum, and a testing phase that reports final policy performance across the three progressive transfer stages. 
+
+1) Training Performance Analysis. 
+
+Figs. 4–6 present per-algorithm training curves comparing the original setup (dashed lines: GT-BEV + Direct Action) against Sim2Real-AD (solid lines: Phase 1 GT-BEV + PAM → Phase 2 GOB-BEV + PAM). In each figure, the vertical dotted line marks the Phase 1 →2 transition at 1×10 6 steps. Examining each algorithm in turn reveals how the sim-to-real modules reshape training dynamics. 
+
+ChatScene (Fig. 4). ChatScene reveals the most striking contrast. Its original training (dashed) converges to a collision rate of 0.85–0.95, the highest among all three algorithms, with high speed ( ∼17 km/h) and large total distance (300–500 m). Under Sim2Real-AD (solid), however, the collision rate drops dramatically to 0.30–0.50 in Phase 1, eventually settling at 0.25–0.40 by Phase 2. This paradoxical improvement arises because the physics action space (PAM) constrains ChatScene’s originally aggressive maneuvers: the PID controller cannot execute the abrupt steering and throttle commands that cause frequent collisions under direct action. The trade-off is a significant reduction in total distance (100–250 m vs. 300–500 m) and route completion (0.3–0.8 vs. 0.8–2.0), as the constrained action space also limits the policy’s ability to complete routes efficiently. At the Phase 1 →2 transition, ChatScene shows a temporary collision rate dip around 1M steps followed by recovery, confirming that TPT prevents catastrophic forgetting during the observation modality switch. 
+
+VLM-RL (Fig. 5). VLM-RL exhibits the closest tracking between its original and Sim2Real-AD curves across all four metrics. Collision rates are nearly overlapping at 0.40–0.55 throughout Phase 1, with the Sim2Real-AD curve tracking at roughly the same level as, or slightly below, the original. This tight alignment indicates that VLM-RL’s single-frame CLIP reward, which contrasts “clear road” vs. “collision” on BEV images, produces behaviors that are relatively invariant to the action space change. In Phase 2, after the observation switches to GOB-BEV, speed increases to 15–17 km/h, actually exceeding the original speeds. This counterintuitive acceleration may stem from the noisier IPM observation reducing the policy’s caution, leading to faster but potentially less safe driving. Route completion in Phase 2 shows mild degradation relative to Phase 1, consistent with the single-frame CLIP reward being more sensitive to observation distributional shift than multi-frame VLM rewards. 
+
+DriveVLM-RL (Fig. 6). Under Sim2Real-AD, DriveVLM-RL’s collision rate rises to 0.35–0.45 in Phase 1 (ap-proximately double its original rate of 0.15–0.25), reflecting the physics action space’s reduced reactivity, then grad-ually drops to 0.28–0.38 in Phase 2 as the policy adapts to the GOB-BEV observation. Despite the Phase 1 increase, 15 Table 2: Unified sim-to-real transfer results across three progressive stages (Town 2, 10 routes, mean ± std over 3 independent runs). PR(SR) and PR(TD) are computed relative to Stage 1, which serves as a non-deployable GT-BEV upper-bound reference. Best result per column within each stage in bold .
+
+Stage Algorithm AS ↑ RC ↑ TD ↑ CS ↓ SR ↑ AC ↓ PR(SR) PR(TD) 
+
+Stage 1 
+
+GT-BEV Direct Action (Upper bound) ChatScene 17.47 ±0.10 0.45 ±0.03 161.78 ±13.56 10.69 ±5.02 0.57 ±0.12 0.43 ±0.12 — —VLM-RL 14.38 ±1.53 0.51 ±0.08 138.08 ±16.68 10.09 ±11.93 0.40 ±0.00 0.10 ±0.10 — —DriveVLM-RL 14.13 ±1.07 0.45 ±0.01 174.69 ±8.96 0.29 ±0.43 0.60 ±0.00 0.17 ±0.08 — —
+
+Stage 2 
+
+GT-BEV +PAM only ChatScene 15.72 ±0.15 0.40 ±0.04 142.37 ±16.28 7.85 ±4.15 0.47 ±0.12 0.37 ±0.10 82.5% 87.9% VLM-RL 12.94 ±1.35 0.48 ±0.07 130.15 ±15.42 9.52 ±10.85 0.37 ±0.07 0.10 ±0.08 92.5% 94.3% 
+
+DriveVLM-RL 11.52 ±0.85 0.39 ±0.02 152.08 ±10.23 0.33 ±0.40 0.50 ±0.00 0.23 ±0.11 83.3% 87.1% 
+
+Stage 3 
+
+GOB-BEV +PAM+TPT (Full S2R) ChatScene 15.28 ±0.18 0.35 ±0.04 108.95 ±15.42 8.45 ±5.02 0.37 ±0.10 0.30 ±0.10 64.9% 67.3% VLM-RL 15.45 ±1.48 0.42 ±0.07 102.45 ±16.35 8.85 ±9.52 0.27 ±0.09 0.17 ±0.14 67.5% 74.2% DriveVLM-RL 13.42 ±0.92 0.36 ±0.03 131.25 ±11.08 0.38 ±0.45 0.43 ±0.12 0.27 ±0.08 71.7% 75.1% 
+
+it remains the lowest collision rate among all three algorithms’ Sim2Real-AD curves throughout training. A notable finding is the speed profile: in Phase 1, average speed is 9–12 km/h, comparable to or slightly below the original’s 10–14 km/h; however, after the Phase 1 →2 transition, speed rises sharply to 13–16 km/h and stabilizes, suggesting that the GOB-BEV observation encourages more confident acceleration once the policy adapts to the new observation modality. The gap in total distance and route completion is most pronounced in Phase 2 (Sim2Real-AD: 150–250 m vs. original: 200–400 m), while Phase 1 trajectories track more closely, indicating that while DriveVLM-RL’s seman-tic safety reasoning transfers robustly, adapting to the noisier GOB-BEV observation reduces episode longevity. 
+
+Cross-algorithm summary. Three observations hold across all algorithms: (i) No catastrophic performance collapse occurs at the Phase 1 →2 boundary, empirically validating TPT’s progressive curriculum; (ii) The physics action space (PAM) generally reduces total distance and route completion relative to original training, but affects collision rate in an algorithm-dependent manner—increasing it for DriveVLM-RL and VLM-RL (whose original collision rates are low) while decreasing it for ChatScene (whose original rate is very high); the reduction is most pronounced for ChatScene, while VLM-RL’s Phase 1 distance and route completion track close to its original curves; (iii) Average speed in Phase 2 tends to increase across all algorithms after the GOB-BEV switch, suggesting that the noisier observation encourages more aggressive throttle behavior. 
+
+2) Performance Evaluation in Testing. 
+
+Table 2 consolidates all three evaluation stages into a single unified view: Stage 1 (pre-transfer GT-BEV baseline), Stage 2 (PAM action space only), and Stage 3 (full Sim2Real-AD with GOB + PAM + TPT). Stage 1 results are reproduced from (Huang et al., 2026) and serve as the upper-bound reference; PR values in Stages 2 and 3 are computed relative to Stage 1. Four key findings emerge from Table 2. 
+
+Ordering preservation (answering RQ1). The absolute SR ranking, DriveVLM-RL > ChatScene > VLM-RL, is preserved across all three stages, with Spearman rank correlation ρs = 1 .0 between Stage 1 and Stage 3. This confirms that Sim2Real-AD does not distort the algorithmic advantages established under ideal conditions. 
+
+PAM’s impact is algorithm-dependent but predictable. Stage 2 reveals that PAM affects each algorithm dif-ferently depending on how much its original performance relies on fine-grained action control. VLM-RL retains the highest PR(SR) = 92 .5% , because its original collision rate is already moderate ( ∼0.45 in training, Fig. 5(a)) and PAM barely changes it. DriveVLM-RL retains PR(SR) = 83 .3% : its original collision rate is very low ( ∼0.20, Fig. 6(a)), partly relying on precise emergency maneuvers that PAM’s PID controller cannot reproduce, so collisions increase. ChatScene sits at PR(SR) = 82 .5% . However, DriveVLM-RL maintains the highest absolute SR (0.50) owing to its large Stage 1 headroom. The lower speed observed for DriveVLM-RL in Stage 2 (AS = 11 .52 km/h vs. original 14.13 km/h) is consistent with the conservative Phase 1 training speed visible in Fig. 6(b). 
+
+DriveVLM-RL retains the most performance under full transfer. Stage 3 PR(SR) = 71 .7% and PR(TD) =75 .1% for DriveVLM-RL, compared to 64.9–67.5% and 67.3–74.2% for baselines. The advantage over ChatScene (+6.8 pp in PR(SR)) reflects that DriveVLM-RL’s dynamic pathway reward is computed on first-person camera im-ages, which are unaffected by the Stage 3 BEV observation switch. ChatScene’s purely geometric reward, by contrast, is more sensitive to IPM spatial distortions (Fig. 4(c)). A notable observation is that Stage 3 AS increases relative to Stage 2 for both DriveVLM-RL ( 11 .52 → 13 .42 km/h) and VLM-RL ( 12 .94 → 15 .45 km/h), consistent with the speed rise observed in Phase 2 of the training curves (Figs. 6(b), 5(b)). This suggests that the noisier GOB-BEV observation reduces the policy’s learned caution, leading to faster but not necessarily safer driving. 
+
+Collision severity is preserved, not just frequency. DriveVLM-RL’s CS remains ≤ 0.38 km/h across all three 16 Table 3: Module ablation (DriveVLM-RL backbone, Town 2, 10 routes, mean ± std over 3 independent runs). Original and Direct Transfer rows indicate upper and lower performance bounds. Best result per column among real-vehicle-deployable configurations in bold . †PAM only retains GT-BEV (available only in simulation). ∗GOB only retains the original direct action space. Neither † nor ∗ can be deployed on the real vehicle. 
+
+> ‡Direct Transfer: the original policy (GT-BEV + Direct Action) evaluated with GOB-BEV observations and no bridging modules in simulation, serving as a proxy for naive real-vehicle deployment.
+
+Configuration GOB PAM TPT SR ↑ AC ↓ TD ↑ PR(SR) Original (upper bound) 0.60 ±0.00 0.17 ±0.08 174.69 ±8.96 100% + PAM only † ✓ 0.50 ±0.00 0.23 ±0.09 152.08 ±10.23 83.3% + GOB only ∗ ✓ 0.37 ±0.09 0.30 ±0.10 126.84 ±12.35 61.7% + GOB + PAM (1-phase) ✓ ✓ 0.30 ±0.10 0.33 ±0.10 110.56 ±15.42 50.0% + GOB + PAM + TPT (ours) ✓ ✓ ✓ 0.43 ±0.12 0.27 ±0.08 131.25 ±11.08 71.7% 
+
+Direct transfer ‡ (lower bound) 0.07 ±0.05 0.67 ±0.15 28.43 ±10.23 11.7% stages (Stage 1: 0.29, Stage 2: 0.33, Stage 3: 0.38), while baselines exhibit CS of 7–11 km/h throughout. The monotone increase from Stage 1 to Stage 3 is small and expected (PAM introduces tracking lag; IPM reduces look-ahead), confirming that anticipatory braking transfers robustly. 
+
+Note on speed–safety trade-off in Stage 3. VLM-RL achieves the highest Stage 3 speed (AS = 15 .45 km/h) and route coverage (RC = 0 .42 ), yet the lowest SR (0.27). This high-speed, low-safety profile is consistent with Fig. 5(b), where Phase 2 speed spikes to ∼15–17 km/h without a corresponding collision rate improvement (Fig. 5(a)). DriveVLM-RL’s more moderate speed (AS = 13 .42 km/h) paired with the highest SR (0.43) and lowest CS (0.38 km/h) confirms that its VLM-guided reward prioritizes safety over speed, and this conservative strategy transfers more effec-tively through the sim-to-real pipeline. This empirically validates the progressive curriculum property in Definition 3 and Remark 3: Phase 1 establishes the action-space foundation that makes Phase 2 observation adaptation stable, consistent with the training dynamics shown in Fig. 6. 
+
+5.1.6. Ablation Study (RQ2) 
+
+We perform a module-level ablation using DriveVLM-RL as the base algorithm to quantify the contribution of each Sim2Real-AD component. Table 3 reports evaluation results on Town 2. Four findings stand out. 
+
+Direct transfer fails catastrophically (SR = 0 .07 , PR = 11 .7% ): to simulate naive real-vehicle deployment within simulation, we feed the original GT-BEV-trained policy with GOB-BEV observations and retain its original direct action space, applying no bridging module. This serves as a controlled in-simulation proxy for what would happen if the CARLA-trained policy were deployed directly on a real vehicle — where GT-BEV is unavailable and GOB-BEV is the only accessible observation. The policy cannot interpret the IPM-generated BEV patterns that differ substantially from the GT-BEV it was trained on, causing catastrophic failure. This establishes the lower bound and confirms the necessity of all bridging modules. 
+
+PAM alone (SR = 0 .50 , PR = 83 .3% ) preserves 83.3% of SR at a modest cost, primarily from PID speed-tracking lag and the nonlinear curvature-to-steering mapping at high curvatures. Note that this ablation retains GT-BEV and thus cannot be deployed on a real vehicle; nevertheless it isolates the PAM-induced performance loss, which is recoverable through tighter PID calibration (see Theorem 1, PAM term). 
+
+GOB alone (SR = 0 .37 , PR = 61 .7% ) causes a larger drop than PAM alone. This ablation retains the original direct action space (simulation-only) and isolates the observation-side degradation: the IPM pipeline produces high-quality near-field BEV ( <10 m) but introduces significant distortion beyond 15 m (see Section 5.1.7), degrading the anticipatory cues the policy relies on for obstacle avoidance. 
+
+GOB + PAM 1-phase (SR = 0 .30 ) falls below both individual ablations, demonstrating a super-additive difficulty effect consistent with the interaction analysis in Section 3.2: when trained from scratch on both a degraded observation space (GOB-BEV) and a novel action space (physics action) simultaneously, the reward signal is too noisy to establish stable lane-keeping before collision avoidance can be learned. The curriculum decomposition in TPT resolves this by first learning a stable policy under clean GT-BEV (Phase 1), then adapting only the observation distribution while the action interface and reward structure remain fixed (Phase 2). 
+
+TPT is the critical enabler : the full framework recovers to SR = 0 .43 (PR = 71 .7% ), a 43.3% relative improve-ment over the 1-phase baseline, while also improving total distance from 110.56 to 131.25 m. Notably, the full pipeline even surpasses the GOB-only ablation (SR 0.43 vs. 0.37 ; TD 131 .25 vs. 126 .84 m) despite bearing both observation 
+
+and action degradation, demonstrating that TPT’s curriculum more than compensates for the added difficulty. This empirically validates the progressive curriculum property in Definition 3 and Remark 3, and is consistent with the TPT residual term in Theorem 1. 17 Frame 111              
+
+> Front-View Input GOB-BEV GT-BEV
+> Frame 325
+> Front-View Input GOB-BEV GT-BEV
+> Frame 350
+> Frame 71 Figure 7: CARLA GOB evaluation on 4 representative frames (2 per row). Each case shows (left to right): front-view camera input, GOB-BEV, and GT-BEV. The GOB-BEV captures near-field road geometry (green), lane markings (yellow), and vehicles (red) within the forward fan-shaped field of view; the GT-BEV provides full 360 ◦coverage. Road Lane Vehicle Walker Traffic Light
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> IoU
+> 0.35
+> 0.00 0.00 0.00 0.00
+
+(a) Per-Channel IoU: GOB-BEV vs GT-BEV      
+
+> Road Lane Vehicle Walker Traffic Light
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> Activation (%)
+> 51.1
+> 1.4
+> 31.1
+> 3.1
+> 0.5 0.8
+
+(b) Channel Activation: GOB-BEV vs GT-BEV 
+
+> GOB-BEV
+> GT-BEV
+> Figure 8: Quantitative GOB evaluation on 200 CARLA frames. (a) Per-channel IoU between GOB-BEV and GT-BEV: road achieves moderate IoU ( 0.35 ) limited by coverage asymmetry; other channels are near-zero due to detection-method differences. (b) Channel activation comparison: GOB-BEV over-activates road (51.1% vs. 31.1%) due to forward-fan projection, while lane and object channels have lower activation than GT, reflecting the single-camera field-of-view limitation.
+
+5.1.7. GOB Observation Quality Analysis (RQ3) 1) CARLA GOB-BEV vs. GT-BEV Visual Comparison. Fig. 7 presents side-by-side comparisons of the front-view camera input, the GOB-generated BEV, and the ground-truth semantic BEV across four representative CARLA frames spanning straight car-following segments, scenes with oncoming vehicles, scenes with cyclists, and an intersection (arranged in a 2 ×2 grid, two cases per row). Two key structural differences are evident: (i) the GOB-BEV captures road surface and lane markings only within the forward fan-shaped field of view ( ∼0–20 m ahead), whereas the GT-BEV provides full 360 ◦ coverage with uniform resolution; (ii) vehicles detected in the front view are projected to approximate BEV positions (red), while GT-BEV encodes all surrounding traffic from the simulator. Despite these inherent coverage limitations, the GOB-BEV reconstructs the road geometry directly ahead of the ego vehicle —the region most critical for the RL policy’s lane-keeping and collision-avoidance decisions. 
+
+2) Quantitative Channel Analysis. We evaluate GOB-BEV fidelity on 200 paired frames from CARLA using two complementary metrics (Fig. 8): per-channel IoU between GOB-BEV and GT-BEV, and channel activation percentage (fraction of nonzero pixels). The moderate road-channel IoU of 0.35 ± 0.10 (Fig. 8(a)) reflects a structural coverage asymmetry rather than poor detection quality: GOB-BEV activates 51.1% of pixels as road (forward fan projection), while GT-BEV activates 31.1% ( 360 ◦ coverage including side streets). Within the overlapping forward region, the spatial agreement is sub-stantially higher. Lane, vehicle, walker, and traffic light channels show near-zero IoU ( <0.01) because (i) the GOB pipeline uses color-based lane detection (0.2% activation) whereas GT uses rendered markings (3.1%); (ii) objects are projected to approximate BEV coordinates rather than exact positions; and (iii) walkers and traffic lights rarely occupy sufficient pixels after perspective projection. Critically, the RL policy was trained on GT-BEV with these same channel semantics, so the road and vehicle channels , which together dominate the policy’s attention map, are the ones that matter most for safe driving. The road channel’s activation ratio (GOB/GT ≈ 1.6 ×) indicates adequate coverage of the policy’s forward decision region, explaining why Phase 2 fine-tuning successfully bridges the remaining gap. 
+
+3) Temporal Consistency. For a deployed RL policy, temporal stability of the BEV observation is as important as absolute accuracy, since flickering masks cause erratic control outputs. In our Ford E-Transit deployment, we evaluate 18 0 20 40 60 80 100 120 140 160 
+
+Frame 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Road Mask IoU
+
+Temporal Consistency: Road Mask IoU Between Adjacent Frames            
+
+> cam0
+> cam1
+> IoU = 0.90 Figure 9: Temporal consistency of the road mask: IoU between adjacent frames on real-world driving data. cam0 (forward-facing) achieves mean IoU = 0 .944 ; cam1 (elevated mount) achieves mean IoU = 0 .969 . The dashed line marks IoU = 0 .90 .Frame 0 Frame 10 Frame 20
+> Frame 30 Frame 40 Frame 50
+> Frame 60 Frame 70 Frame 80
+> Frame 90 Frame 100 Frame 110
+> Figure 10: Real-world GOB output on 12 representative frames (Frame 0–110, interval 10) from the Ford E-Transit primary forward-facing camera (cam0), arranged in a 4 ×3 grid. Each cell shows the source image (left) and GOB-BEV (right). Road surface (green), lane markings (yellow), and vehicles (red) are consistently detected across diverse road conditions using zero-shot transfer from CARLA-trained SegFormer-B0.
+
+two camera mounting positions: cam0 (forward-facing), used as the primary deployment camera in Section 5.2, and cam1 (elevated mount), evaluated as a comparison configuration. Fig. 9 plots the road-channel IoU between consecutive frames across a 163-frame real-world driving sequence from the Ford E-Transit. cam0 achieves a mean IoU of 0.944 , with 90.1% of frames above 0.90 . cam1 achieves a mean IoU of 0.969 , with 95.1% of frames exceeding 
+
+0.90 . The higher temporal consistency of cam1 is consistent with its elevated mounting position providing a more stable viewing angle and less susceptibility to vehicle pitch changes. Brief dips below 0.90 in both cameras correspond to sharp heading changes during lane transitions. This level of temporal stability confirms that the GOB pipeline produces smooth observations suitable for closed-loop RL control at 20 Hz, with cam0 fully satisfying the stability requirements of the primary deployment configuration. 
+
+4) Real-World GOB Visualization. Fig. 10 presents 12 representative GOB outputs from the primary forward-facing camera (cam0) on real-world driving footage, arranged in a 4 ×3 grid (frames labeled 0–110 at interval 10). The pipeline produces interpretable BEV masks across diverse conditions: straight roads with clear lane markings, gentle curves, and scenes with leading vehicles. Road surface (green) forms a consistent fan-shaped region ahead; lane markings (yellow) are detected via color filtering restricted to the semantic road region; and vehicles (red) are projected to approximate BEV positions using the bottom-center ground contact point of each detected bounding box as the IPM projection anchor. Notably, the CARLA-trained SegFormer-B0 model generalizes zero-shot to these real-world winter conditions without any domain-specific fine-tuning, supporting the claim that the GOB pipeline is 19 Table 4: Cross-map generalization (10 routes per town, trained on Town 2 only, mean ± std over 3 independent runs). ∆SR = SR change from GT-BEV to Sim2Real-AD. Town 2 ∗ is the in-distribution training town; GT-BEV results from Table 2. 
+
+Town Method AS ↑ TD ↑ CS ↓ SR ↑ ∆SR Town 1 GT-BEV 17.91 ±0.05 375.77 ±69.53 0.73 ±0.21 0.57 ±0.12 —+ S2R 16.42 ±0.58 308.91 ±72.14 0.88 ±0.34 0.40 ±0.10 −0.17 Town 2 ∗ GT-BEV 14.13 ±1.07 174.69 ±8.96 0.29 ±0.43 0.60 ±0.00 —+ S2R 13.42 ±0.92 131.25 ±11.08 0.38 ±0.45 0.43 ±0.12 −0.17 Town 3 GT-BEV 16.78 ±0.70 156.57 ±29.20 12.06 ±1.04 0.17 ±0.09 —+ S2R 15.31 ±0.85 127.15 ±31.42 10.82 ±1.24 0.10 ±0.05 −0.07 Town 4 GT-BEV 19.48 ±1.32 438.40 ±284.27 3.64 ±1.87 0.07 ±0.05 —+ S2R 18.12 ±1.45 358.24 ±215.38 4.85 ±2.12 0.03 ±0.03 −0.04 Town 5 GT-BEV 15.37 ±1.84 86.59 ±14.23 10.65 ±3.42 0.10 ±0.05 —+ S2R 14.18 ±1.92 71.24 ±16.85 9.53 ±3.18 0.07 ±0.08 −0.03 platform-agnostic. 
+
+5.1.8. Cross-Map Generalization (RQ4) 
+
+Models trained on Town 2 are evaluated on Towns 1, 3, 4, and 5 (all unseen during training). Town 2 (in-distribution) is included as a reference. We compare the original DriveVLM-RL (GT-BEV + direct action) with DriveVLM-RL + Sim2Real-AD (GOB-BEV + PAM via TPT). Table 4 shows that the absolute SR degradation from Sim2Real-AD scales with baseline SR. This floor effect is most evident in Towns 4 and 5 (baseline SR ≤ 0.10 ), where 
+
+∆SR is −0.04 and −0.03 respectively, compared to −0.17 for Towns 1 and 2 (baseline SR ≥ 0.57 ). This indicates that the dominant factor limiting out-of-distribution performance is the policy’s limited exposure to diverse road layouts during training, not the sim-to-real transfer itself — the transfer overhead does not compound with map complexity. CS changes are mixed: collision severity decreases under Sim2Real-AD for Towns 3 ( 12 .06 → 10 .82 km/h) and 5 ( 10 .65 → 9.53 km/h), suggesting that PAM’s speed modulation attenuates collision force in complex layouts. CS increases mildly in Towns 1 ( 0.73 → 0.88 km/h), 2 ( 0.29 → 0.38 km/h), and 4 ( 3.64 → 4.85 km/h), where baseline collision severity is already low relative to Towns 3 and 5. 
+
+5.2. Real-World Deployment Experiments (RQ5) 
+
+We deploy the complete Sim2Real-AD framework on a full-scale autonomous vehicle to validate zero-shot sim-to-real transfer without any real-world training data. All policy parameters are frozen after simulation training; no real-world fine-tuning is performed at any stage. 
+
+5.2.1. Platform and Hardware 
+
+The experiments were conducted on a lab-developed full-scale electric Ford E-Transit autonomous van equipped with a drive-by-wire system. As illustrated in Fig. 11(a), the sensor configuration includes three LiDAR units, seven high-resolution RGB cameras, and a front-facing radar, providing complementary spatial, semantic, and velocity information. A key point of the deployment is that Sim2Real-AD uses only the front-facing monocular camera for policy inference , demonstrating that the framework does not require expensive multi-sensor fusion for the observation bridge. Onboard computation is supported by an NVIDIA RTX A6000 GPU, which handles real-time inference for both the policy network and the perception stack. For data logging, telemetry, and remote monitoring, the vehicle is equipped with a NETGEAR Nighthawk M6 Pro 5G router, providing high-bandwidth and low-latency wireless connectivity during experiments. 
+
+5.2.2. Camera Configuration 
+
+DriveVLM-RL’s reward computation during training relies on two camera views: a forward-facing ego-centric view for the static CLIP-based pathway and an elevated view for the dynamic LVLM pathway, which benefits from a wider spatial context. To maintain consistency with this training configuration and enable shadow-mode reward analysis (Section 5.2.4), we install two cameras on the Ford E-Transit as shown in Fig. 11(b): a forward-facing camera and an elevated camera mount. Both are calibrated using the checkerboard procedure described in Section 5.2.3. Critically, the RL policy itself receives only the forward-facing view as input through the GOB pipeline; the elevated camera is used exclusively for reward signal analysis and does not participate in the control loop. 20 Radar       
+
+> Lidars Cameras
+> For remote
+> control and data
+> collection
+> Lab -developed Ford E -transit
+> Electric Autonomous Van Dashboard Monitor
+> Power
+> Modules
+> Computing
+> Rack
+> 5G mmWave
+> Mobile Hotspot
+> (a) (b)
+> Forward -facing Camera (First -Person View)
+> Camera
+> Elevated Camera Mount (Bird's Eye View)
+> Car -following
+> Static Obstacle Avoidance
+> Semantic -critical Stop Sign Interaction
+> Leading
+> Vehicle
+> Following
+> Vehicle
+> Static
+> Obstacle
+> Pedestrian
+> (c)
+> Platform and Hardware Camera Configuration Evaluation Scenarios
+
+Figure 11: Real-world experimental platform and evaluation scenarios. (a) Lab-developed full-scale electric Ford E-Transit autonomous vehicle platform with drive-by-wire control, multimodal perception sensors, onboard computing, and wireless communication infrastructure. (b) Camera configuration: a forward-facing camera and an elevated camera mount, matching the dual-camera setup used in DriveVLM-RL training for reward computation; only the forward-facing camera is used for policy inference. (c) Real-world driving scenarios used for evaluation: routine car-following, static obstacle avoidance, and semantic-critical stop sign interaction. Table 5: Practical setup for real-world deployment on the Ford E-Transit, including platform calibration and route preparation. Vehicle calibration requires approximately 30 min; total practical setup time is approximately 35 min. No training data are required. 
+
+Parameter Value Method Time Front camera field of view 110 ◦ FOV Checkerboard (Zhang, 2000) 15 min Camera height ( h) 1.7 m Tape measure 2 min Camera pitch ( α) 0◦ Included above —Wheelbase ( L) 3.67 m Vehicle manual 1 min Max steer angle ( δmax ) 38 .5◦ Vehicle manual 1 min PID gains (Kp, K i, K d) (0.8, 0.1, 0.15) Step-response test 10 min 
+
+Vehicle calibration subtotal ∼30 min 
+
+Route waypoints 47 points One manual drive 5 min 
+
+Total practical setup time ∼35 min 
+
+5.2.3. Platform Calibration and Deployment Preparation 
+
+A key practical advantage of Sim2Real-AD is its minimal setup effort compared to learning-based domain adap-tation methods (Zhu et al., 2017; Ganin et al., 2016), which typically require thousands of real-world images and iterative GPU training. Table 5 summarizes the platform-specific calibration items together with the route preparation needed for real-world deployment. The vehicle calibration itself requires approximately 30 min and no training data, while route waypoint recording adds about 5 min for a given test site. The PID gains for the E-Transit differ from the CARLA defaults owing to the vehicle’s greater mass and different throttle response characteristics. Recalibration requires only ∼10 min of step-response testing on a straight road, while the remaining calibration items are obtained through standard camera and vehicle measurements. This efficiency follows from the PAM design (Definition 2), which isolates the vehicle-specific mapping and allows the platform-dependent component to be updated without modifying the policy. 
+
+5.2.4. Deployment Protocol 
+
+All policy parameters are frozen after simulation training and transferred to the real vehicle without any additional fine-tuning. The DriveVLM-RL-trained actor network runs at 20 Hz, generating curvature and desired speed com-mands that are translated to steering and throttle via PAM. Owing to its lightweight architecture, the policy satisfies real-time constraints and operates fully on onboard computation, enabling stable closed-loop driving. Although PAM maps policy outputs to desired speeds up to vmax = 35 km/h, the safety layer constrains actual vehicle speed to 15 km/h during initial real-world testing. To analyze the behavior of DriveVLM-RL’s dual-pathway reward structure under real-world conditions, we ad-ditionally run both reward pathways in shadow mode during deployment: they process live sensor data and produce reward signals, but their outputs have no effect on vehicle control decisions. This shadow-mode analysis is entirely 21 Table 6: Offline policy reaction test on real-world driving recordings (6,000 policy inference steps at 20 Hz). Validates that the GOB-to-policy chain produces sensible outputs before closed-loop testing. 
+
+Metric Result Straight-road steering within expected band ( |δ| < 0.1) 91.3% Curve steer direction correctness 87.2% Speed output in valid range [0 , v max ] 99.8% End-to-end pipeline latency (mean / P95) 17.2 / 24.3 ms S1: Follow S2: Obstacle S3: Stop Sign     
+
+> 0
+> 4
+> 8
+> 12
+> 16
+> 20
+> Safety Interventions
+> 75%
+> Reduction
+> 4
+> 8
+> 16
+> 12
+> 4
+> VLM-RL
+> DriveVLM-RL(Ours) S1: Follow S2: Obstacle S3: Stop Sign
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Task Success Rate (%)
+> Collapse
+> 70%
+> 25%
+> 10%
+> 90%
+> 80% 75%
+> VLM-RL
+> DriveVLM-RL(Ours)
+> Figure 12: Quantitative real-world evaluation results over 20 trials per scenario. (a) Safety driver interventions across three scenarios. (b) Task success rates over 20 independent trials per scenario. Both algorithms are deployed through the identical Sim2Real-AD pipeline.
+
+separate from the control loop and is consistent with the training-deployment decoupling property described in Sec-tion 3: the deployed policy is a standalone lightweight network with no VLM inference in the control path. Shadow mode serves purely as a diagnostic tool to examine the alignment between semantic risk estimation and real-world behavioral responses, and does not alter the zero-shot transfer evaluation in any way. 
+
+5.2.5. Offline Policy Reaction Test 
+
+Before closed-loop operation, we validate the full pipeline on ∼5 min of pre-recorded real-world driving footage (6,000 policy inference steps at 20 Hz) without actuating the vehicle. Table 6 reports the results. The ±0.1 steering threshold corresponds to approximately 3.85 ◦ front wheel angle, consistent with the acceptable straight-road deviation in the safety layer (Section 4.5). On straight segments, 91.3% of steering outputs fall within this expected band. On curves, 87.2% have the correct sign; the remaining errors occur at curve entry/exit transitions where the road mask geometry changes abruptly as the vehicle begins to turn, causing momentary steering sign ambiguity before the forward-looking GOB-BEV stabilizes. Speed commands remain in the valid range for 99.8% of frames, confirming that PAM output is well-bounded. End-to-end latency averages 17.2 ms (P95: 24.3 ms), comfortably within the 50 ms budget of the 20 Hz control loop. 
+
+5.2.6. Evaluation Scenarios 
+
+We evaluate the Sim2Real-AD framework across three real-world driving scenarios of increasing semantic com-plexity, as illustrated in Fig. 11(c). Both DriveVLM-RL and VLM-RL are deployed through the identical Sim2Real-AD pipeline, allowing direct comparison of how different reward paradigms transfer under the same bridging frame-work. • S1: Routine Car-Following. The agent maintains safe longitudinal control behind a leading vehicle exhibiting non-constant speed on an open road, evaluating basic speed regulation and distance keeping. • S2: Static Obstacle Avoidance. Static obstacles are placed along the driving route, requiring the agent to detect and safely maneuver around unexpected obstructions while maintaining lane-level control. • S3: Semantic-Critical Stop Sign Interaction. The agent must recognize a stop sign and execute appropriate stopping behavior, potentially in the presence of pedestrians near the crosswalk, evaluating semantic under-standing and traffic rule compliance. 
+
+5.2.7. Quantitative Results 
+
+For each scenario, we perform 20 independent trials under identical conditions. All experiments were conducted on December 23, 2025: Scenario 1 along Sprocket Drive, Madison, WI, and Scenarios 2 and 3 along Discovery Path, Madison, WI. We define three trial outcomes: 22 Figure 13: Representative DriveVLM-RL car-following episode (S1). Top row: forward-facing camera view (cam0), used as policy input through the GOB pipeline. Bottom row: elevated camera view (cam1), used for reward analysis in shadow mode. The ego vehicle maintains consistent following distance without triggering the dynamic reward pathway. 0 20 40 60 80 100 120 140 160 
+
+Time Step         
+
+> 0.15
+> 0.10
+> 0.05
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> Reward Value
+> Static (VLM-RL)
+> Dynamic (VLM-RL)
+> Combined (VLM-RL)
+> (a) VLM-RL reward components 020 40 60 80 100 120 140 160
+
+Time Step          
+
+> 0.15
+> 0.10
+> 0.05
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> Reward Value
+> Static (DriveVLM-RL)
+> Dynamic (DriveVLM-RL)
+> Combined (DriveVLM-RL) (b) DriveVLM-RL reward components 020 40 60 80 100 120 140 160
+
+Time Step         
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> Speed (m/s)
+> VLM-RL
+> DriveVLM-RL (Ours)
+> (c) Vehicle speed profiles 020 40 60 80 100 120 140 160
+
+Time Step  
+
+> 80
+> 60
+> 40
+> 20
+> 0
+> 20
+> 40
+> 60
+> Steering Wheel Angle (°)
+> VLM-RL
+> DriveVLM-RL (Ours) (d) Steering angle profiles
+
+Figure 14: Qualitative analysis of S1 (routine car-following). (a) Temporal evolution of reward components for VLM-RL. (b) Temporal evolution of reward components for DriveVLM-RL: the dynamic pathway remains inactive throughout, confirming no unnecessary semantic intervention in routine scenarios. (c) Speed profiles: DriveVLM-RL achieves smoother speed regulation than VLM-RL. (d) Steering angle profiles: DriveVLM-RL produces more gradual adjustments, indicating more human-like control behavior. 
+
+• Success: the task is completed fully autonomously, i.e., reaching the designated goal region or completing the required interaction without any human intervention and within a reasonable time budget. • Safety Violation: a trained safety driver intervenes to prevent a collision or traffic rule violation; such trials are not counted as successes. • Stagnation: the vehicle remains safe but fails to complete the task within the allotted time due to indecision or overly conservative behavior. Results are summarized in Fig. 12. Safety violations are reported explicitly through safety driver intervention counts; stagnation cases are reflected implicitly in the task success rate. Three key findings emerge from the real-world evaluation. 
+
+Sim2Real-AD enables functional zero-shot deployment. DriveVLM-RL deployed through Sim2Real-AD achieves success rates of 90%, 80%, and 75% across S1, S2, and S3 respectively, without any real-world training data or fine-tuning. These results confirm that the four-module pipeline (GOB, PAM, TPT, and RDP) successfully bridges the sim-to-real gap for closed-loop operation on a full-scale vehicle, validating the core claim of this work. 
+
+The framework preserves semantic safety structure, not merely driving capability. The most significant difference between the two algorithms appears in S3, where VLM-RL requires safety driver intervention in 16 of 20 23 Figure 15: Representative VLM-RL failure case in S2 (static obstacle avoidance). Top row: forward-facing camera view (cam0), used as policy input through the GOB pipeline. Bottom row: elevated camera view (cam1), used for reward analysis in shadow mode. VLM-RL continues forward without initiating a bypass maneuver, approaching the obstacle dangerously close and requiring safety driver intervention. 0 10 20 30 40 50 60 
+
+Time Step       
+
+> 0.3
+> 0.2
+> 0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> Reward Value
+> Static (VLM-RL)
+> Dynamic (VLM-RL)
+> Combined (VLM-RL)
+> (a) VLM-RL reward components 010 20 30 40 50 60
+
+Time Step        
+
+> 0.3
+> 0.2
+> 0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> Reward Value
+> Static (DriveVLM-RL)
+> Dynamic (DriveVLM-RL)
+> Combined (DriveVLM-RL) (b) DriveVLM-RL reward components 010 20 30 40 50 60
+
+Time Step       
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> Brake Pressure
+> Human Takeover
+> VLM-RL
+> DriveVLM-RL (Ours)
+> (c) Brake pressure profiles 010 20 30 40 50 60
+
+Time Step  
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> Speed (m/s)
+> Human Takeover
+> VLM-RL
+> DriveVLM-RL (Ours) (d) Vehicle speed profiles
+
+Figure 16: Quantitative signal analysis of S2 (static obstacle avoidance). (a) VLM-RL reward components: dynamic pathway remains inactive throughout, providing no signal to initiate bypass. (b) DriveVLM-RL reward components: dynamic pathway activates when the obstacle enters the critical region. (c) Brake pressure profiles: VLM-RL decelerates but does not redirect, while DriveVLM-RL maintains controlled deceleration before the bypass. (d) Speed profiles: VLM-RL approaches the obstacle without bypass while DriveVLM-RL preserves forward progress through the maneuver. 
+
+trials (80%), while DriveVLM-RL requires only 4 (20%) — a 75% reduction in critical safety violations. In S2, VLM-RL’s success rate drops to 25%: its static single-frame CLIP reward cannot reliably distinguish a temporary obstacle from a leading vehicle, leading to stagnation or unsafe behavior. DriveVLM-RL’s dynamic pathway activates context-dependent semantic reasoning in these situations, preserving the simulation-learned distinction under real-world visual variability. This demonstrates that Sim2Real-AD does not merely transfer motion control capability but specifically preserves the semantic safety structure of the backbone policy. 
+
+Performance ordering established in simulation is maintained in the real world. DriveVLM-RL outperforms VLM-RL across all three scenarios (90% vs. 70%, 80% vs. 25%, 75% vs. 10%), cross-validating the RQ1 ordering preservation finding from simulation in a real-world closed-loop setting. The fact that both algorithms are deployed through the identical Sim2Real-AD pipeline isolates reward design as the source of the performance difference, con-firming that Sim2Real-AD is reward-agnostic and does not favor any particular training paradigm. 
+
+5.2.8. Qualitative Case Studies 
+
+To further illustrate how Sim2Real-AD preserves algorithm-specific behavioral properties through the sim-to-real pipeline, we analyze representative behaviors in each scenario. 24 (a) DriveVLM-RL reward signal decomposition during obstacle bypass 0 5 10 15 20 25 30 
+
+Longitudinal Distance (m)  
+
+> 6
+> 4
+> 2
+> 0
+> 2
+> 4
+> 6
+> 8
+> 10
+> 12
+> Lateral Position (m)
+> Human Takeover
+> Smooth Bypass
+> 10
+> 12
+> 14
+> 16
+> 18
+> 20
+> 22
+> 24
+> Speed (km/h)
+> DriveVLM-RL (Ours)
+> VLM-RL
+> Predicted Trajectory
+> Parked Vehicle
+> (b) Vehicle trajectory comparison
+> Figure 17: DriveVLM-RL reward mechanism and trajectory in S2. (a) Temporal evolution of DriveVLM-RL’s reward components: static reward, dynamic reward, combined reward, and attentional gate activation value. The gate fires sharply when the obstacle enters the critical detection region, driving the dynamic reward negative and shifting the combined reward polarity to penalize continued forward approach and encourage lateral bypass. (b) Resulting vehicle trajectories: DriveVLM-RL executes a smooth anticipatory lateral bypass while maintaining safe clearance; VLM-RL approaches the obstacle without redirecting and requires safety driver intervention.
+
+S1: Routine Car-Following. Fig. 13 illustrates a representative DriveVLM-RL episode from two camera views: the forward-facing view (cam0) used for policy control, and the elevated view (cam1) used for shadow-mode reward analysis. Throughout the episode, the ego vehicle follows a leading vehicle along a roadway without abrupt maneuvers or external disturbances. As shown in Figs. 14(a)–(b), the dynamic reward pathway remains largely inactive for DriveVLM-RL in this scenario: the attentional gate does not trigger because no safety-critical objects appear within the detection radius. The combined reward is therefore determined entirely by the static pathway. This behavior is expected — routine car-following involves only a leading vehicle and no semantically critical events such as pedestrians, obstacles, or rule violations, all of which are explicitly handled by the static pathway through predefined language goals. The resulting control behaviors are compared in Figs. 14(c)–(d). VLM-RL exhibits noticeable speed oscillations and abrupt steering corrections, whereas DriveVLM-RL achieves smoother speed profiles and more gradual steer-ing adjustments. This difference demonstrates that Sim2Real-AD successfully transfers the behavioral smoothness advantage of DriveVLM-RL’s dual-pathway design to the real vehicle: in routine scenarios, the dynamic pathway introduces no unnecessary semantic intervention, and the policy’s learned conservative control style transfers intact through the GOB and PAM bridges. 
+
+S2: Static Obstacle Avoidance. Fig. 15 shows a representative case from two camera views: the forward-facing view (cam0) used as policy input, and the elevated view (cam1) used for shadow-mode reward analysis. A parked vehicle partially occupies the driving lane and is accompanied by traffic cones, indicating a temporary obstruction that 25 Figure 18: Representative episode in S3 (stop sign interaction with pedestrian). Top row: forward-facing camera view (cam0), used as policy input through the GOB pipeline. Bottom row: elevated camera view (cam1), used for reward analysis in shadow mode. A pedestrian is present at the crosswalk ahead of the stop sign. VLM-RL fails to yield and requires safety driver intervention; DriveVLM-RL decelerates smoothly and stops before the crosswalk. 0 10 20 30 40 50 60 70 80 
+
+Time Step       
+
+> 0.3
+> 0.2
+> 0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> Reward Value
+> Static (VLM-RL)
+> Dynamic (VLM-RL)
+> Combined (VLM-RL)
+> (a) VLM-RL reward components 010 20 30 40 50 60
+
+Time Step          
+
+> 0.3
+> 0.2
+> 0.1
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> Reward Value
+> Static (DriveVLM-RL)
+> Dynamic (DriveVLM-RL)
+> Combined (DriveVLM-RL) (b) DriveVLM-RL reward components 010 20 30 40 50 60 70 80
+
+Time Step         
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> Brake Pressure
+> Human Takeover
+> VLM-RL
+> DriveVLM-RL (Ours)
+> (c) Brake pressure profiles 010 20 30 40 50 60 70 80
+
+Time Step  
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> Speed (m/s)
+> Human Takeover
+> VLM-RL
+> DriveVLM-RL (Ours) (d) Vehicle speed profiles
+
+Figure 19: Quantitative signal analysis of S3 (stop sign interaction). (a) VLM-RL reward components: static reward provides no signal for stop sign compliance or pedestrian yielding; dynamic pathway remains inactive. (b) DriveVLM-RL reward components: dynamic pathway activates upon pedestrian detection, shifting reward polarity to penalize continued forward motion. (c) Brake pressure profiles: VLM-RL applies abrupt braking only at safety driver takeover; DriveVLM-RL initiates smooth early deceleration. (d) Speed profiles: VLM-RL maintains speed until intervention; DriveVLM-RL progressively decelerates to a complete stop before the crosswalk. 
+
+should be bypassed rather than waited for. As shown in Fig. 16(a), VLM-RL’s static CLIP-based reward provides no spatial disambiguation between a stopped vehicle and a temporary obstacle. Without a signal to initiate lateral bypass, the policy continues forward until the vehicle approaches the obstacle dangerously close, necessitating safety driver intervention. The brake pres-sure profile in Fig. 16(c) and speed profile in Fig. 16(d) confirm this: the policy decelerates but does not redirect, resulting in a straight-line approach toward the obstacle rather than a bypass maneuver. In contrast, DriveVLM-RL successfully completes the task. Fig. 16(b) shows the temporal evolution of DriveVLM-RL’s reward signals during the episode: the static reward remains stable throughout, while the attentional gate activates sharply when the obstacle enters the critical detection region, triggering the dynamic pathway. The dynamic reward drops negative at this moment, penalizing continued forward approach, and the combined reward reflects this abrupt shift. As shown in Fig. 17(a), the LVLM correctly selects the language goal “An obstacle is on the road,” introducing the negative dynamic reward that drives the bypass decision. The resulting trajectory in Fig. 17(b) demonstrates a smooth anticipatory lateral bypass around the parked vehicle, maintaining safe clearance while preserving forward progress, without any safety driver intervention. 26 (a) LVLM semantic reasoning process during stop sign interaction 0 5 10 15 20 25 30 
+
+Distance (m) 
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> Speed (m/s)
+> VLM-RL
+> DriveVLM-RL (Ours)
+> (b) Distance and speed profiles
+> Figure 20: DriveVLM-RL dynamic pathway reasoning and behavioral profiles in S3. (a) LVLM reasoning process when the attentional gate acti-vates: the input prompt constructed from sequential visual observations, the LVLM’s multi-step reasoning response, and the final selected language description (“A pedestrian is crossing the road ahead”) that drives the dynamic reward. This process (learned entirely in CARLA simulation) trans-fers zero-shot to real-world conditions through the Sim2Real-AD pipeline. (b) Distance-to-pedestrian and vehicle speed profiles: DriveVLM-RL maintains increasing clearance while progressively reducing speed to a complete stop before the crosswalk; VLM-RL fails to yield and requires safety driver intervention.
+
+This case study demonstrates that Sim2Real-AD successfully transfers DriveVLM-RL’s context-dependent se-mantic reasoning to the real vehicle. The dynamic pathway’s ability to detect safety-critical scenes and shift reward polarity, i.e., preserved intact through the GOB and PAM bridges, is precisely what enables correct disambiguation in this scenario, a capability that static reward paradigms cannot replicate. 
+
+S3: Semantic-Critical Stop Sign Interaction. Fig. 18 shows a representative episode from two camera views: the forward-facing view (cam0) used as policy input, and the elevated view (cam1) for shadow-mode reward analysis. As the ego vehicle approaches a stop-controlled intersection, a pedestrian enters the crosswalk region, creating a semantically critical situation that cannot be resolved through geometric cues alone. As shown in Fig. 19(a), VLM-RL’s static reward fails to encode the stop sign rule and pedestrian right-of-way, providing no signal to initiate early deceleration. The vehicle continues forward without appropriate yielding behavior, approaching the intersection and pedestrian dangerously close and necessitating safety driver intervention. This is reflected in the brake pressure profile in Fig. 19(c) and speed profile in Fig. 19(d), where abrupt braking spikes coincide with safety driver takeover. In contrast, as shown in Fig. 19(b), DriveVLM-RL selectively activates the dynamic pathway when the attentional gate detects the safety-critical event. Fig. 20(a) illustrates the LVLM’s reasoning process when the attentional gate activates: the input prompt is con-structed from sequential visual observations, the LVLM produces a multi-step reasoning response over candidate descriptions, and the final selected description “A pedestrian is crossing the road ahead” is used to compute the dy-27 Table 7: Per-stage inference latency on NVIDIA RTX A6000 GPU (mean ± std over 1,000 frames). Control budget: 50 ms at 20 Hz. 
+
+Pipeline Stage Latency (ms) Budget Used (%) Image capture + preprocessing 2.1 ± 0.3 4.2 Semantic segmentation (SegFormer-B0) 8.7 ± 1.2 17.4 IPM projection (GOB) 3.4 ± 0.5 6.8 Policy inference (SAC forward) 1.8 ± 0.2 3.6 PAM (bicycle model + PID) < 0.1 < 0.2
+
+CAN bus transmission 1.2 ± 0.4 2.4 
+
+Total end-to-end 17 .2 ± 1.8 34.4 VLM-as-Control DriveVLM-RL (Ours)   
+
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> 600
+> 700
+> Inference latency per step (ms)
+> Real-time control budget: 50 ms @ 20 Hz
+> 580±45
+> 17±2
+> (a) End-to-end inference latency comparison VLM-as-Control DriveVLM-RL (Ours)
+> 0
+> 200
+> 400
+> 600
+> 800
+> 1000
+> 1200
+> Control-cycle budget used (%)
+> 100% = saturates 20 Hz budget
+> 1160% (margin -530 ms)
+> 34% (margin 33 ms) (b) Control budget utilization
+> Figure 21: Real-time feasibility on the Ford E-Transit onboard GPU. Sim2Real-AD satisfies the 20 Hz control budget with an average end-to-end control latency of 17.2 ms, whereas direct VLM-as-control inference is far beyond the real-time limit.
+
+namic reward. This drives the dynamic reward sharply negative and shifts the combined reward polarity to penalize continued forward motion. This triggers an early, smooth deceleration, as confirmed by Fig. 20(b), which shows DriveVLM-RL maintaining increasing clearance distance to the pedestrian while progressively reducing speed to a complete stop before the crosswalk — without any safety driver intervention. This case study demonstrates that Sim2Real-AD successfully transfers DriveVLM-RL’s multi-frame semantic reasoning capability to the real vehicle. The dynamic pathway’s ability to aggregate sequential observations, apply semantic filtering, and select among candidate language descriptions (all learned exclusively in CARLA simulation) translates directly into correct traffic rule compliance under real-world conditions through the GOB and PAM bridges. This is the most demanding validation of Sim2Real-AD’s transfer fidelity: the policy must not only navigate cor-rectly but interpret symbolic traffic semantics and reason about vulnerable road users, a capability that static reward paradigms cannot encode. 
+
+5.2.9. Real-Time Feasibility 
+
+A practical prerequisite for any sim-to-real deployment framework is that the transferred policy must satisfy real-time control requirements on onboard hardware. Table 7 profiles the end-to-end inference pipeline of Sim2Real-AD on the Ford E-Transit’s onboard NVIDIA RTX A6000 GPU (mean ± std over 1,000 frames). The total end-to-end latency of 17 .2 ± 1.8 ms satisfies the 20 Hz control rate with a 32.8 ms margin per cycle (65.6% of the 50 ms budget remaining for safety checks and system overhead). The segmentation stage dominates at 8.7 ms (50.6% of total), suggesting that lighter backbones could further reduce latency for resource-constrained platforms. To contextualize this result, we benchmark against LeapAD (Mei et al., 2024), a representative VLM-as-Control approach. It is important to note that our objective here is to evaluate computational efficiency and inference latency rather than safety performance; we therefore do not deploy the full LeapAD in real-world closed-loop control. Instead, we directly map camera observations to control decisions using Qwen3-VL, with outputs restricted to a set of high-level meta-actions (e.g., accelerate, decelerate, idle) that are translated into low-level acceleration commands through a predefined action library. All measurements use the same onboard NVIDIA RTX A6000 GPU; reported latencies cover end-to-end perception and inference, excluding sensor acquisition and CAN communication. As shown in Fig. 21(a), a single Qwen3-VL forward pass incurs 580 ± 45 ms per step, limiting the achievable control frequency to 1–2 Hz and consuming 1160% of the 20 Hz budget — making real-time closed-loop operation in-feasible. In contrast, Sim2Real-AD’s deployed pipeline requires only 34.4% of the budget, as illustrated in Fig. 21(b). The deployed system also occupies approximately 1.2 GB of VRAM (GOB backbone + SAC policy), compared to 28 24.5 GB required to load Qwen3-VL under FP16 precision. These results confirm that the training-deployment decoupling in Sim2Real-AD, where all VLM and LVLM com-ponents operate exclusively during offline training and are completely absent from the deployed control loop, is not merely a design convenience but a practical necessity for real-time vehicle control. The same property that enables Sim2Real-AD to focus its bridging modules on observation and action interfaces (Section 4.1) is what makes the framework computationally viable on standard onboard hardware. 
+
+6. Conclusion 
+
+This paper presented Sim2Real-AD , a modular framework for zero-shot sim-to-real deployment of VLM-guided RL autonomous driving policies. By decomposing the sim-to-real problem into an observation-space bridge (GOB) and an action-space bridge (PAM), stabilized by a two-phase progressive training curriculum (TPT) and integrated into a real-time deployment pipeline (RDP), the framework transfers a CARLA-trained policy to a full-scale Ford E-Transit using only ∼30 minutes of lightweight calibration and no real-world RL training data. A formal transfer guarantee decomposes the sim-to-real performance gap into three independently controllable error terms. Simulation experiments confirmed ordering preservation across algorithms (Spearman ρs = 1 .0) and the necessity of each mod-ule, while zero-shot closed-loop deployment achieved success rates of 90%, 80%, and 75% across three real-world scenarios. The framework is reward-agnostic and was validated across ChatScene, VLM-RL, and DriveVLM-RL, confirming its role as a universal deployment bridge for RL-based driving policies. Several directions remain open for future work. The current 15 km/h speed limit is safety-conservative; scaling to higher speeds requires tighter PID calibration and potentially multi-camera sensing to extend BEV coverage for longer-horizon planning, directly reducing the PAM and GOB error terms in the transfer guarantee. The forward-only monocular configuration limits GOB quality at sharp turns and wide intersections; surround-view sensing would improve effective range without modifying the policy. GPS route dependency could be removed through online map matching or vision-based lane centerline extraction. Finally, incorporating a small number of real-world rollouts into Phase 2 ( analogous to Rapid Motor Adaptation (Kumar et al., 2021)) could directly reduce the residual distribution gap dTV (O2, Oreal ) and further close the zero-shot performance ceiling. 
+
+Acknowledgment 
+
+This work was supported by the University of Wisconsin-Madison’s Center for Connected and Automated Trans-portation (CCAT), a part of the larger CCAT consortium, a USDOT Region 5 University Transportation Center funded by the U.S. Department of Transportation, Award #69A3552348305. The contents of this paper reflect the views of the authors, who are responsible for the facts and the accuracy of the data presented herein, and do not necessarily reflect the official views or policies of the sponsoring organization. 29 Appendix A. Pseudocode for Training and Deployment 
+
+This appendix provides complete pseudocode for the Two-Phase Progressive Training procedure (Algorithm 1) and the Real-Time Deployment Pipeline (Algorithm 2) of Sim2Real-AD. Both algorithms compose directly on top of the DriveVLM-RL training backbone (Huang et al., 2026), whose asynchronous reward-annotation infrastructure is reused in both phases without modification. 
+
+Algorithm 1 Two-Phase Progressive Training (TPT) 
+
+Input: DriveVLM-RL reward oracle R(·) (static + dynamic pathways, hierarchical synthesis (Huang et al., 2026)), GOB pipeline G (SegFormer-B0 + IPM, calibrated with K, h, α, β ), PAM limits κmax , v max , Phase 1 steps T1 =1 × 10 6, Phase 2 steps T2 = 5 × 10 5, SAC hyperparameters (entropy coefficient λ, target smoothing τ , batch size 
+
+B, replay buffer D, reward-worker interval ∆, warmup threshold Nwarmup ) 
+
+> 1:
+
+// —- Phase 1: Action-Space Adaptation —- 
+
+> 2:
+
+Initialize policy πϕ, Q-functions Qθ , target θ− ← θ, Nready ← 0 
+
+> 3:
+
+for t = 1 , 2, . . . , T 1 do  
+
+> 4:
+
+// Interaction thread  
+
+> 5:
+
+Observe ot = (ˆ osim  
+
+> t
+
+, o cam  
+
+> t
+
+, s t, w t) from CARLA ▷ GT-BEV ˆosim  
+
+> t
+
+, front-view, ego-state, waypoints  
+
+> 6:
+
+(ˆ a1,t , ˆa2,t ) ∼ πϕ(· | ot) 
+
+> 7:
+
+Decode PAM: κt ← ˆa1,t κmax , vdt ← ˆa2,t +1 2 vmax  
+
+> 8:
+
+Execute (κt, v dt ) in CARLA via bicycle-model steering and simulated PID speed tracking; observe ot+1  
+
+> 9:
+
+Store (ot, ˆat, o t+1 , r t ← NaN , ready ← 0) in D 
+
+> 10:
+
+if t mod ∆ = 0 then ▷ Reward worker thread  
+
+> 11:
+
+Sample mini-batch from D where ready = 0  
+
+> 12:
+
+Annotate each transition with Rfinal ← R (oi, o i+1 ); set ready ← 1, Nready += 1  
+
+> 13:
+
+end if  
+
+> 14:
+
+if Nready ≥ Nwarmup then ▷ Learner thread  
+
+> 15:
+
+Sample mini-batch {(oi, ˆai, r i, o i+1 )} from D with ready = 1  
+
+> 16:
+
+Update Qθ : minimize Bellman residual loss JQ(θ) 
+
+> 17:
+
+Update πϕ: maximize RL objective Eq. (1) with SAC  
+
+> 18:
+
+Soft-update targets: θ− ← (1 − τ ) θ− + τ θ  
+
+> 19:
+
+end if  
+
+> 20:
+
+end for  
+
+> 21:
+
+θ1 ← ϕ ▷ Save Phase 1 checkpoint  
+
+> 22:
+
+// —- Phase 2: Observation-Space Adaptation —- 
+
+> 23:
+
+ϕ ← θ1, θ− ← θ, Nready ← 0 ▷ Warm-start from Phase 1  
+
+> 24:
+
+for t = 1 , 2, . . . , T 2 do  
+
+> 25:
+
+// Interaction thread  
+
+> 26:
+
+Capture rendered front-view image It from CARLA camera  
+
+> 27:
+
+Apply GOB: St ← fseg (It), ˜St ← fipm (St; K, h, α, β ), ˆosim  
+
+> t
+
+← Encode( ˜St) 
+
+> 28:
+
+ot ← (ˆ osim  
+
+> t
+
+, o cam  
+
+> t
+
+, s t, w t) ▷ GOB-BEV ˆosim  
+
+> t
+
+replaces GT-BEV; all else unchanged  
+
+> 29:
+
+Decode PAM, execute, store as in Phase 1  
+
+> 30:
+
+if t mod ∆ = 0 then  
+
+> 31:
+
+Annotate batch using R(·); set ready ← 1 
+
+> 32:
+
+end if  
+
+> 33:
+
+if Nready ≥ Nwarmup then  
+
+> 34:
+
+Update Qθ , πϕ via SAC; soft-update θ− 
+
+> 35:
+
+end if  
+
+> 36:
+
+end for  
+
+> 37:
+
+return trained policy πθ2 ← πϕ
+
+30 Algorithm 2 Sim2Real-AD Real-Time Deployment Pipeline (RDP) 
+
+Input: Trained policy πθ2 , GOB pipeline G with calibrated (K, h, α, β ), PAM parameters Θ =
+
+{L, δ max , K p, K i, K d}, PAM limits κmax , v max , pre-recorded GPS route Wroute , safety bounds 
+
+(vlimit , d limit , ∆δmax , r safe ), anti-windup clip emax , control period ∆t = 1 /20 s 
+
+> 1:
+
+Initialize: eint ← 0, eprev ← 0, δprev ← 0 
+
+> 2:
+
+while not stop-signal received do  
+
+> 3:
+
+// Stage 1: Perception (≈14 ms)  
+
+> 4:
+
+It ← Camera .capture()  
+
+> 5:
+
+St ← fseg (It) 
+
+> 6:
+
+ˆosim  
+
+> t
+
+← Encode( fipm (St; K, h, α, β ))  
+
+> 7:
+
+// Stage 2: Route and State (<1 ms)  
+
+> 8:
+
+wt ← MatchRoute(GPS t, Wroute ) ▷ Nearest-point match → vehicle-frame waypoints  
+
+> 9:
+
+(vt, δ cur  
+
+> t
+
+, τ t) ← CAN .read()  
+
+> 10:
+
+st ← (vt/v max , δ cur  
+
+> t
+
+/δ max , τ t/100) ▷ Normalized ego-state  
+
+> 11:
+
+// Stage 3: Policy Inference (≈2 ms)  
+
+> 12:
+
+(ˆ a1,t , ˆa2,t ) ← πθ2 (ˆ osim  
+
+> t
+
+, s t, w t) 
+
+> 13:
+
+// Stage 4: PAM (<1 ms)  
+
+> 14:
+
+κt ← ˆa1,t κmax , vdt ← ˆa2,t +1 2 vmax  
+
+> 15:
+
+δdes  
+
+> t
+
+← arctan( L κ t), uδt ← δdes  
+
+> t
+
+/δ max  
+
+> 16:
+
+et ← vdt − vt 
+
+> 17:
+
+eint ← clip( eint + et ∆t, −emax , e max ) 
+
+> 18:
+
+uvt ← Kp et + Ki eint + Kd (et − eprev )/∆t 
+
+> 19:
+
+eprev ← et 
+
+> 20:
+
+// Stage 5: Safety Layer  
+
+> 21:
+
+uvt ← min( uvt , v limit ) ▷ Speed cap  
+
+> 22:
+
+uδt ← clip( uδt , δ prev − ∆δmax , δ prev + ∆ δmax ) ▷ Steering-rate limit  
+
+> 23:
+
+if isNaN( uδt ) ∨ isNaN( uvt ) ∨ LaneDev(ˆ osim  
+
+> t
+
+) > dlimit ∨ ObstacleIn( rsafe ) ∨ EStop() 
+
+∨ OutsideGeofence() then  
+
+> 24:
+
+(uδt , u vt ) ← (0 , −1) ▷ Emergency brake: zero steer, full brake  
+
+> 25:
+
+end if  
+
+> 26:
+
+if DriverTakeover() then  
+
+> 27:
+
+break ▷ Safety driver override: release control  
+
+> 28:
+
+end if  
+
+> 29:
+
+// Stage 6: Actuation (<1 ms)  
+
+> 30:
+
+CAN .send( uδt , u vt ) 
+
+> 31:
+
+δprev ← uδt 
+
+> 32:
+
+sleep(∆ t − telapsed ) ▷ Maintain 20 Hz loop  
+
+> 33:
+
+end while Appendix B. Theoretical Analysis of Sim2Real-AD 
+
+This appendix provides formal statements and proofs for the theoretical claims in Section 4. We proceed in five steps: Assumptions (Appendix B.1), GOB perceptual bound (Proposition 1), PAM tracking bound (Proposition 2), TPT distribution-shift bound (Proposition 3), and the main zero-shot transfer guarantee (Theorem 1). All results are stated with respect to the POMDP formulation in Section 3, with reward rt = F(rtask  
+
+> t
+
+, r sem  
+
+> t
+
+, s t) as defined in Eq. (2). 
+
+Appendix B.1. Notation and Assumptions 
+
+Assumption 1 (Lipschitz Policy). The policy πsim  
+
+> θ
+
+is Lπ -Lipschitz with respect to its BEV input: for any two BEV tensors ˆo, ˆo′ ∈ ˆOsim ,
+
+πsim  
+
+> θ
+
+(ˆ o) − πsim  
+
+> θ
+
+(ˆ o′) 2 ≤ Lπ ˆo − ˆo′
+
+> 1
+
+. (B.1) 
+
+Remark 1. Neural networks with bounded weights and smooth activation functions (ELU, Tanh) are Lipschitz. In practice, Lπ can be estimated via spectral normalization or empirical Jacobian bounds (Miyato et al., 2018). The SAC-trained policy uses gradient clipping and weight decay, which empirically constrain the Lipschitz constant. 
+
+Assumption 2 (Lipschitz Reward). The reward rt = F(rtask  
+
+> t
+
+, r sem  
+
+> t
+
+, s t) from Eq. (2) is Lr -Lipschitz with respect to vehicle state and satisfies |rt| ≤ Rmax for all t.
+
+Remark 2. The CLIP-based (Radford et al., 2021) semantic term rsem  
+
+> t
+
+is 1-Lipschitz in the visual embedding since cosine similarity is 1-Lipschitz on the unit sphere. The task reward term rtask  
+
+> t
+
+comprises differentiable, bounded driving signals (speed, lane deviation, collision indicator) and is Lipschitz by construction. The composite reward Eq. (2) is therefore Lipschitz with bounded constant Lr .
+
+31 Assumption 3 (Bounded Segmentation Error). The SegFormer-B0 model produces segmentation maps such that the expected L1 distance between sim and real BEV tensors satisfies: 
+
+E ˆosim  
+
+> t
+
+− ˆoreal  
+
+> t1
+
+ ≤ ϵseg , (B.2) 
+
+where the expectation is over the joint randomness in lighting, texture, sensor noise, and scene sampling. 
+
+Remark 3. SegFormer-B0 achieves 37.4 mIoU on ADE20K under distribution shift (Xie et al., 2021). In our setting, paired rollouts can be collected in CARLA (Dosovitskiy et al., 2017) by rendering the same scenario simultaneously from a privileged semantic view and a camera view, enabling direct empirical measurement of ϵseg .
+
+Assumption 4 (Bounded Path Deviation). The executed path deviates from the intended path by at most ϵpid > 0 in curvature at each timestep: 
+
+κexecuted  
+
+> t
+
+− κt ≤ ϵpid , (B.3) 
+
+where κexecuted  
+
+> t
+
+is the curvature realized by the physical vehicle and κt is the curvature commanded by PAM. This bound encompasses both direct curvature tracking error ( ϵκ) and the effective curvature deviation induced by speed tracking error, and can be measured directly during the calibration procedure of Section 4.3. 
+
+Remark 4. The path deviation bound ϵpid is tunable through PID gain selection and is not a fixed system constant. Tighter gains reduce ϵpid at the cost of increased control effort and potential actuation saturation; the calibration protocol in Section 4.3 identifies gains that keep ϵpid small while maintaining stable closed-loop behavior on the Ford E-Transit. Appendix B.2. GOB Perceptual Bound 
+
+Proposition 1 (GOB Observation Error Bound). Under Assumptions 1 and 3, the expected L2 deviation in policy output caused by the perceptual gap satisfies: 
+
+E πsim  
+
+> θ
+
+(ˆ osim  
+
+> t
+
+) − πsim  
+
+> θ
+
+(ˆ oreal  
+
+> t
+
+) 2
+
+ ≤ Lπ · ϵseg . (B.4) 
+
+Proof 1. Applying the Lipschitz condition (Assumption 1) and then the expectation bound (Assumption 3): 
+
+E πsim  
+
+> θ
+
+(ˆ osim  
+
+> t
+
+) − πsim  
+
+> θ
+
+(ˆ oreal  
+
+> t
+
+) 2
+
+ ≤ Lπ · E ˆosim  
+
+> t
+
+− ˆoreal  
+
+> t1
+
+ ≤ Lπ · ϵseg . (B.5) 
+
+Remark 5. Proposition 1 shows that the GOB contribution to sim-to-real performance degradation scales linearly with ϵseg . Replacing SegFormer-B0 with a stronger segmentation model directly reduces ϵseg and tightens the bound without requiring any policy retraining. Appendix B.3. PAM Tracking Error Bound 
+
+Proposition 2 (PAM Lateral Position Tracking Bound). Under Assumption 4 and a kinematic bicycle model with wheelbase L, the lateral position error accumulated over a control horizon of T steps satisfies: 
+
+yreal  
+
+> T
+
+− yintended  
+
+> T
+
+≤ v2max T 2
+
+2 ϵpid , (B.6) 
+
+where vmax is the maximum vehicle speed. 
+
+Proof 2. Under the bicycle model, the lateral dynamics satisfy ˙y ≈ vψ for small heading angle ψ, and the heading rate satisfies ˙ψ = vκ . A curvature tracking error ∆κt = |κexecuted  
+
+> t
+
+− κt| ≤ ϵpid induces a heading angle error: 
+
+|∆ψ(t)| ≤ 
+
+Z t
+
+> 0
+
+v(τ ) |∆κ(τ )| dτ ≤ vmax ϵpid t. (B.7) 
+
+Integrating the resulting lateral position error: 
+
+yreal  
+
+> T
+
+− yintended  
+
+> T
+
+≤
+
+Z T
+
+> 0
+
+v(t) |∆ψ(t)| dt ≤ vmax 
+
+Z T
+
+> 0
+
+vmax ϵpid t dt = v2max T 2
+
+2 ϵpid . (B.8) 
+
+Remark 6. The lateral error bound grows quadratically with the horizon T and quadratically with vmax . This mo-tivates both the 20 Hz closed-loop control frequency (shorter ∆t reduces the effective horizon over which errors accumulate) and the conservative 15 km/h speed cap during initial testing (at vmax ≈ 4.2 m/s the quadratic term is substantially smaller than at highway speeds). 
+
+32 Appendix B.4. TPT Distribution Shift Bound 
+
+Proposition 3 (TPT Performance Bound under Distribution Shift). Let J(π, O) denote the expected discounted return Eq. (1) of policy π under observation distribution O. Under Assumption 2, for any policy π and any two observation distributions O2 and Oreal :
+
+J π, Oreal  ≥ J(π, O2) − 2 Rmax dTV 
+
+ O2, Oreal 
+
+(1 − γ)2 . (B.9) 
+
+Proof 3. We use a Bellman-recursion sensitivity argument in two steps. 
+
+Step 1: Per-state value difference. For any state s, define the value function V π, O (s) = Eπ [P 
+
+> t≥0
+
+γtrt | s0 = s, O].Since |rt| ≤ Rmax , the Bellman operator is a γ-contraction and |V π, O (s)| ≤ Rmax /(1 − γ).By the standard total variation inequality, for any bounded measurable function f with ∥f ∥∞ ≤ M and distribu-tions P , Q, |EP [f ] − EQ[f ]| ≤ 2M · dTV (P, Q ) (Levin and Peres, 2017), the single-step reward difference at state s
+
+satisfies: 
+
+r(s, π, Oreal ) − r(s, π, O2) ≤ 2 Rmax · dTV 
+
+ Oreal (s), O2(s) . (B.10) 
+
+Applying this bound at each step of the Bellman recursion and summing the geometric series: 
+
+V π, Oreal 
+
+(s) − V π, O2 (s) ≤ 2 Rmax 
+
+1 − γ sup 
+
+> s′
+
+dTV 
+
+ Oreal (s′), O2(s′) . (B.11) 
+
+Step 2: Return difference via state visitation. The performance difference J(π, Oreal ) − J(π, O2) can be written in terms of the discounted state visitation measure dπ, O of each environment: 
+
+J(π, Oreal ) − J(π, O2) = (1 − γ) Es∼dπ, Oreal 
+
+h
+
+V π, Oreal 
+
+(s) − V π, O2 (s)
+
+i
+
++ ∆ vis , (B.12) 
+
+where ∆vis accounts for the difference in state visitation between the two environments. Since |V π, O (s)| ≤ Rmax /(1 −
+
+γ), the visitation mismatch contributes at most 2Rmax  
+
+> 1−γ
+
+dTV (dπ, Oreal 
+
+, d π, O2 ). The total variation distance between state visitation measures is bounded by the per-step observation TV via the simulation lemma (Kakade and Lang-ford, 2002): dTV (dπ, Oreal 
+
+, d π, O2 ) ≤ 11−γ sup s′ dTV (Oreal (s′), O2(s′)) . Combining with Eq. (B.11) and applying 
+
+sup s′ dTV (Oreal (s′), O2(s′)) ≤ dTV (Oreal , O2) (TV is non-increasing under marginalization): 
+
+J(π, Oreal ) − J(π, O2) ≥ − 2 Rmax 
+
+(1 − γ)2 dTV 
+
+ O2, Oreal  . (B.13) 
+
+Rearranging yields Eq. (B.9) .
+
+Remark 7. The (1 − γ)−2 factor has a clear two-factor interpretation: one (1 − γ)−1 from summing the per-step reward difference over the discounted horizon (Step 1), and a second (1 − γ)−1 from the mismatch in state visitation measures between the two environments (Step 2). Note that Lπ does not appear here: the Lipschitz policy constant connects BEV distance to action deviation (Proposition 1), but is not needed in the Bellman-recursion sensitivity argument. This also motivates Phase 2 of TPT: reducing dTV (O2, Oreal ) by training on IPM-generated observations directly tightens the bound. Appendix B.5. Main Zero-Shot Transfer Guarantee 
+
+Theorem 1 (Zero-Shot Transfer Guarantee). Under Assumptions 1–4, the expected cumulative reward of the Sim2Real-AD composed policy πreal = M ◦ πsim  
+
+> θ
+
+◦ G (abbreviated; see Eq. (4) for the full definition including st and wt) on the real vehicle satisfies: 
+
+E
+
+" TX
+
+> t=0
+
+γtrreal 
+
+> t
+
+#
+
+≥ E
+
+" TX
+
+> t=0
+
+γtrsim 
+
+> t
+
+#
+
+− Lr Lπ ϵseg 
+
+1 − γ
+
+| {z }
+
+> GOB term
+
+− Lr v2max T 2 ϵpid 
+
+2(1 − γ)
+
+| {z }
+
+> PAM term
+
+− 2 Rmax dTV 
+
+ O2, Oreal 
+
+(1 − γ)2
+
+| {z }
+
+> TPT term
+
+, (B.14) 
+
+where rsim  
+
+> t
+
+= F(rtask  
+
+> t
+
+, r sem  
+
+> t
+
+, s t) is the VLM-guided reward Eq. (2) and Lr is its Lipschitz constant. 
+
+Remark 8 (Correspondence with Simplified Theorem). The constants C1, C2, C3 in Theorem 1 (Section 4.6) cor-respond to the explicit expressions in Eq. (B.14) as follows: 
+
+C1 = Lr Lπ
+
+1 − γ , C2 = Lr v2max T 2
+
+2(1 − γ) , C3 = 2 Rmax . (B.15) 
+
+Note that C3 does not depend on Lπ : the TPT bound (Theorem 3) is controlled by reward magnitude Rmax alone, not by how sensitively the policy maps BEV inputs to actions. All three constants decrease as the reward becomes less sensitive to state perturbations (smaller Lr ), the policy becomes more Lipschitz-regular (smaller Lπ , relevant for 
+
+C1), or the planning horizon shortens (smaller T , relevant for C2). 
+
+33 Proof 4. We introduce three intermediate reward sequences to make the triangle inequality argument explicit. Define: 
+
+• r(0)  
+
+> t
+
+≜ rsim  
+
+> t
+
+: reward under ideal simulation (ground-truth BEV ˆosim  
+
+> t
+
+, perfect curvature tracking, observation distribution O1); 
+
+• r(1)  
+
+> t
+
+: reward after substituting GOB-generated BEV ˆoreal  
+
+> t
+
+for ground-truth BEV ˆosim  
+
+> t
+
+, while keeping perfect curvature tracking and operating under O1;
+
+• r(2)  
+
+> t
+
+: reward after further introducing PAM curvature tracking error |∆κt| ≤ ϵpid , while operating under the Phase 2 observation distribution O2;
+
+• rreal  
+
+> t
+
+: actual deployment reward (GOB error + PAM error + residual distribution gap between O2 and Oreal ). By the triangle inequality: 
+
+rsim  
+
+> t
+
+− rreal  
+
+> t
+
+=
+
+
+
+r(0)  
+
+> t
+
+− r(1) 
+
+> t
+
+| {z }
+
+> GOB error
+
++
+
+
+
+r(1)  
+
+> t
+
+− r(2) 
+
+> t
+
+| {z }
+
+> PAM error
+
++
+
+
+
+r(2)  
+
+> t
+
+− rreal 
+
+> t
+
+| {z }
+
+> TPT residual
+
+. (B.16) 
+
+Step 1 (GOB term). Substituting ˆoreal  
+
+> t
+
+for ˆosim  
+
+> t
+
+changes the policy output by at most ∥πsim  
+
+> θ
+
+(ˆ osim  
+
+> t
+
+) − πsim  
+
+> θ
+
+(ˆ oreal  
+
+> t
+
+)∥2 ≤
+
+Lπ ϵseg (Proposition 1). By the Lr -Lipschitz reward (Assumption 2), the per-step reward difference satisfies |r(0)  
+
+> t
+
+−
+
+r(1)  
+
+> t
+
+| ≤ Lr Lπ ϵseg . Summing over the discounted horizon using PTt=0 γt ≤ 1/(1 − γ):
+
+> T
+
+X
+
+> t=0
+
+γt E
+
+h
+
+r(0)  
+
+> t
+
+− r(1) 
+
+> t
+
+i
+
+≤ Lr Lπ ϵseg 
+
+1 − γ . (B.17) 
+
+Step 2 (PAM term). Imperfect curvature tracking ( |∆κt| ≤ ϵpid ) causes a lateral position error bounded by v2max T 2 
+
+> 2
+
+ϵpid 
+
+(Proposition 2). By the Lr -Lipschitz reward: 
+
+> T
+
+X
+
+> t=0
+
+γt E
+
+h
+
+r(1)  
+
+> t
+
+− r(2) 
+
+> t
+
+i
+
+≤ Lr v2max T 2 ϵpid 
+
+2(1 − γ) . (B.18) 
+
+Step 3 (TPT residual). The remaining gap between operating under O2 and Oreal is bounded by Proposition 3: 
+
+> T
+
+X
+
+> t=0
+
+γt E
+
+h
+
+r(2)  
+
+> t
+
+− rreal 
+
+> t
+
+i
+
+≤ 2 Rmax dTV 
+
+ O2, Oreal 
+
+(1 − γ)2 . (B.19) 
+
+Summing Steps 1–3 and rearranging yields Eq. (B.14) .
+
+Corollary 1 (Convergence under Ideal Conditions). If ϵseg → 0, ϵpid → 0, and dTV (O2, Oreal ) → 0, then: 
+
+E
+
+" TX
+
+> t=0
+
+γtrreal 
+
+> t
+
+#
+
+−→ E
+
+" TX
+
+> t=0
+
+γtrsim 
+
+> t
+
+#
+
+. (B.20) 
+
+Proof 5. Immediate from Theorem 1 by taking all three error terms to zero. 
+
+Remark 9. Corollary 1 establishes that Sim2Real-AD is asymptotically lossless : as each module approaches its theoretical ideal, real-vehicle performance converges to simulation performance under the VLM-guided RL objective Eq. (1) . The three error terms in Theorem 1 are independently controllable: GOB via improved segmentation ( ϵseg ↓), PAM via tighter path tracking ( ϵpid ↓), and TPT via longer Phase 2 training ( dTV (O2, Oreal ) ↓), defining three orthogonal axes along which the framework can be improved. 
+
+References  
+
+> Abdel-Aty, M., Ding, S., 2024. A matched case-control analysis of autonomous vs human-driven vehicle accidents. Nature communications 15, 4931. Alqahtani, T., 2025. Recent trends in the public acceptance of autonomous vehicles: A review. Vehicles 7, 45. Astrom, K.J., H¨ agglund, T., 2006. Advanced pid control. IEEE Control Systems 26, 98–101. Bengio, Y., Louradour, J., Collobert, R., Weston, J., 2009. Curriculum learning, in: Proceedings of the 26th annual international conference on machine learning, pp. 41–48. Bertozzi, M., Broggi, A., 1998. Gold: A parallel real-time stereo vision system for generic obstacle and lane detection. IEEE transactions on image processing 7, 62–81. CARLA Simulator Team, 2020. Carla autonomous driving leaderboard. URL: https://leaderboard.carla.org/ . accessed: 2025.
+
+34 Chitta, K., Prakash, A., Jaeger, B., Yu, Z., Renz, K., Geiger, A., 2022. Transfuser: Imitation with transformer-based sensor fusion for autonomous driving. IEEE transactions on pattern analysis and machine intelligence 45, 12878–12895. Codevilla, F., Santana, E., L´ opez, A.M., Gaidon, A., 2019. Exploring the limitations of behavior cloning for autonomous driving, in: Proceedings of the IEEE/CVF international conference on computer vision, pp. 9329–9338. Daza, I.G., Izquierdo, R., Mart´ inez, L.M., Benderius, O., Llorca, D.F., 2023. Sim-to-real transfer and reality gap modeling in model predictive control for autonomous driving. Applied Intelligence 53, 12719–12735. Delavari, E., Khanzada, F.K., Kwon, J., 2025. A comprehensive review of reinforcement learning for autonomous driving in the carla simulator. arXiv preprint arXiv:2509.08221 . Dosovitskiy, A., Ros, G., Codevilla, F., Lopez, A., Koltun, V., 2017. Carla: An open urban driving simulator, in: Conference on robot learning, PMLR. pp. 1–16. Ganin, Y., Ustinova, E., Ajakan, H., Germain, P., Larochelle, H., Laviolette, F., March, M., Lempitsky, V., 2016. Domain-adversarial training of neural networks. Journal of machine learning research 17, 1–35. Gao, S., Wang, Q., Sun, Y., 2025. Seq-bev: Semantic bird-eye-view map generation in full view using sequential images for autonomous driving. IEEE Transactions on Intelligent Transportation Systems . Haarnoja, T., Zhou, A., Abbeel, P., Levine, S., 2018. Soft actor-critic: Off-policy maximum entropy deep reinforcement learning with a stochastic actor, in: International conference on machine learning, Pmlr. pp. 1861–1870. Hu, Y., Yang, J., Chen, L., Li, K., Sima, C., Zhu, X., Chai, S., Du, S., Lin, T., Wang, W., et al., 2023. Planning-oriented autonomous driving, in: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition, pp. 17853–17862. Hu, Z., Xu, M., Cheng, Q., 2025. Multimodal large-language model empowering next-generation autonomous driving systems. Journal of Intelligent and Connected Vehicles 8, 9210059–1. Huang, Z., Sheng, Z., Chen, S., 2025a. Pe-rlhf: Reinforcement learning with human feedback and physics knowledge for safe and trustworthy autonomous driving. Transportation Research Part C: Emerging Technologies 179, 105262. Huang, Z., Sheng, Z., Ma, C., Chen, S., 2024. Human as ai mentor: Enhanced human-in-the-loop reinforcement learning for safe and efficient autonomous driving. Communications in Transportation Research 4, 100127. Huang, Z., Sheng, Z., Qu, Y., You, J., Chen, S., 2025b. Vlm-rl: A unified vision language models and reinforcement learning framework for safe autonomous driving. Transportation Research Part C: Emerging Technologies 180, 105321. Huang, Z., Sheng, Z., Wan, Z., Qu, Y., Luo, Y., Wang, B., Li, P., Chen, Y.J., Chen, J., Long, K., et al., 2025c. Sky-drive: a distributed multiagent simulation platform for human-ai collaborative and socially aware future transportation. Journal of Intelligent and Connected Vehicles 8, 9210070–1. Huang, Z., Sheng, Z., Wan, Z., Qu, Y., You, J., Jiang, S., Chen, S., 2026. Drivevlm-rl: Neuroscience-inspired reinforcement learning with vision-language models for safe and deployable autonomous driving. arXiv preprint arXiv:2603.18315 . Ilharco, G., Wortsman, M., Carlini, N., Taori, R., Dave, A., Shankar, V., Namkoong, H., Miller, J., Hajishirzi, H., Farhadi, A., et al., 2021. Openclip. Zenodo . Jia, X., Yang, Z., Li, Q., Zhang, Z., Yan, J., 2024. Bench2drive: Towards multi-ability benchmarking of closed-loop end-to-end autonomous driving. Advances in Neural Information Processing Systems 37, 819–844. Jiang, B., Chen, S., Zhang, Q., Liu, W., Wang, X., 2025a. Alphadrive: Unleashing the power of vlms in autonomous driving via reinforcement learning and reasoning. arXiv preprint arXiv:2503.07608 . Jiang, S., Huang, Z., Qian, K., Luo, Z., Zhu, T., Zhong, Y., Tang, Y., Kong, M., Wang, Y., Jiao, S., et al., 2025b. A survey on vision-language-action models for autonomous driving, in: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 4524–4536. Jun, W., Lee, S., 2025. A comparative study and optimization of camera-based bev segmentation for real-time autonomous driving. Sensors 25, 2300. Kakade, S., Langford, J., 2002. Approximately optimal approximate reinforcement learning, in: Proceedings of the nineteenth international conference on machine learning, pp. 267–274. Kiran, B.R., Sobh, I., Talpaert, V., Mannion, P., Al Sallab, A.A., Yogamani, S., P´ erez, P., 2021. Deep reinforcement learning for autonomous driving: A survey. IEEE transactions on intelligent transportation systems 23, 4909–4926. Koopman, P., Wagner, M., 2017. Autonomous vehicle safety: An interdisciplinary challenge. IEEE Intelligent Transportation Systems Magazine 9, 90–96. Kumar, A., Fu, Z., Pathak, D., Malik, J., 2021. Rma: Rapid motor adaptation for legged robots. arXiv preprint arXiv:2107.04034 . Levin, D.A., Peres, Y., 2017. Markov chains and mixing times. volume 107. American Mathematical Soc. Li, D., Okhrin, O., 2024. A platform-agnostic deep reinforcement learning framework for effective sim2real transfer towards autonomous driving. Communications Engineering 3, 147. Li, Y., Tian, M., Zhu, D., Zhu, J., Lin, Z., Xiong, Z., Zhao, X., 2025. Drive-r1: Bridging reasoning and planning in vlms for autonomous driving with reinforcement learning. arXiv preprint arXiv:2506.18234 . Li, Z., Wang, W., Li, H., Xie, E., Sima, C., Lu, T., Yu, Q., Dai, J., 2024. Bevformer: learning bird’s-eye-view representation from lidar-camera via spatiotemporal transformers. IEEE Transactions on Pattern Analysis and Machine Intelligence 47, 2020–2036. Lin, H., Zhang, Y., Ding, W., Wu, J., Zhao, D., 2025. Model-based policy adaptation for closed-loop end-to-end autonomous driving, in: Workshop on Foundation Models Meet Embodied Agents at CVPR 2025. Mei, J., Ma, Y., Yang, X., Wen, L., Cai, X., Li, X., Fu, D., Zhang, B., Cai, P., Dou, M., et al., 2024. Continuously learning, adapting, and improving: a dual-process approach to autonomous driving, in: Proceedings of the 38th International Conference on Neural Information Processing Systems, pp. 123261–123290. Miyato, T., Kataoka, T., Koyama, M., Yoshida, Y., 2018. Spectral normalization for generative adversarial networks. arXiv preprint arXiv:1802.05957 . Philion, J., Fidler, S., 2020. Lift, splat, shoot: Encoding images from arbitrary camera rigs by implicitly unprojecting to 3d, in: European conference on computer vision, Springer. pp. 194–210. Qian, K., Jiang, S., Zhong, Y., Luo, Z., Huang, Z., Zhu, T., Jiang, K., Yang, M., Fu, Z., Miao, J., et al., 2025. Agentthink: A unified framework for tool-augmented chain-of-thought reasoning in vision-language models for autonomous driving. arXiv preprint arXiv:2505.15298 1, 3. Qu, Y., Sheng, Z., Huang, Z., Chen, J., Luo, Y., Wang, T., Feng, Y., Labi, S., Chen, S., 2026. Found-rl: foundation model-enhanced reinforcement learning for autonomous driving. arXiv preprint arXiv:2602.10458 . Qu, Y., Xu, Z., Huang, Z., Sheng, Z., Chen, S., Chen, T., 2025. Metassc: Enhancing 3d semantic scene completion for autonomous driving through meta-learning and long-sequence modeling. Communications in Transportation Research 5, 100184. Radford, A., Kim, J.W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al., 2021. Learning transferable visual models from natural language supervision, in: International conference on machine learning, PmLR. pp. 8748–8763. Rajamani, R., 2006. Vehicle dynamics and control. Springer. Renz, K., Chen, L., Arani, E., Sinavski, O., 2025. Simlingo: Vision-only closed-loop autonomous driving with language-action alignment, in: Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 11993–12003. Salvato, E., Fenu, G., Medvet, E., Pellegrino, F.A., 2021. Crossing the reality gap: A survey on sim-to-real transferability of robot controllers in reinforcement learning. IEEE Access 9, 153171–153187. 
+
+35 Shao, H., Wang, L., Chen, R., Li, H., Liu, Y., 2023. Safety-enhanced autonomous driving using interpretable sensor fusion transformer, in: Conference on Robot Learning, PMLR. pp. 726–737. Sheng, Z., Huang, Z., Chen, S., 2024a. Kinematics-aware multigraph attention network with residual learning for heterogeneous trajectory predic-tion. Journal of Intelligent and Connected Vehicles 7, 138–150. Sheng, Z., Huang, Z., Chen, S., 2024b. Traffic expertise meets residual rl: Knowledge-informed model-based residual reinforcement learning for cav trajectory control. Communications in Transportation Research 4, 100142. Sutton, R.S., Barto, A.G., et al., 1998. Reinforcement learning: An introduction. volume 1. MIT press Cambridge. Tahmina, T., Fuchs, M., Shi, C., 2025. Use of virtual reality for automated driving simulation. Journal of Intelligent and Connected Vehicles 8, 1–8. Tang, W., You, J., Liu, J., Wang, Z., Gan, R., Huang, Z., Wei, F., Ran, B., 2026. Hermes: A holistic end-to-end risk-aware multimodal embodied system with vision-language models for long-tail autonomous driving. arXiv preprint arXiv:2602.00993 . Tobin, J., Fong, R., Ray, A., Schneider, J., Zaremba, W., Abbeel, P., 2017. Domain randomization for transferring deep neural networks from simulation to the real world, in: 2017 IEEE/RSJ international conference on intelligent robots and systems (IROS), IEEE. pp. 23–30. T´ oth, S.H., Viharos, Z.J., B´ ardos, ´ A., Szalay, Z., 2024. Sim-to-real application of reinforcement learning agents for autonomous, real vehicle drifting. Vehicles 6, 781–798. Voogd, K.L., Allamaa, J.P., Alonso-Mora, J., Son, T.D., 2023. Reinforcement learning from simulation to real world autonomous driving using digital twin. IFAC-PapersOnLine 56, 1510–1515. Wang, Y., Luo, W., Bai, J., Cao, Y., Che, T., Chen, K., Chen, Y., Diamond, J., Ding, Y., Ding, W., et al., 2025. Alpamayo-r1: Bridging reasoning and action prediction for generalizable autonomous driving in the long tail. arXiv preprint arXiv:2511.00088 . Wasif, D., Moore, T.J., Reddy, C.K., Cho, J.H., 2025. Drivemind: A dual-vlm based reinforcement learning framework for autonomous driving. arXiv preprint arXiv:2506.00819 . Xie, E., Wang, W., Yu, Z., Anandkumar, A., Alvarez, J.M., Luo, P., 2021. Segformer: Simple and efficient design for semantic segmentation with transformers. Advances in neural information processing systems 34, 12077–12090. Xu, R., Lin, H., Jeon, W., Feng, H., Zou, Y., Sun, L., Gorman, J., Tolstaya, E., Tang, S., White, B., et al., 2025. Wod-e2e: Waymo open dataset for end-to-end driving in challenging long-tail scenarios. arXiv preprint arXiv:2510.26125 . Yang, J., Chitta, K., Gao, S., Chen, L., Shao, Y., Jia, X., Li, H., Geiger, A., Yue, X., Chen, L., 2025. Resim: Reliable world simulation for autonomous driving. arXiv preprint arXiv:2506.09981 . You, J., Jia, X., Zhang, Z., Zhu, Y., Yan, J., 2024. Bench2drive-r: Turning real world data into reactive closed-loop autonomous driving benchmark by generative model. arXiv preprint arXiv:2412.09647 . Zhang, C., Wei, B., Liu, Y., Labi, S., 2026. World model-based long-tail and scenario-specific generation for autonomous driving. Journal of Intelligent and Connected Vehicles . Zhang, J., Xu, C., Li, B., 2024. Chatscene: Knowledge-enabled safety-critical scenario generation for autonomous vehicles, in: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 15459–15469. Zhang, Z., 2000. A flexible new technique for camera calibration. IEEE Transactions on pattern analysis and machine intelligence 22, 1330–1334. Zhao, W., Queralta, J.P., Westerlund, T., 2020. Sim-to-real transfer in deep reinforcement learning for robotics: a survey, in: 2020 IEEE symposium series on computational intelligence (SSCI), IEEE. pp. 737–744. Zhou, Z., Cai, T., Zhao, S.Z., Zhang, Y., Huang, Z., Zhou, B., Ma, J., 2025. Autovla: A vision-language-action model for end-to-end autonomous driving with adaptive reasoning and reinforcement fine-tuning. arXiv preprint arXiv:2506.13757 . Zhu, J.Y., Park, T., Isola, P., Efros, A.A., 2017. Unpaired image-to-image translation using cycle-consistent adversarial networks, in: Proceedings of the IEEE international conference on computer vision, pp. 2223–2232. 
+
+36

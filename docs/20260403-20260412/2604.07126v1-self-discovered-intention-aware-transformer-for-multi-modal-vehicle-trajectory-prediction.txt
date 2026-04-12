@@ -1,0 +1,342 @@
+Title: Self-Discovered Intention-aware Transformer for Multi-modal Vehicle Trajectory Prediction
+
+URL Source: https://arxiv.org/pdf/2604.07126v1
+
+Published Time: Thu, 09 Apr 2026 01:06:24 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+> JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015 1
+
+# Self-Discovered Intention-aware Transformer for Multi-modal Vehicle Trajectory Prediction 
+
+Diyi Liu, Zihan Niu, Tu Xu, and Lishan Sun 
+
+Abstract —Predicting vehicle trajectories plays an important role in autonomous driving and ITS applications. Although multiple deep learning algorithms are devised to predict vehicle trajectories, their reliant on specific graph structure (e.g., Graph Neural Network) or explicit intention labeling limit their flexibili-ties. In this study, we propose a pure Transformer-based network with multiple modals considering their neighboring vehicles. Two separate tracks are employed. One track focuses on predicting the trajectories while the other focuses on predicting the likelihood of each intention considering neighboring vehicles. Study finds that the two track design can increase the performance by separating spatial module from the trajectory generating module. Also, we find the the model can learn an ordered group of trajectories by predicting residual offsets among K trajectories. 
+
+Index Terms —Vehicle Trajectory Prediction, Transformer Ar-chitecture, Multi-modal Trajectory Prediction. 
+
+I. I NTRODUCTION 
+
+# VEHICLE trajectory prediction is a cornerstone tech-nology for developing autonomous driving vehicles, Vehicle-to-Vehicle/Vehicle-to-Infrastructure applications, etc. However, the vehicle trajectory prediction task is also a chal-lenging task because there are multiple influential factors (e.g., driver’s intention, other vehicle’s movements, road geometries and contexts) influencing behaviors at the same time. During the last decade, the fast development of deep learning models provide a chance to predict trajectories by a data driven approach. Models like Recurrent Neural Networks (RNN), Long-short Term Memory (LSTM), Gated Recurrent Units (GRU) can interpret individual trajectories as a time series to predict future trajectories. To better consider the in-teractions between vehicles, multiple approaches are designed to model the interactions among vehicles. Social LSTM is one of the early successful work predicting vehicle/pedestrian tra-jectories. With the development of the Graph Neural Network (GNN), many studies are using GNN to further model the interactions among vehicles. Recently, models are shifting to the Transformer architecture to replace traditional RNN/LSTM for both the encoder and decoder processes for better modeling capabilities. Although developments have made, there are still several directions to improve. First, considering the complexity of decision-making process, multiple intentions, or multi-modal capabilities, should be available at the same time. Since different drivers can have different objectives and actions 
+
+D. Liu, Z. Niu, X. Tu was with the School of Metropolitan Trans-portation, Beijing Univeristy of Technology, Beijing, China e-mail: (see diyi.liu@bjut.edu.cn). Manuscript received xxxx xx, 2026; revised xxxx xx, 2026. 
+
+under the same scenario, the problem is better classified as a probabilistic problem rather than deterministic. Generative Ad-versarial Networks (GAN), Variational Autoencoders (VAE) are widely used for generating multiple predictions. Some other aspects of solving the prediction problem are also important. First, the interoperability of previous Transformer-based models are less discussed compared to the model architecture design. Second, it is hard to guide Transformer-based model to learn multi-modal trajectories without manual intention labels (e.g., ’turn left’). In this study, we designed a Transformer-based, multi-modal trajectory prediction model with the following contributions:  
+
+> •
+
+We propose a new attention Module considering edge relationships considering vehicle velocities.  
+
+> •
+
+We summarize the ”propose then select” philosophy. We discovered the multi-modal performance is better by two decoders to separately predict intentions and probabilities.  
+
+> •
+
+We discovered a multi-modality residual prediction trick to get self-regularized trajectories for highway traffic.  
+
+> •
+
+We provide more specific way of interpreting vehicle decisions by applying counterfactual analysis and time series analysis. II. R ELATED WORKS 
+
+A. Early Studies 
+
+Vehicle trajectory prediction has been a long discussed research topic. Traditionally, limited by the computation abil-ities, physical methods or mathematical fitting curves are applied for trajectory prediction. Methods like Kalman Filters (KF), Constant Venosity (CV), Constant Acceleration methods are treated as naive ground-truth models. However, these model cannot incorporate driver’s intention or interactions between vehicles, thus they are unsuitable for long horizon prediction. To consider vehicle intentions, models like Hidden Markov Models (HMM) and Bayesian Networks are applied to predict maneuvers (e.g., lane change, right turn). Very early attempts like Social Forces are suggested to predict trajectories considering multiple trajectories. 
+
+B. Information Encoding 
+
+During the last decade, the evolution of deep learning mod-els have provided an opportunity to model behaviors consid-ering maneuvers using a data oriented approach. To learn the history trajectories and dynamics, an encoder is used to encode the historical trajectories. Auto-regressive architecture like RNNs/LSTMs/GRUs are frequently used to encode informa-tion. Some studies applied Temporal Convolutional Network  
+
+> arXiv:2604.07126v1 [cs.RO] 8 Apr 2026 JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015 2
+
+(TCN) and Convolutional Neural Network (CNN) are achieve parallelization over recurrent model structure. However, most modern studies use the Transformer for encoders due to its benefits in capturing long range dependencies, handle variable length sequences via self-attention, parallelism, etc. Typical models include Wayformer, Scene Transformer, etc. 
+
+C. Vehicular Interaction 
+
+Besides modeling vehicle’s dynamics, the interactions be-tween different vehicles are also important. Social LSTM, as one of the semental method, applied pooling grids to share information between nearby travelers [1]. Graph Neural Network has become one of the dominant paradigm to grasp the spatial relationship. By modifying every traveler as a node each pairwise relationship as a link, the spatial relationships are modeled in a dynamic way. Specifically, architectures like Graph Convolutional Network (GCN), Graph Attention Network (GATs) are both frequently used. Some influential work includes GRIP [2], VectorNet [3], etc. However, the graph structure could be one of limitations as it may ignore distance vehicle interactions. Also, predefined graph structure may not capable of heterogeneous potential patterns in field. 
+
+D. Multi-modality Prediction 
+
+Travel trajectories, by nature, are a stochastic process over a range of future trajectories with different intentions. Thus, it is important to generate multiple trajectory given the same historical condition. Social-GAN is only of the early work using generating adversarial training to train a generator for realistic outputs [4]. The distribution of trajectories can also be interpreted as a Bayesian process where hyper-parameters representing different choices are used to generate specific trajectories. Variational Autoencoder (VAE) by drawing pa-rameter over a latent space of possible futures, can generate different trajectories (see Trajectron++) [5]. Recently, models like (Leapfrog Diffusion, MotionDiffuser) are modeling the trajectory generation as a diffusion process [6], [7]. Many works still focus on the Transformer paradigm to use different decoder head for different intentions. To the best knowledge of the authors, all Transformer-based model would require manual label to train different behavior (e.g., left lane change). 
+
+E. Model Interpretation 
+
+Besides predicting multi-modal trajectories considering in-teractions between vehicles, the interpretation of final trajecto-ries are also important. For Transformer-based model, visual-izing attention weights between vehicles are an important way to analyze the level of interactions between different vehicles. However, those analysis is basic without explicitly explaining their approach. Some studies now move to incorporate other causal inference mechanism to find causal relationships. III. M ETHODOLOGY 
+
+A. Problem Definition 
+
+Given time t, the motion state of a vehicle i is described as a tuple sti = ( pti, v ti , a ti, θ ti yti ), where pti, vti , ati and yti 
+
+> Fig. 1. An Overview of the proposed model framework
+
+respectively denote positions, velocity, acceleration, angle, and yaw. Thus, given historical time period {1, . . . , T hist }, the history record is represented as: 
+
+X = {s1: Thist  
+
+> i
+
+, i ∈ [1 , N ]} (1) For future time period over Thist . . . T hist + Tpred , the future trajectory is represented as: 
+
+Y = {pThist +1: Thist +Tpred  
+
+> i
+
+, i ∈ [1 , N ]} (2) In practice, only the future positions are of interest since velocities and accelerations are derivable from the positions. For multi-modal prediction, there are k ∈ { 1, . . . , K } possible different modal trajectories provided: 
+
+ˆYi,k = {pThist +1: Thist +Tpred  
+
+> i,k
+
+, k ∈ [1 , K ]} (3) where each ˆYi,k , the i th estimated trajectory, corresponds to a probability Pi,k to denote the likelihood of choosing the k th mode for the i th vehicle. The summation of all probabilities for each vehicle should equal to 1. 
+
+> K
+
+X
+
+> k=1
+
+Pi,k = 1 , ∀i ∈ { 1, . . . , N } (4) Among all K predicted trajectories, the trajectory Yi,k with the highest predicted likelihood Pi,k is used as final prediction. The objective is to minimize the difference between predicted trajectory and the actual trajectory. 
+
+min L( ˆYi,w , Yi), w = arg max  
+
+> k
+
+Pi,k (5) 
+
+B. Overall Structure 
+
+Figure 1 shows an overview of the proposed model struc-ture. First, historical trajectories are added with temporal embeddings (same as “Positional Embeddings in Transformer paper”). Then, inter-vehicle dynamics and trajectories are em-bedded using a temporal attention module. The temporal atten-tion outputs are fed into two parallel tracks. One track/decoder is to generate K trajectories correspond to K intentions, the other track/decoder is to generate probabilities for each inten-tion considering spatiotemporal interactions among vehicles. JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015 3
+
+Final outputs are gathered by collecting both trajectories and its probabilities from both decoders. The trajectory decoder focuses on proposing K possible trajectories, whereas the probability decoder evaluates the likelihood of each possible trajectories. Both decoders use a Multi-Layer Perceptron to generate final data, whereas the trajectories are regulated using an “inter-modal residual summation” mechanism to generate an ordered set of K trajectories. 
+
+C. Positional and Spatial Encoding 
+
+For trajectory encoder, temporal information is encoded standard positional encoding: 
+
+P E (t, 2i) = sin 
+
+ t
+
+10000 2i/d 
+
+
+
+P E (t, 2i+1) = cos 
+
+ t
+
+10000 2i/d 
+
+ (6) where t ∈ [1 , . . . , T hist + Tpred ] is anytime during the historical and future time frames. Spatial emcoding is applied by fusing the historical record: 
+
+SE (X) = MLP (X) (7) For the trajectory decoder, to distinguish between K trajec-tories, the encode becomes: 
+
+SE (X) = MLP (X) + eintent (8) where eintent is a learnable vector for the k th intention. In summary, the spatial and temporal encoding is computed as: 
+
+Xout = SE (X) + PE (X) (9) 
+
+D. Temporal Attention Module 
+
+Let X(l) 
+
+> n
+
+∈ RT ×d be the input feature of one vehicle indexed 
+
+n ∈ { 1, . . . , N }. X(l) 
+
+> n
+
+is mapped to h-head query Q(h) 
+
+> n
+
+, key 
+
+K(h) 
+
+> n
+
+and values V(h) 
+
+> n
+
+:
+
+Q(h) 
+
+> n
+
+= X(l) 
+
+> n
+
+W (h) 
+
+> q
+
+; K(h) 
+
+> n
+
+= X(l) 
+
+> n
+
+W (h) 
+
+> k
+
+; V(h) 
+
+> n
+
+= X(l) 
+
+> n
+
+W (h) 
+
+> v
+
+;
+
+(10) Given key, query and value vectors, a temporal attention mechanism is used to incorporate the dynamics of each vehicle: head h = softmax Q(h) 
+
+> n
+
+K(h)⊤
+
+> n
+
+√dk
+
+!
+
+Vn (11) Concatenating H heads, the multihead attention output becomes: MHA (X) = Concat (head 1, . . . , head H ) WO (12) Following the sandwich LayerNorm pattern, the whole attention module becomes: 
+
+Xln := Xln + MHA  LayerNorm (Xn)
+
+X(l+1)  
+
+> n
+
+= Xln + FFN  LayerNorm (Xln) (13) Both encoder and decoder are using the same Temporal Attention Module. However, the decoder module apply the module in parallel for K times to incorporate K different intentions. 
+
+E. Spatial Attention Module 
+
+Spatial attention module is similar to temporal attention module except the attention network communicate information among vehicles instead of different time frames. Let X(l)(t) ∈
+
+RN ×d be the input feature of all vehicles at time t. Then, 
+
+Qht ∈ RN ×d, Kht ∈ RN ×d, Vht ∈ RN ×d be the query, key, and value matrices obtained by projecting the agent features at a given time t ∈ [1 , . . . , T hist + Tpred ].head h = softmax Q(h) 
+
+> t
+
+K(h)⊤
+
+> t
+
+√dk
+
++ B(h)
+
+!
+
+V (14) where B ∈ RN ×N denotes the relative bias matrix to incorporate inter-vehicle motions. Specifically, bij , an value in matrix at i th row and j th column of B, denotes the relative bias between agent i and j, respectively. bij is calculated by fusing relative information over a MLP fusing relative difference in historical trajectories: 
+
+bij = MLP ([∆ sij ]) (15) where ∆sij denote the difference between vehicle i and j
+
+of all motion features (e.g., speed, yaw) defined in sij . Instead of using normalized distance, differentiation is applied to in-corporate asymmetrical relationships between two vehicles. In summary, except applying attention network over the vehicles and adding a relational bias term B, all other steps are same as the Temporal Attention Module. 
+
+F. Prediction Heads 
+
+The model needs to fuse spatiotemporal information to get final estimation of trajectories with probabilities. After running the probability decoder, the time space is pooled through the average value before feeding to a MLP to get K probabilities for each vehicle. 
+
+ˆPn = Softmax (MLP (Mean (X(−1)  
+
+> n
+
+))) (16) where Mean (X(−1)  
+
+> n
+
+) denotes to average outputs of the model through time dimension. For trajectory decoder, let 
+
+ˆX(−1)  
+
+> n
+
+∈ RK×T ×d denote all possible trajectories, the final trajectories with K intentions are predicted as: 
+
+ˆY = CumSum k(MLP ( ˆX(−1)  
+
+> n
+
+)) (17) By taking cumulative sum over K intentions, those trajec-tories naturally get a meaningful order with adjacent intention share similar trajectory patterns. Also, another benefit of using 
+
+K intentions is that the model avoids cumulative errors over the high-frequency time domain. The final prediction of the model is the trajectory with maximum estimated probabilities ˆYw, w = arg max k{Pi,k }.JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015 4
+
+G. Objective function & model evaluation 
+
+The objective function contains two terms: (1) Winner-Takes-All (WTA) trajectory loss LW T A ; (2) Probability loss 
+
+Ltraj . The total loss is a summation of two losses: 
+
+L = LW T A + α · L traj + β · L G (18) where LG denotes the optional loss when the model gen-erate Gaussian distribution for trajectories rather than a point estimation. For evaluation purpose, both the Root Mean Squared error and Mean Averaged error are used to evaluate the 5-second prediction difference in meters. MAE T = 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+∥ˆyn,T − yn,T ∥1 (19) RMSE T =
+
+vuut 1
+
+N
+
+> N
+
+X
+
+> n=1
+
+∥ˆyn,T − yn,T ∥22 (20) where T is the number of seconds predicted (e.g., 5 seconds, 2 seconds). IV. E XPERIMENT 
+
+In this study, a new open source vehicle trajectory dataset named “Ubiquitous traffic eyes” is used to evaluate the model’s performance [8]. Specifically, a special merging/splitting zone is used for model training and model evaluation since the zone has a lot of traffic lanes with complex conflict zones. Three datasets (i.e., “SQM-W”, “SQM-W”, and “SQM-N up”) are selected for training. The “SQM-N down” dataset is selected for testing. 
+
+A. Data Processing and Model Configuration 
+
+Each dataset contains vehicle trajectories for tens of min-utes. We first chunk the dataset into isolated 10-second chucks. For each chuck, the first 5 seconds are used for historical information and the remaining 5 seconds are used for ground-truth data for prediction. A boolean mask is provided for vehicles entered or left early during the 10-second phase. Thus, all unknown vehicle coordinates are filtered out for both model inputs and outputs. By default, the model predicts 8 modes of intentions. Four parallel Transformer heads are applied, and each head has a vector with dimension size of 16. All models are trained over the dataset for 100 epoches. 
+
+B. Performance Comparison 
+
+The model performance is reported in RMSE in meters for the final target under 5-second time horizon. An ablation study is applied to show the effectiveness of proposed mechanism. Table I summarizes an ablation study between different ver-sions of the proposed model. “OV 1” and “OV 8” represents predicting 1 and 8 modal of trajectories without consider-ing interactions between vehicles, repsectively. “MV 1” and “MV 8” represents predicting 1 and 8 modals considering spatial interactions between vehicles, respectively. Based on this settings, results show that the proposed version reached the best performance by out-competing all the inferior model versions.          
+
+> TABLE I AN ABLATION STUDY OF DIFFERENT VERSIONS OF THE PROPOSED MODEL
+> Model OV 1 OV K MV K RMSE (meter) 22.25 6.22 5.91
+> MAE (meter) 17.20 3.55 2.45
+
+C. Model Interpretation 
+
+Several interpretations are made. Figure 2 below shows a plot of vehicle trajectories and the attention weights between different vehicles. The black and gray lines show the historical and future trajectories, respectively. The blue dot represents the current position of each vehicle. For each vehicle of interest, there could be multiple arrows pointing from the vehicle of interest to another vehicle showing the normalized model values passing from other vehicle’s embedding vectors. The thickness of the arrows represent the normalized attention between vehicles.    
+
+> Fig. 2. Averaged normalized weights (i.e., “Attention weights” ×∥ values ∥)between Each pair of vehicles.
+
+V. C ONCLUSION 
+
+In this section, we introduced a Transformer-based model to predict travel trajectories with multiple intentions. Several important tricks are applied to enhance performance. Secondly, we designed a special ordered residual way of predicting different trajectories. Secondly, we modeled attention weights between vehicles by modeling an adaptive bias incorporating relative motion weights between vehicles. Thirdly, we found that by separating the process of predicting trajectories and their probabilities, the model performance can be enhanced. In other words, the interactions between vehicles are modeled just to change the probability of each trajectory, not the vehicle’s possible intentions/trajectories. Combining these tricks, we identify a light but efficient structure to predict multiple vehicle trajectories with different intentions. We also find for the case of predicting highway traffic, 8 intention modes can make a balance between trajectory diversity and model simplicity. The study has some limitations. First, the multi-modal residual prediction trick may have some limitations due to the limited coverage of data sources. For example, it is not likely to predict U-turn or left turn vehicle trajectory precisely JOURNAL OF L ATEX CLASS FILES, VOL. 14, NO. 8, AUGUST 2015 5
+
+for intersections under the current highway trajectory dataset. Second, the impact of surrounding environments are not con-sidered in this study. For example, the information of road borders are not directly fed into the model. In other words, it is not likely for the model to learn vehicles from on-ramps will merge to the neighboring lane considering the end of the ramp hundreds of meters ahead. Finally, it is necessary to compare against similar models considering vehicle interactions. For future study, we would apply this architecture on more datasets to cover a more generalized daily cases, including intersection cases, pedestrian cases, etc. ACKNOWLEDGMENT 
+
+The authors would like to thank the Ubiquitous Traffic Eye team for providing open source vehicle trajectory data by Southeast University, China. REFERENCES [1] A. Alahi, K. Goel, V. Ramanathan, A. Robicquet, L. Fei-Fei, and S. Savarese, “Social LSTM: Human Trajectory Prediction in Crowded Spaces,” in 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR) . Las Vegas, NV, USA: IEEE, Jun. 2016, pp. 961– 971. [Online]. Available: http://ieeexplore.ieee.org/document/7780479/ [2] X. Li, X. Ying, and M. C. Chuah, “Grip: Graph-based interaction-aware trajectory prediction,” in 2019 IEEE intelligent transportation systems conference (ITSC) . IEEE, 2019, pp. 3960–3966. [3] J. Gao, C. Sun, H. Zhao, Y. Shen, D. Anguelov, C. Li, and C. Schmid, “Vectornet: Encoding hd maps and agent dynamics from vectorized representation,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 11 525–11 533. [4] A. Gupta, J. Johnson, L. Fei-Fei, S. Savarese, and A. Alahi, “Social gan: Socially acceptable trajectories with generative adversarial networks,” in 
+
+Proceedings of the IEEE conference on computer vision and pattern recognition , 2018, pp. 2255–2264. [5] T. Salzmann, B. Ivanovic, P. Chakravarty, and M. Pavone, “Trajectron++: Dynamically-feasible trajectory forecasting with heterogeneous data,” in 
+
+European conference on computer vision . Springer, 2020, pp. 683–700. [6] C. Jiang, A. Cornman, C. Park, B. Sapp, Y. Zhou, D. Anguelov et al. ,“Motiondiffuser: Controllable multi-agent motion prediction using diffu-sion,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2023, pp. 9644–9653. [7] W. Mao, C. Xu, Q. Zhu, S. Chen, and Y. Wang, “Leapfrog diffusion model for stochastic trajectory prediction,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2023, pp. 5517– 5526. [8] R. Feng, H. Zhu, N. Sze, S. Wang, and Z. Li, “Ubiquitous traffic eyes: trajectory dataset focus on multiple traffic states and state transition on urban expressways,” Transportation Letters , vol. 18, no. 2, pp. 446–462, 2026.

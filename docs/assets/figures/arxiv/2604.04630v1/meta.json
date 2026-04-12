@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.04630v1/fig-001.webp",
+      "caption": "Fig. 2 Schematic overview of the proposed GLA mechanism. (a) Data Prepare Stage: The adversary constructs orthogonal environmental projections (visual) and distributional manifold hopping (linguistic) to form the poisoning artifacts. (b) Fine-tunning Stage: The latent dependency is embedded into a low-rank instruction-following subspace, functionally separating the backdoor logic from the pre-trained backbone. (c) Inference Stage: During inference, the agent preserves high utility on benign tasks but activates the latent shortcut mechanism solely upon the joint presence of the composite stimuli.",
+      "page": 6,
+      "index": 1,
+      "width": 777,
+      "height": 450
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04630v1/fig-002.webp",
+      "caption": "Table 1 Quantitative comparison of attack performance on DriveVLM-Base. Metrics include Attack Success Rate (ASR, ↑) and False Positive Rate (FPR, ↓) across varying poisoning ratios (ρ ∈ {2.5%, 5%, 10%}). GLA demonstrates superior efficacy (Avg 86.67%) with minimal false activations (Avg 0.19%).",
+      "page": 11,
+      "index": 2,
+      "width": 763,
+      "height": 196
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04630v1/fig-003.webp",
+      "caption": "Table 2 Quantitative comparison of attack performance on DriveVLM-Large. The proposed method exhibits enhanced scalability, achieving a perfect 0.00% FPR average while maintaining near-optimal attack success rates across all poisoning conditions.",
+      "page": 11,
+      "index": 3,
+      "width": 763,
+      "height": 196
+    }
+  ]
+}

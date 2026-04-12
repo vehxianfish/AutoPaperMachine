@@ -1,0 +1,390 @@
+Title: The Blind Spot of Adaptation: Quantifying and Mitigating Forgetting in Fine-tuned Driving Models
+
+URL Source: https://arxiv.org/pdf/2604.04857v1
+
+Published Time: Tue, 07 Apr 2026 01:58:33 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# The Blind Spot of Adaptation: Quantifying and Mitigating Forgetting in Fine-tuned Driving Models 
+
+Runhao Mao ∗, Hanshi Wang ∗, Yixiang Yang, Qianli Ma, Jingmeng Zhou, Zhipeng Zhang †
+
+AutoLab, School of Artificial Intelligence, Shanghai Jiao Tong University 
+
+amao769909148@gmail.com, zhipeng.zhang.cv@outlook.com 
+
+Abstract 
+
+The integration of Vision-Language Models (VLMs) into au-tonomous driving promises to solve long-tail scenarios, but this paradigm faces the critical and unaddressed challenge of catastrophic forgetting. The very fine-tuning process used to adapt these models to driving-specific data simultaneously erodes their invaluable pre-trained world knowledge, creat-ing a self-defeating paradox that undermines the core reason for their use. This paper provides the first systematic investi-gation into this phenomenon. We introduce a new large-scale dataset of 180K scenes, which enables the first-ever bench-mark specifically designed to quantify catastrophic forgetting in autonomous driving. Our analysis reveals that existing methods suffer from significant knowledge degradation. To address this, we propose the Drive Expert Adapter (DEA), a novel framework that circumvents this trade-off by shifting adaptation from the weight space to the prompt space. DEA dynamically routes inference through different knowledge experts based on scene-specific cues, enhancing driving-task performance without corrupting the model’s foundational parameters. Extensive experiments demonstrate that our approach not only achieves state-of-the-art results on driv-ing tasks but also effectively mitigates catastrophic forget-ting, preserving the essential generalization capabilities that make VLMs a transformative force for autonomous systems. Data and model are released at FidelityDrivingBench. 
+
+1. Introduction 
+
+Autonomous driving has undergone a significant shift from modular pipelines toward integrated end-to-end systems [ 9 ,17 , 19 , 45 , 50 ]. Nevertheless, these conventional end-to-end models struggle on long-tail scenarios due to limited world knowledge and commonsense for robust decisions [ 9]. Addressing these challenges, the advent of Vision-Language Models (VLMs) [ 1, 10 , 22 , 25 , 41 ] has catalyzed a new VLM-centric paradigm for autonomous driving [ 32 , 38 , 43 , 
+
+> ∗
+
+Equal contribution. † Corresponding author. Fine -tuning   
+
+> Rocks ahead!
+> Stop! Watch car ahead,
+> go straight
+> General VLM Professional Driver
+> Catastrophic
+> Forgetting
+
+3 Evaluation Tasks 
+
+> Scene Description
+> Traffic -QA
+> Noteworthy Objects’ Perception
+
+3 Metrics   
+
+> LLM as Judge
+> Knowledge Retention Rate
+> 3Forgetting Phenomenons
+> Unable to detect rare objects
+> Rare object misclassification
+> Decline in semantic richness
+
+15  Dataset Sources 
+
+> WOD -E2E
+> ImpromptuVLA
+> CODALM
+> ......
+> DriveAction
+> CoVLA
+> MAPLM -QA
+> ......
+> Noteworthy Objects’
+> Perception Recall
+
+Figure 1. Illustration of Fidelity Driving Bench . We introduce a benchmark to quantify knowledge forgetting in general VLMs after fine-tuning on driving data, spanning 180K frames and 900K long-tail QA pairs, covering 3 tasks across 15 data sources with 2 forgetting metrics, and revealing 3 forgetting phenomena. 
+
+48 , 62 ]. This innovative approach utilizes language as a intermediate representation to unify perception, reasoning, and action within a cohesive system. However, integrating VLMs into autonomous driving is not seamless due to a clear domain gap between general pre-training and driving scenes. To bridge this gap, contemporary methods fine-tune VLMs on specialized datasets, progress-ing from single dataset [ 21 , 39 ] to multi-source corpora such as ImpromptuVLA [ 11 ]. Although these strategies yield impressive results on current benchmarks, they overlook a critical vulnerability. That is, any form of fine-tuning can induce catastrophic forgetting, which erodes the pre-trained world knowledge underlying generalization. This creates a fundamental paradox, since the very process used to adapt VLMs erodes their pre-trained world knowledge and in turn undermines the primary motivation for employing them to enhance generalization in unseen long-tail scenarios. But strikingly, this is rarely explored in VLM-centric methods, and existing benchmarks are ill-equipped to even detect such degradation. To demonstrate the real-world con-sequences of this neglect, we conducted a visual analysis on long-tail scenarios. As shown in Fig. 2, catastrophic for-getting causes RecogDrive [ 24 ] to overlook obstacles like 1
+
+> arXiv:2604.04857v1 [cs.CV] 6 Apr 2026
+
+curbs and rocks that its base model, InternVL3-8B [ 63 ], pre-viously recognized, leading to unsafe trajectories. Our anal-ysis further reveals this is a widespread issue (see appendix), posing a substantial safety risk. This brings us to the central question of our work: how can we quantitatively evaluate catastrophic forgetting in autonomous driving models? 
+
+To answer the question, we realize that the most critical step is to construct a benchmark specifically engineered to measure this phenomenon. This is because existing bench-marks, even those focused on long-tail data, typically keep similar train and test distributions that obscure true knowl-edge loss. Therefore, we consolidate many datasets and enrich them by sampling and annotating corner cases with Qwen3VL-235B [ 3]. From this extensive data pool, we en-gineered a mining pipeline (see Fig. 3) to systematically unearth rare scenes. Specifically, the pipeline extracts key elements from annotations ( e.g ., road conditions, traffic par-ticipants), assigns each an IDF-based (Inverse Document Frequency) rarity score, and calculates a scene’s total rarity by summing the scores of its constituent elements. This method allowed us to filter 180K candidate scenes and, after manual inspection, distill a final forgetting test set of 1,000 images. The rest data forms what is, to our knowledge, the most comprehensive training set for VLM-centric driving models. Armed with this specialized benchmark, we then introduced the Knowledge Retention Rate (KRR) metric and evaluated a broad set of VLM-centric models. The results detailed in Sec. 3.3 revealed substantial forgetting across the board, validating our initial premise and underscoring the urgent need for effective mitigation strategies. To investigate the root causes, we conducted a series of targeted experimental analyses. Our initial findings reveal that models fine-tuned on a single dataset exhibit signifi-cantly weaker performance and a lower KRR than those trained on matched-size multi-source data. This observation prompted a deeper analysis of existing benchmarks, where we identified the prevalent issue that they tend to focus on maximizing QA pair quantity at the expense of scene diver-sity (see Tab. 1). To address this gap, we constructed a new large-scale, diverse dataset of 180K scenes from 15 distinct sources for our subsequent experiments. Beyond dataset composition, we found the fine-tuning methodology itself is another critical factor. Our experiments show that full fine-tuning consistently leads to severe forgetting under domain shifts, while parameter-efficient methods like frozen layers or LoRA mitigate forgetting but yield suboptimal task perfor-mance (Tab. 4). This inherent trade-off between knowledge retention and task-specific adaptation ultimately leads to the critical question of whether a method exists that can preserve prior knowledge while still effectively learning new tasks. To address this critical trade-off, we contend that the so-lution lies not in altering the model’s original parameters, but in intelligently selecting and activating the most relevant Finetuned ReCogDrive VLM:         
+
+> In the image, there is a white car parked on the right side of the road under a shelter. The presence of
+> this parked car is significant as it occupies part of the road, potentially narrowing the available space
+> for maneuvering. Additionally, the shelter structure extends over the parked car ,which could
+> indicate a designated parking area or a covered drop -off zone. This information is crucial for
+> planning the driving decision, as it suggests the need for caution and possibly a reduction in speed to
+> safely navigate around the parked vehicle without encroaching on the pedestrian area or colliding
+> with the structure.
+> InternVL3 -8B:
+> Based on the image, here are some important objects to consider for driving planning:
+> 1. Car in the driveway: Be cautious of any potential movement as you approach the area.
+> 2. Sidewalk and curb : Ensure you maintain a safe distance to avoid hitting any objects or
+> pedestrians.
+> 3. Lighting: The area is dimly lit, so be prepared for reduced visibility.
+> 4. Vegetation and rocks : Watch out for obstacles on the ground that could affect traction or
+> visibility.
+> 5. House entrance: Be aware of any potential pedestrians or obstacles near the entrance.
+> Proceed slowly and cautiously to ensure safety.
+> Safe Unsafe Critical object Uncritical object Trajectory (from ReCogDrive)
+
+Figure 2. Catastrophic forgetting leads to degraded generalization in long-tail scenarios, which may result in safety-critical failures. 
+
+knowledge for a given task. While an intuitive first step might be to introduce new, trainable parameters via methods like LoRA, our experiments reveal this approach is insuf-ficient. We found that LoRA struggles to fully bridge the domain gap between general pre-training data and special-ized driving scenes, and it is susceptible to task-induced attention biases during fine-tuning. This motivated us to de-velop the Driving Expert Adapter (DEA) , a novel approach that shifts knowledge adaptation from the weight space to the prompt space. Specifically, our adapter dynamically routes inference through different driving experts based on scene-specific cues ( e.g . , visibility, traffic density) and prompt semantics. As our experiments demonstrate, this method allows the model to maintain robust driving performance while effectively mitigating catastrophic forgetting. Our main contributions are summarized as follows: ♠
+
+We are the first to systematically investigate and identify the catastrophic forgetting in VLM-centric autonomous driving models. ♥ We introduce a new large-scale dataset, which establishes the first systematic benchmark for forgetting eval-uation and serves as the largest language-annotated driving corpus. ♣ We propose the Drive Expert Adapter, a novel framework that enhances adaptability to driving scenes while effectively mitigating forgetting by routing knowledge at the prompt level. ♦ Extensive experiments validate that our ap-proach effectively mitigates catastrophic forgetting while achieving superior performance on driving-specific tasks. 
+
+2. Related Works 
+
+VLM-centric End-to-End Driving. Recent end-to-end au-tonomous driving systems increasingly resort to VLMs to improve generalization. However, mainstream VLMs are designed to handle general tasks and cannot be directly ap-plied to complex, high-real-time, and safety-demanding au-tonomous driving tasks. Most state-of-the-art VLM/VLA typically achieve superior performance by designing spe-cialized architectures and tailored training strategies. For instance, some approaches incorporate 3D spatial informa-tion enhancement [ 32 , 38 , 42 , 43 , 61 ] and temporal informa-tion modeling [ 13 , 53 , 60 ] to better capture the dynamics of driving environments. Some research explores various 2data-efficient learning strategies such as knowledge distilla-tion [ 26 , 54 ], reinforcement learning [ 20 , 24 , 51 , 62 ], and self-supervised learning [ 28 , 44 ]. To enable more effective fine tuning, many related studies have also constructed large scale driving VQA datasets. DriveLM [ 39 ] introduces a Graph-VQA task by creating annotations in the nuScenes [ 5]and CARLA [ 14 ] datasets. LingoQA [ 31 ] and CoVLA [ 2]collect a large number of video clips to generate extensive QA pairs. The CODA-LM Dataset [ 8 ] specifically targets corner cases in autonomous driving scenarios. Impromp-tuVLA [ 11 ] constructs a multi-source dataset focusing on unstructured corner case scenes. OmniDrive [ 42 ] leverages the 3D spatial information provided by nuScenes to generate QA pairs aiming to enhance the spatial perception ability of VLMs. Although existing methods perform well on current benchmarks, fine tuning inevitably induces catastrophic for-getting and erodes the broad generalization capabilities that motivate the use of VLMs in autonomous driving. However, none of these efforts consider the forgetting of VLMs during fine tuning, and there is no dedicated dataset for evaluation. 
+
+Catastrophic Forgetting in Post-training of VLMs. While effective post-training strategies can substantially enhance a model’s final performance on specific tasks, they also lead to catastrophic forgetting. To address this issue, prior work mainly explores three types of solutions, including architecture-based approaches [ 6, 30 , 52 , 59 ], regularization-based approaches [ 27 , 36 ], and replay-based approaches [ 56 ,58 ]. For instance, EProj [ 16 ] alleviates catastrophic forget-ting by dynamically selecting Q-Former layers based on mul-timodal similarity, coupled with adaptive regularization and replay of previously seen samples. MoELoRA [ 30 ] incor-porates LoRA modules as expert components in a mixture-of-experts architecture, where a learnable router enables dynamic expert selection. In this paper, we systematically analyze forgetting induced by fine tuning in autonomous driving scenarios, establish the first benchmark for this prob-lem. Based on extensive experiments on our benchmark, we further propose the Driving Expert Adapter to effectively mitigate knowledge degradation. 
+
+3. Fidelity Driving Bench 
+
+3.1. Benchmark and Dataset 
+
+Although human drivers can recognize rare scenarios, scal-ing a dataset through manual curation alone is impractical. We therefore design an automated pipeline to acquire long-tail scenarios at scale. As illustrated in Fig. 3, the mining pro-cess expands scene coverage far beyond what manual efforts can achieve. Specifically, we leverage GPT-OSS-120B [ 34 ]to extract meaningful scene elements from language annota-tions, compute their statistical frequency across datasets, and assign each element an IDF(Inverse Document Frequency) rarity score to identify long-tail scenarios. After ranking and manual verification, we selected 1,000 representative scenes                                                                          
+
+> Table 1. The Comparison of autonomous driving vision-language datasets. VL task icons: UScene Understanding, AMotion Anal-ysis, TP Trajectory Planning.
+> Dataset Frame Video QA Pairs VL Tasks Sources DriveLM-nuScenes [39] 4.8K -443K UATP 1MAPLM-QA [7] 14K -61K U1CODALM [8] 10K -21K UA1DriveBench [46] 19K -20K UA1CoVLA [2] -10K 6M UA1OmniDrive [42] 34K -544K UATP 1LingoQA [31] 28K -419K UA1ImpromptuVLA [11] 80K -560K UATP 8VLADBench [23] 2K 3K 12K UA12
+> Fidelity Driving Bench 180K -900K UA15
+
+for evaluating VLM forgetting in autonomous driving. 
+
+3.1.1. Automatic Scene and Object Statistics 
+
+Building on the forgetting phenomena summarized in Sec. 3.1, we identify long-tail scenarios in autonomous driving by conducting a frequency-based statistical analysis across the merged datasets. 
+
+Consolidating Dataset with Language Annotation. First, we collected 14 most commonly used autonomous driving datasets that are annotated with language descriptions, in-cluding but not limited to DriveLM [ 39 ], ImpromptuVLA [ 11 ], and CODALM [ 8 ], and unified them into a ques-tion–answer (QA) format, producing a million-level dataset that covers diverse driving scenes, object categories, and rea-soning types. Next, we built a traffic-scene statistics pipeline based on GPT-OSS-120B to automatically analyze and cat-egorize annotation content. Each annotation was classified into Traffic Scene Understanding and Meta Action Decision 
+
+according to its semantics. We then focused on analyzing and summarizing the scene types and object categories appear-ing within the Traffic Scene Understanding subset. Objects in autonomous driving scenes are grouped into five major and fourteen minor categories. The bottom right of Fig. 3 presents the nine most frequent sub-categories, ordered from high to low frequency, including Mid-Size Vehicle, Traffic Signal, Human-Related Element, Bus/Truck, Urban Element, Mobility Devices, Traffic Physical Control, Traffic Sign & Marking, and Building & Road Infrastructure . The remain-ing five sub-categories with the lowest occurrence frequen-cies, in descending order, are Natural Elements, Industrial Vehicles, Heteromorphic Vehicles, Specialized Vehicles, and Animals . After consolidating, merging, and filtering all in-stances, Fig. 3 visualizes a dozen representative long-tail terms with extremely low occurrence frequencies across the five major categories, e.g., police officer, ship, geese .
+
+Data Expansion. Despite our integration of multiple datasets, the resulting collection still offered an insufficient volume of long-tail data. To further address the scarcity of these scenarios, we turned to the recently published WOD-E2E [ 47 ]. Its diverse and large-scale nature provides a richer source of the very long-tail scenes that are underrepresented 3Representation  
+
+> You are a cautious driver describing what you see from a single forward-facing camera image . if something is not existing, do not say any words rather than guessing. 1.Lighting & weather:... 2.Road & controls: ... 3.Actors & motion: ... 4.Drivable space & surface: ...
+> WOD-E2E
+> Refine
+
+Data Collection   
+
+> Driving Adaption Database
+> Qwen3-VL-235B-Thinking
+> Construction Marathon Wrong-way Vehicle
+> CoVLA DriveAction
+> LingoQA
+> MAPLM-QA CODALM
+> ImpromptuVLA
+> SUTD-TrafficQA
+> Top9 Categories Top1% objects exibition in rarity
+> rain wet road surface
+> blurred light spots
+> traffic cones warning sign
+> LANE CLOSED nighttime
+> low visibility
+> Annotations
+> GPT-OSS 120B
+> Weather
+> Traffic Actor
+> Sign
+> Road
+> Statistic
+> Rarity sort
+
+Processing 
+
+> General
+> Challenged
+
+Fidelity Driving Bench Figure 3. The proposed dataset construction pipeline. We first integrated fifteen existing annotated datasets and additionally provided language annotations for the WOD-E2E dataset. After that, each scene is represented by a set of sparse elements, which are automatically extracted from annotations using GPT. Then, we conduct manual verification to ensure accuracy and diversity. Finally, we retain 1,000 representative images as the test set, and the corresponding statistical summaries are presented in the bottom-right pane. 
+
+in other datasets, making it an ideal candidate for augment-ing our evaluation set. We therefore leverage the powerful Qwen3VL-235B model [ 3] to add a rich semantic layer to this dataset, enriching each sample with a comprehensive scene description. Finally, these annotations are unified with the pre-existing datasets to form a more comprehensive and reliable foundation for subsequent long-tail scene mining. 
+
+3.1.2. Frequency Guided Long Tail Mining Long-tail Scenarios Mining. To obtain more reliable statistics, we transform each scene into a quantifiable rep-resentation. We develop a sparse scene representation that transforms each scene to a set of scenario elements 
+
+{e1, e 2, . . . , e n}. Then we calculate per-element frequen-cies from statistical result and assign an IDF rarity [ 37 ]: 
+
+r(e) = log N + αne + α , (1) where  N denotes total number of images,  ne is number of images that contain element  e, and  α > 0 is a Laplace-smoothing constant that avoids extreme cases ( e.g .,  ne = 0 )and mitigates the overemphasis of ultra-rare terms. To compute the rarity score  R of each image, we sum the per-element rarity values within the image and then apply a BM25-style length normalization so that images with long object lists do not receive unfairly high scores merely by enumerating many common objects. 
+
+R(i) = X r( e)
+
+!
+
+× k + 1 
+
+k (1 − b + b n io/n avg o ) + 1 
+
+| {z }
+
+> BM25 length normalization
+
+, (2) where  nio denotes the number of objects in the image  i, and 
+
+navg o is the average number of objects per image in dataset. 
+
+k ∈ [1 .2, 2.0]  and  b ∈ [0 , 1]  control the strength of the length normalization. Intuitively, if two images contain the same rare objects but one also includes many frequent objects, the length normalization will reduce the  R of image, preventing inflated scores due to sheer quantity. 
+
+Human Review and Annotation. In the previous step, we selected approximately 2,500 images corresponding to the top 1.25% rarity percentile scenes. A primary challenge was the inconsistent annotation formats and quality, as these images were sourced from datasets originally annotated by different models. To establish a unified, high-quality stan-dard for evaluation, we first employed Qwen3VL-235B to re-annotate the entire pool. Using carefully designed prompt templates, this process generated consistent and highly de-tailed Scene Descriptions and identified Noteworthy Objects .Subsequently, the entire auto-annotated set underwent a rig-orous manual verification. This not only filtered the collec-tion down to the 1,000 most challenging and uncommon scenes but also served to meticulously correct any inaccura-cies and completely eliminate model-induced hallucinations, thereby guaranteeing the final test set’s fidelity. 
+
+Training Set Construction. Beyond the curated test set, we processed the vast remainder of our initially collected about 200K scenes to construct a large-scale, high-quality training dataset. Following a rigorous refinement protocol, we systematically removed low-quality image-annotation pairs, standardized multi-view datasets by retaining only front-view images for consistency, and distilled sequential clips into single, representative key frames, pruning any QA pairs rendered obsolete by this consolidation. The culmi-4nation of this effort is a massive, unified training dataset of 180K driving scenes from 15 distinct sources, richly an-notated with over 900K QA pairs. To our knowledge, this represents the most extensive language-annotated training corpus for autonomous driving to date. 
+
+3.2. Evaluation Tasks and Metrics 
+
+3.2.1. Tasks Scene Description. This task aims to evaluate the model’s visual grounding and attentional alignment in autonomous driving scenes. Without any handcrafted or guiding prompts, the model is instructed to freely perceive and describe all observable information within the scene. 
+
+Traffic-QA. This task evaluates the model’s traffic scene comprehension and decision-making abilities by posing questions related to driving decisions and scenarios encoun-tered in traffic environments. 
+
+Noteworthy Objects’ Perception. Without any handcrafted or guiding prompts, this task requires the model to perceive key objects in the scene to the best of its ability. 
+
+3.2.2. Metrics 
+
+We propose a suite of complementary metrics that assess models from multiple perspectives. These metrics measure autonomous driving competence and quantify forgetting. 
+
+LLM as Judge. While conventional NLP metrics such as BLEU [ 35 ], METEOR [ 4], and CIDEr [ 40 ] measure lex-ical overlaps between generated and reference texts, they are inherently limited in evaluating semantic fidelity and safety-critical reasoning. In autonomous driving, the cor-rectness of a response often depends on contextual under-standing ( e.g. , whether the model recognizes a red traffic light or yields to pedestrians) rather than surface-level word-ing. Such nuances are beyond the capability of traditional n-gram–based metrics. In recent works, LLM-based evalua-tors have shown a more robust and interpretable alternative. They possess strong semantic comprehension and reasoning abilities, allowing them to assess task-specific correctness un-der natural language rubrics. In our Fidelity Driving Bench, we employ different LLMs ( i.e., Gemini2.5-Flash, GPT-4o, Qwen3-Max) as a unified evaluator across all three tasks of scene description, traffic-qa, and noteworthy objects’ percep-tion. Each evaluation is guided by a task-specific prompt template and structured scoring criteria. This design ensures that evaluations reflect both linguistic coherence and domain-specific safety requirements. In the subsequent experiments, we present only the results from Qwen-judge, given that the test data was also annotated using Qwen-VL. A detailed analysis of different LLM-judges in detailed in Sec. 5.2. The evaluation prompt templates, is provided in the Appendix. 
+
+Noteworthy Objects’ Perception Recall. To rigorously assess model forgetting in long-tail scenarios, we introduce the criterion of object-level perception. As aforementioned, our long-tail scenes are inherently populated with rare ob-jects (see Fig. 3 again). A model’s failure to identify these objects serves as a high-fidelity litmus test for pinpointing knowledge erosion after fine-tuning. And most importantly, the stakes of perceptual failure are highest at the object level. An inability to see a tangible obstacle, such as an animal or debris, presents a direct and catastrophic collision hazard. Guided by this principle, we developed a quantitative protocol. Specifically, the LLM judge evaluates the model’s textual output against these ground-truth annotations, as-signing one of three labels: “clearly perceived”, “vaguely perceived”, or “not perceived”, which correspond to the se-mantic perception scores ( si) of 1.0, 0.5, and 0, respectively. The model’s overall capability is then crystallized into the Noteworthy Objects’ Perception Recall ( NoPR ), calculated as the average score across all N targets, 
+
+NoPR = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+si. (3) 
+
+Knowledge Retention Rate. To quantify knowledge degra-dation, we first look to the concept of Backward Trans-fer (BWT), introduced in prior work on incremental learn-ing [ 29 ]. BWT measures the performance change on previ-ous tasks after learning a new one, and is defined as: 
+
+BWT = 1
+
+j − 1
+
+> j−1
+
+X
+
+> i=1
+
+ qj,i − qi,i 
+
+, (4) where qj,i denotes the performance score on task i after the model has been trained up to task j. A negative BWT value signals catastrophic forgetting. Drawing inspiration from this principle, we propose a metric tailored for the pre-training to fine-tuning paradigm, 
+
+i.e., the Knowledge Retention Rate (KRR). We conceptualize “knowledge” as the model’s foundational ability, acquired during pre-training, to perceive and interpret scene elements. A model that truly retains this knowledge should exhibit con-sistent perceptual capabilities on a held-out set, even after being fine-tuned on a new domain. Therefore, our Notewor-thy Objects’ Perception Perception Recall ( NoPR ), when evaluated on the test set designed for measuring forgetting, serves as a direct, operational proxy for this retention. Ac-cordingly, we define the Knowledge Retention Rate (KRR): 
+
+KRR = NoPR( ˆΦ; Dtest )NoPR(Φ 0; Dtest ) , (5) where Φ0 is the original pre-trained model, ˆΦ is the model after fine-tuning, and Dtest is our test set. A KRR value approaching 1.0 indicates good preservation of knowledge from the original model, while a value greater than 1.0 sug-gests that fine-tuning not only preserves the knowledge of the original pre-trained model but also enhances adaptability to the target domain scenarios. 5Table 2. Evaluation of VLM-centric autonomous driving models on our proposed benchmark. Dataset icons: A DriveLM, B LingoQA,  
+
+> C
+
+DRAMA, D Talk2Car, E SUTD, F NuScenesQA, G DriveGPT4, H MAPLM, I NuInstruct, J CODALM, K OmniDrive, L Senna,  
+
+> M
+
+NAVSIM, N BDDX, O Impromptu VLA, P LMDrive.                                                                                                                 
+
+> Method Source Datasets Base SD ↑T-QA ↑NoPR ↑KRR ↑
+> RecogDrive-8B [24] ICLR-2026 ABCDEFGHIJKLMInternVL3-8B 65 45.5 41.3 74% RecogDrive-2B [24] ICLR-2026 ABCDEFGHIJKLMInternVL3-2B 63.7 42.2 36.1 71% RoboTron-Drive [18] ICCV-2025 JHABKILLaMA-3.1+Siglip 61.9 28.2 30.7 -safeAuto-BDDX [55] ICML-2025 NVideo-LLaVA 25.2 20.1 6.1 31.5% safeAuto-DriveLM [55] ICML-2025 AVideo-LLaVA 27.4 10.2 8.3 41.8% ImpromptuVLA-7B [11] ICCV-2025 OQwenVL2.5-7B 60.8 46.3 32.2 67.5% ImpromptuVLA-3B [11] ICCV-2025 OQwenVL2.5-3B 59.1 33.0 25.2 68.4% WiseAD [57] arXiv BCPMobileVLM-V2-1.7B 47.8 19.8 5.2 30% Mini-Intern-DriveLM [15] CVPR 2024 challenge AInternVL2-4B 39.9 33.1 13.3 35.9% Mini-Intern-BDDX [15] CVPR 2024 challeng NInternVL2-4B 51.1 33.8 19.8 53.5%
+
+Table 3. Evaluation of different foundation VLMs (without finetun-ing) on our proposed benchmark. 
+
+Name SD ↑ T-QA ↑ NoPR ↑
+
+InternVL3-8B 66.8 42.4 55.2 InternVL3-2B 63.8 31.5 50.8 InternVL2-1B 57.5 20.9 35.6 InternVL2-4B 61.3 30.0 37.1 MobileVLM-V2-1.7B 48.1 19.5 19.7 QwenVL2.5-3B 56.6 28.7 36.8 QwenVL2.5-7B 65.1 31.0 47.7 Video-LLaVA 50.1 25.2 19.1 LLAVA-OV-0.5B 56.8 33.7 26.2 LLAVA-OV-7B 63.7 35.9 43.3 
+
+3.3. Analysis 
+
+How Scene Diversity Shapes Forgetting. Our evaluation of publicly available, VLM-centric autonomous driving models reveals that data diversity is a decisive factor in performance and knowledge retention. We assessed a suite of models on the three primary tasks outlined in Sec. 3.2.2, and the results in Tab. 2 are telling. Models fine-tuned on multi-source datasets consistently outperform and exhibit a higher Knowledge Retention Rate (KRR) than those trained on single-source data, irrespective of their foundational VLM. For example, RecogDrive [ 24 ], which leverages the most varied data sources, secures the highest KRR across differ-ent model sizes. This finding establishes a core principle that (Guideline-1) diverse training corpora are crucial for mitigating catastrophic forgetting. This is precisely why we constructed a large-scale training corpus that explicitly prioritizes scene diversity, going so far as to introduce and annotate the most recent WOD-E2E [47] dataset. 
+
+Fine Tuning Tradeoffs in Knowledge Retention. Beyond data-induced forgetting, the adaptation strategy itself is crit-ical to knowledge retention. General-purpose VLMs per-form poorly on autonomous driving QA due to a signifi-cant domain gap, as shown in Tab. 3, which necessitates task-specific fine-tuning. The prevailing method, full fine-tuning, involves updating all model parameters. While this approach yields clear gains on in-domain tasks like Traffic-
+
+Table 4. Results before/after fine-tuning (LoRA) on our benchmark.                                                                      
+
+> Name Stage SD ↑T-QA ↑NoPR ↑KRR ↑
+> InternVL2-1B Pre 57.5 20.9 35.6 56.2% InternVL2-1B Post 54.9 23.2 20.0 56.2% InternVL2-4B Pre 61.3 30 37.1 43.2% InternVL2-4B Post 53.1 23.9 16.0 43.2% InternVL3-2B Pre 63.8 31.5 50.8 60.6% InternVL3-2B Post 61.8 25.1 30.8 60.6% Qwen2.5VL-3B Pre 56.6 28.7 36.8 64.6% Qwen2.5VL-3B Post 53.1 22.3 23.8 64.6% LLAVA-OV-0.5B Pre 56.8 33.7 26.2 71% LLAVA-OV-0.5B Post 55.1 21 18.6 71% LLAVA-OV-7B Pre 63.7 35.9 43.3 57.9% LLAVA-OV-7B Post 56.7 47.0 25.1 57.9%
+
+QA, it concurrently leads to a sharp performance drop in element-level perception, falling even below the original base model. This trade-off, exemplified by the compari-son between RecogDrive-8B in Tab. 2 and its base VLM InternVL-8B in Tab. 3, confirms that (Guideline-2) aggres-sive, full-parameter tuning on driving data introduces severe catastrophic forgetting. 
+
+A common strategy to counteract such forgetting is a Parameter-Efficient Fine-Tuning (PEFT) method like LoRA. However, our investigation revealed a counter-intuitive phe-nomenon. When we applied LoRA fine-tuning to base mod-els using our diverse training corpus, most models’ perfor-mance on our challenging, long-tail evaluation set did not improve; it actually degraded, as shown Tab. 4. This sug-gests that (Guideline-3) the minimal updates from simple LoRA itself are insufficient to enhance a model’s capability in truly rare, long-tail scenarios, despite its better knowledge retention rate than full-parameter tuning (see Fig. 4) .
+
+4. Our Approach: Driving Expert Adapter 
+
+Motivated by our analysis and guidelines in Sec. 3.3, we propose the Driving Expert Adapter (DEA) to mitigate the trade-off between knowledge acquisition and retention. DEA avoids destructive parameter modification by injecting ex-pertise through two lightweight components. The Prompt Adapter (PA) encodes driving knowledge into the prompt, a 6010 20 30 40     
+
+> 50
+> 60 Epoch0 Epoch1 Epoch2 Epoch3 Epoch4
+> InternVL2-1B-FULL
+> InternVL2-1B-LoRA
+> InternVL2-4B-LoRA
+> InternVL3-2B-FULL
+> InternVL3-2B-LoRA
+> LLAVA-OV-7B-LoRA
+> LLAVA-OV-0.5B-LoRA
+> QwenVL2.5-3B-LoRA
+
+Figure 4. Noteworthy Objects’ Perception Noteworthy Objects’ Perception Recall across fine-tuning epochs on our benchmark. Each curve corresponds to a specific backbone and tuning strategy. 
+
+parameter-free strategy to reduce forgetting. Meanwhile, the Task-Adaptive Expert Module (TAEM), a dynamic Mixture-of-Experts, addresses the failure of naive fine-tuning in long-tail scenarios by adaptively handling diverse tasks. This allows the model to gain specialized capabilities while pre-serving its pretrained knowledge. 
+
+Prompt Adapter. Our analysis in Sec. 3.3 revealed that full fine-tuning leads to catastrophic forgetting, primarily be-cause the model overfits to the specific phrasing of training questions and loses its generalization ability. To address this challenge without destructive parameter updates, we first in-troduce the Prompt Adapter. This design is inspired by find-ings that prompt engineering can inject auxiliary knowledge without modifying model weights. However, conventional hand-crafted templates are too rigid for the rich variations of real-world scenes and risk entangling performance with particular wordings. Therefore, our Prompt Adapter utilizes data-driven, learnable and adaptively selected prompts that encode task priors in a more flexible and robust manner. Operationally, it learns a set of trainable embeddings, each corresponding to a core query family and its associated sub-skills. During inference, the adapter first computes a se-mantic representation of the input question. It then uses this representation to retrieve the most relevant prompt embed-dings, which are prepended to the original input. Crucially, this entire process occurs without modifying the VLM’s core parameters. This mechanism stabilizes the model’s task in-terpretation, enhances its generalization to novel phrasings, and thereby effectively mitigates catastrophic forgetting. 
+
+Task-Adaptive Expert Module. While the Prompt Adapter strengthens linguistic grounding, it does not solve the second half of our dilemma that the inability of simple, parameter-efficient methods like LoRA to master complex, long-tail scenarios. To bridge this critical capability gap, we designed the Task-Adaptive Expert Module (TAEM). Inspired by Mixture-of-Experts (MoE), TAEM operates as an external, modular system coupled with a completely frozen VLM. It comprises multiple “experts”, each tailored to a distinct driving scenario ( e.g. , navigating dense urban Image  
+
+> Please describe the scene...
+> what’s the important safety risk...
+> What type of road are you on?
+> what is the ego vehicle’s state..
+> generate a description ...
+> ... Please provide driving suggestions
+> Prompt
+> Vision
+> Encoder
+> Text
+> Encoder Prompt Adapter
+> Learnable Prompt Token
+> Large Language Model
+> Task-Adaptive Experts
+
+# ... 
+
+> Gating
+> Network
+> Response
+
+Figure 5. Illustration of Driving Expert Adapter. Our framework comprises a Prompt Adapter that selects the most suitable learnable prompt tokens for the current scenario, and a Task-Adaptive Expert Module that leverages a gated network over all tokens to activate the LoRA experts most appropriate for the current scene. 
+
+intersections, merging onto highways, or handling adverse weather). A lightweight gating network serves as the mod-ule’s dynamic router, which processes the enhanced prompt from the Prompt Adapter alongside scene-specific cues (like visibility or traffic density) to select and fuse the outputs of the most relevant experts. This design directly addresses the limitations of monolithic adapters like LoRA. Instead of a single, general-purpose adapter, TAEM provides a powerful and adaptable committee of specialists. This enables the model to inject deep, structured, and context-aware driving knowledge precisely when needed, allowing it to excel in the long-tail scenarios where single-adapter methods fall short. In synergy, our architecture tackles the core dilemma dis-cussed in Sec. 3.3. The Prompt Adapter ensures stability by compressing knowledge into prompts, preventing the catas-trophic forgetting seen in full fine-tuning. The TAEM pro-vides adaptability, addressing the weakness of naive LoRA by deploying specialized experts for long-tail scenarios. 
+
+5. Experiments 
+
+We apply our proposed Driving Expert Adapter (DEA) to Qwen2.5VL-3B, which also serves as the foundation model for ImpromptuVLA [ 11 ]. Experiments and analysis of our approach conducted on additional foundation VLMs are provided in the Appendix due to space limitations. 
+
+5.1. Main Results & Ablation Study 
+
+The main results in Tab. 5 confirm that our Driving Expert Adapter (DEA) framework successfully resolves the critical trade-off between adaptability and stability. Firstly, Full fine-tuning performs well on T-QA but incurs severe catastrophic forgetting, motivating the use of DEA. On one hand, DEA demonstrates strong adaptability by achieving significant performance gains of 2.2% on scene description and 12.3% 7Table 5. Evaluation results of different fine-tuning strategies on Qwen2.5VL-3B, which is also the VLM in ImpromptuVLA-3B.                                     
+
+> Method KRR ↑SD ↑T-QA ↑NoPR ↑
+> ImpromptuVLA-3B 68.4% 59.1 33.0 25.2 ImpromptuVLA+DEA-3B 76.0% 58.7 38.6 27.8 Base (Qwen2.5VL-3B) -56.6 28.7 36.8 Base+Full 64.3% 54.7 35.4 23.6 Base+LoRA 64.6% 53.1 22.3 23.8 Base+TAEM 74.4% 57.7 35.0 27.4 Base+TAEM+PA (DEA) 79.0% 58.8 41.0 29.0
+
+on Traffic-QA, respectively, when compared to the original, non-fine-tuned Qwen2.5VL-3B baseline. This result refutes the initial observation that LoRA fine-tuning is incapable of enhancing the model’s comprehension of long-tail scenarios. On the other hand, and more importantly, DEA effectively mitigates catastrophic forgetting. While any form of fine-tuning introduces some knowledge loss, our method’s ad-vantage becomes clear. Notably, ImpromptuVLA-3B, which employs full fine-tuning on the same base model, suffers from severe forgetting. In stark contrast, our DEA maintains a knowledge retention rate of 79.0%, substantially outper-forming ImpromptuVLA-3B’s 68.4%. Even when fine-tuned using the same dataset, the DEA method still achieves a knowledge retention rate of 76.0%, which further shows that the training set we constructed helps reduce forgetting. This superior knowledge preservation directly validates our central hypothesis. As further substantiated by the results in Tab. 5, it is the complementary action of the Prompt Adapter and the Task-Adaptive Expert Module that enables the model to acquire specialized driving skills without the destructive side effects inherent to full-parameter updates. 
+
+5.2. Robustness to the Choice of LLM Judge 
+
+Fig. 6 validates the robustness of our LLM Judge. We re-peated the entire assessment in Tab. 2 using a panel of di-verse and representative models, including Qwen3-Max [ 49 ], Gemini-2.5-Pro [ 12 ], and GPT-5 [ 33 ]. The results demon-strate remarkable consistency across all settings, the judges preserve nearly identical performance rankings for the com-peting methods, with only minor fluctuations. This finding confirms that our evaluation primarily captures the intrinsic differences between the autonomous driving systems, rather than being an artifact of a specific LLM judge’s bias. 
+
+5.3. Qualitative Analysis 
+
+In Fig. 7, we compare our method with ImpromptuVLA on a nighttime intersection. Our model correctly identifies multiple risk factors, including traffic and a construction zone, which is a typical long-tail scenario easily forgotten during fine-tuning. In contrast, ImpromptuVLA overlooks these critical elements, incorrectly states there are no ob-stacles, and thus underestimates the potential danger. This comparison demonstrates that our method preserves much 010 20 30 40 50 60 70         
+
+> RecogDrive-8B RecogDrive-2B RoboTron-Drive
+> ImpromptuVLA-7B ImpromptuVLA-3B Mini-Intern-BDDX
+> WiseAD Mini-Intern-DriveLM safeAuto-DriveLM
+> safeAuto-BDDX
+> 010 20
+> 30
+> 40 50 60
+> 010 20 30 40 50
+> SD T-QA NoPR
+> Qwen3 -MAX
+> GPT5
+> Gemini2.5 -Pro
+
+Figure 6. Comparison among different LLM judges. 
+
+Figure 7. Qualitative comparison. Bounding boxes indicate key objects and corresponding red text provides their descriptions. 
+
+richer, fine-grained perception, which is crucial for reliable reasoning in safety-critical environments. 
+
+6. Conclusion 
+
+In this work, we conduct the first systematic study of catas-trophic forgetting in VLM-based autonomous driving, a crit-ical yet overlooked challenge. We introduce Fidelity Driving Bench to quantify knowledge degradation, especially in long tail and safety critical scenarios. To address this, we pro-pose the Driving Expert Adapter (DEA), a plug-and-play framework that injects driving specific expertise without de-structively overwriting the pretrained model. Experiments demonstrate that our approach substantially mitigates forget-ting while maintaining strong driving performance. 8Acknowledgements 
+
+This work was supported in part by the Natural Science Foundation of China (Grant No.62503323). 
+
+References 
+
+[1] Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, et al. Flamingo: a visual language model for few-shot learning. Advances in neural information processing systems , 35:23716–23736, 2022. 1 [2] Hidehisa Arai, Keita Miwa, Kento Sasaki, Kohei Watan-abe, Yu Yamaguchi, Shunsuke Aoki, and Issei Yamamoto. Covla: Comprehensive vision-language-action dataset for au-tonomous driving. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) , pages 1933–1943. IEEE, 2025. 3 [3] Jinze Bai, Shuai Bai, Shusheng Yang, Shijie Wang, Sinan Tan, Peng Wang, Junyang Lin, Chang Zhou, and Jingren Zhou. Qwen-vl: A versatile vision-language model for understand-ing, localization, text reading, and beyond. arXiv preprint arXiv:2308.12966 , 2023. 2, 4 [4] Satanjeev Banerjee and Alon Lavie. Meteor: An automatic metric for mt evaluation with improved correlation with hu-man judgments. In Proceedings of the acl workshop on intrin-sic and extrinsic evaluation measures for machine translation and/or summarization , pages 65–72, 2005. 5 [5] Holger Caesar, Varun Bankiti, Alex H. Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Gi-ancarlo Baldan, and Oscar Beijbom. nuscenes: A multimodal dataset for autonomous driving, 2020. 3 [6] Meng Cao, Yuyang Liu, Yingfei Liu, Tiancai Wang, Jiahua Dong, Henghui Ding, Xiangyu Zhang, Ian Reid, and Xiaodan Liang. Continual llava: Continual instruction tuning in large vision-language models. arXiv preprint arXiv:2411.02564 ,2024. 3 [7] Xu Cao, Tong Zhou, Yunsheng Ma, Wenqian Ye, Can Cui, Kun Tang, Zhipeng Cao, Kaizhao Liang, Ziran Wang, James M Rehg, et al. Maplm: A real-world large-scale vision-language benchmark for map and traffic scene understanding. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 21819–21830, 2024. 3 [8] Kai Chen, Yanze Li, Wenhua Zhang, Yanxin Liu, Pengxi-ang Li, Ruiyuan Gao, Lanqing Hong, Meng Tian, Xinhai Zhao, Zhenguo Li, et al. Automated evaluation of large vision-language models on self-driving corner cases. In 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) , pages 7817–7826. IEEE, 2025. 3 [9] Li Chen, Penghao Wu, Kashyap Chitta, Bernhard Jaeger, Andreas Geiger, and Hongyang Li. End-to-end autonomous driving: Challenges and frontiers, 2024. 1 [10] Zhe Chen, Jiannan Wu, Wenhai Wang, Weijie Su, Guo Chen, Sen Xing, Muyan Zhong, Qinglong Zhang, Xizhou Zhu, Lewei Lu, et al. Internvl: Scaling up vision foundation models and aligning for generic visual-linguistic tasks. In Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition , pages 24185–24198, 2024. 1 [11] Haohan Chi, Huan ang Gao, Ziming Liu, Jianing Liu, Chenyu Liu, Jinwei Li, Kaisen Yang, Yangcheng Yu, Zeda Wang, Wenyi Li, Leichen Wang, Xingtao Hu, Hao Sun, Hang Zhao, and Hao Zhao. Impromptu vla: Open weights and open data for driving vision-language-action models, 2025. 1, 3, 6, 7 [12] Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, et al. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long con-text, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261 , 2025. 8 [13] Xinpeng Ding, Jianhua Han, Hang Xu, Wei Zhang, and Xi-aomeng Li. Hilm-d: Towards high-resolution understanding in multimodal large language models for autonomous driving. 
+
+arXiv preprint arXiv:2309.05186 , 2023. 2 [14] Alexey Dosovitskiy, German Ros, Felipe Codevilla, Antonio Lopez, and Vladlen Koltun. Carla: An open urban driving simulator. In Conference on robot learning , 2017. 3 [15] Zhangwei Gao, Zhe Chen, Erfei Cui, Yiming Ren, Weiyun Wang, Jinguo Zhu, Hao Tian, Shenglong Ye, Junjun He, Xizhou Zhu, et al. Mini-internvl: A flexible-transfer pocket multimodal model with 5% parameters and 90% performance. 
+
+arXiv preprint arXiv:2410.16261 , 2024. 6 [16] Haiyang Guo, Fanhu Zeng, Fei Zhu, Jiayi Wang, Xukai Wang, Jingang Zhou, Hongbo Zhao, Wenzhuo Liu, Shijie Ma, Da-Han Wang, Xu-Yao Zhang, and Cheng-Lin Liu. Continual learning for generative ai: From llms to mllms and beyond, 2025. 3 [17] Yihan Hu, Jiazhi Yang, Li Chen, Keyu Li, Chonghao Sima, Xizhou Zhu, Siqi Chai, Senyao Du, Tianwei Lin, Wenhai Wang, Lewei Lu, Xiaosong Jia, Qiang Liu, Jifeng Dai, Yu Qiao, and Hongyang Li. Planning-oriented autonomous driv-ing, 2023. 1 [18] Zhijian Huang, Chengjian Feng, Feng Yan, Baihui Xiao, Ze-qun Jie, Yujie Zhong, Xiaodan Liang, and Lin Ma. Robotron-drive: All-in-one large multimodal model for autonomous driving. In Proceedings of the IEEE/CVF International Con-ference on Computer Vision , pages 8011–8021, 2025. 6 [19] Bo Jiang, Shaoyu Chen, Qing Xu, Bencheng Liao, Jiajie Chen, Helong Zhou, Qian Zhang, Wenyu Liu, Chang Huang, and Xinggang Wang. Vad: Vectorized scene representation for efficient autonomous driving, 2023. 1 [20] Bo Jiang, Shaoyu Chen, Qian Zhang, Wenyu Liu, and Xing-gang Wang. Alphadrive: Unleashing the power of vlms in autonomous driving via reinforcement learning and reasoning. 
+
+arXiv preprint arXiv:2503.07608 , 2025. 3 [21] Jinkyu Kim, Anna Rohrbach, Trevor Darrell, John Canny, and Zeynep Akata. Textual explanations for self-driving vehicles. In ECCV , pages 563–578, 2018. 1 [22] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pre-training with frozen image encoders and large language models. pages 19730– 19742. PMLR, 2023. 1 [23] Yue Li, Meng Tian, Zhenyu Lin, Jiangtong Zhu, Dechang Zhu, Haiqiang Liu, Yueyi Zhang, Zhiwei Xiong, and Xinhai 
+
+9Zhao. Fine-grained evaluation of large vision-language mod-els in autonomous driving. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 9431– 9442, 2025. 3 [24] Yongkang Li, Kaixin Xiong, Xiangyu Guo, Fang Li, Sixu Yan, Gangwei Xu, Lijun Zhou, Long Chen, Haiyang Sun, Bing Wang, et al. Recogdrive: A reinforced cognitive framework for end-to-end autonomous driving. arXiv:2506.08052 , 2025. 1, 3, 6 [25] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. 36:34892–34916, 2023. 1 [26] Wenru Liu, Pei Liu, and Jun Ma. Dsdrive: Distilling large language model for lightweight end-to-end autonomous driv-ing with unified reasoning and planning. arXiv preprint arXiv:2505.05360 , 2025. 3 [27] Wenzhuo Liu, Fei Zhu, Haiyang Guo, Longhui Wei, and Cheng-Lin Liu. Llava-c: Continual improved visual instruc-tion tuning. arXiv preprint arXiv:2506.08666 , 2025. 3 [28] Xueyi Liu, Zuodong Zhong, Yuxin Guo, Yun-Fu Liu, Zhiguo Su, Qichao Zhang, Junli Wang, Yinfeng Gao, Yupeng Zheng, Qiao Lin, et al. Reasonplan: Unified scene prediction and decision reasoning for closed-loop autonomous driving. arXiv preprint arXiv:2505.20024 , 2025. 3 [29] David Lopez-Paz and Marc’Aurelio Ranzato. Gradient episodic memory for continual learning. Advances in neural information processing systems , 30, 2017. 5 [30] Tongxu Luo, Jiahe Lei, Fangyu Lei, Weihao Liu, Shizhu He, Jun Zhao, and Kang Liu. Moelora: Contrastive learning guided mixture of experts on parameter-efficient fine-tuning for large language models, 2024. 3 [31] Ana-Maria Marcu, Long Chen, Jan H ¨unermann, Alice Karn-sund, Benoit Hanotte, Prajwal Chidananda, Saurabh Nair, Vijay Badrinarayanan, Alex Kendall, Jamie Shotton, et al. Lingoqa: Visual question answering for autonomous driving. In European Conference on Computer Vision , pages 252–269. Springer, 2024. 3 [32] Ming Nie, Renyuan Peng, Chunwei Wang, Xinyue Cai, Jian-hua Han, Hang Xu, and Li Zhang. Reason2drive: Towards interpretable and chain-based reasoning for autonomous driv-ing. In ECCV , pages 292–308. Springer, 2024. 1, 2 [33] OpenAI. Gpt-5 system card. openai.com/index/gpt-5-system-card , 2025. 8 [34] OpenAI. gpt-oss-120b & gpt-oss-20b model card, 2025. 3 [35] Kishore Papineni, Salim Roukos, Todd Ward, and Wei-Jing Zhu. Bleu: a method for automatic evaluation of machine translation. In Proceedings of the 40th annual meeting of the Association for Computational Linguistics , pages 311–318, 2002. 5 [36] Weiguo Pian, Shijian Deng, Shentong Mo, Yunhui Guo, and Yapeng Tian. Modality-inconsistent continual learn-ing of multimodal large language models. arXiv preprint arXiv:2412.13050 , 2024. 3 [37] Stephen Robertson. Understanding inverse document fre-quency: on theoretical arguments for idf. Journal of Docu-mentation , 60(5):503–520, 2004. 4 [38] Hao Shao, Yuxuan Hu, Letian Wang, Guanglu Song, Steven L Waslander, Yu Liu, and Hongsheng Li. Lmdrive: Closed-loop end-to-end driving with large language models. In CVPR ,pages 15120–15130, 2024. 1, 2 [39] Chonghao Sima, Katrin Renz, Kashyap Chitta, Li Chen, Hanxue Zhang, Chengen Xie, Jens Beißwenger, Ping Luo, Andreas Geiger, and Hongyang Li. Drivelm: Driving with graph visual question answering. In European conference on computer vision , pages 256–274. Springer, 2024. 1, 3 [40] Ramakrishna Vedantam, C Lawrence Zitnick, and Devi Parikh. Cider: Consensus-based image description evalu-ation. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 4566–4575, 2015. 5 [41] Peng Wang, Shuai Bai, Sinan Tan, Shijie Wang, Zhihao Fan, Jinze Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, et al. Qwen2-vl: Enhancing vision-language model’s perception of the world at any resolution. arXiv preprint arXiv:2409.12191 , 2024. 1 [42] Shihao Wang, Zhiding Yu, Xiaohui Jiang, Shiyi Lan, Min Shi, Nadine Chang, Jan Kautz, Ying Li, and Jose M Alvarez. Omnidrive: A holistic llm-agent framework for autonomous driving with 3d perception, reasoning and planning. CoRR ,2024. 2, 3 [43] Wenhai Wang, Jiangwei Xie, ChuanYang Hu, Haoming Zou, Jianan Fan, Wenwen Tong, Yang Wen, Silei Wu, Hanming Deng, Zhiqi Li, et al. Drivemlm: Aligning multi-modal large language models with behavioral planning states for autonomous driving. arXiv:2312.09245 , 2023. 1, 2 [44] Licheng Wen, Daocheng Fu, Xin Li, Xinyu Cai, Tao Ma, Pinlong Cai, Min Dou, Botian Shi, Liang He, and Yu Qiao. Dilu: A knowledge-driven approach to autonomous driving with large language models. arXiv preprint arXiv:2309.16292 ,2023. 3 [45] Penghao Wu, Xiaosong Jia, Li Chen, Junchi Yan, Hongyang Li, and Yu Qiao. Trajectory-guided control prediction for end-to-end autonomous driving: A simple yet strong baseline, 2022. 1 [46] Shaoyuan Xie, Lingdong Kong, Yuhao Dong, Chonghao Sima, Wenwei Zhang, Qi Alfred Chen, Ziwei Liu, and Liang Pan. Are vlms ready for autonomous driving? an empirical study from the reliability, data, and metric perspectives. arXiv preprint arXiv:2501.04003 , 2025. 3 [47] Runsheng Xu, Hubert Lin, Wonseok Jeon, Hao Feng, Yuliang Zou, Liting Sun, John Gorman, Kate Tolstaya, Sarah Tang, Brandyn White, Ben Sapp, Mingxing Tan, Jyh-Jing Hwang, and Drago Anguelov. Wod-e2e: Waymo open dataset for end-to-end driving in challenging long-tail scenarios, 2025. 3, 6 [48] Zhenhua Xu, Yujia Zhang, Enze Xie, Zhen Zhao, Yong Guo, Kwan-Yee K Wong, Zhenguo Li, and Hengshuang Zhao. Drivegpt4: Interpretable end-to-end autonomous driving via large language model. IEEE Robotics and Automation Letters ,2024. 1 [49] An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu, Chang Gao, Chengen Huang, Chenxu Lv, et al. Qwen3 technical report, 2025. 8 [50] Yixiang Yang, Chuanrong Han, Runhao Mao, et al. Survey of general end-to-end autonomous driving: A unified perspec-tive. TechRxiv , 2025. 1 
+
+10 [51] Zhenlong Yuan, Jing Tang, Jinguo Luo, Rui Chen, Chengxuan Qian, Lei Sun, Xiangxiang Chu, Yujun Cai, Dapeng Zhang, and Shuo Li. Autodrive-r 2: Incentivizing reasoning and self-reflection capacity for vla model in autonomous driving. arXiv preprint arXiv:2509.01944 , 2025. 3 [52] Fanhu Zeng, Fei Zhu, Haiyang Guo, Xu-Yao Zhang, and Cheng-Lin Liu. Modalprompt: Towards efficient multi-modal continual instruction tuning with dual-modality guided prompt. arXiv preprint arXiv:2410.05849 , 2024. 3 [53] Shuang Zeng, Xinyuan Chang, Mengwei Xie, Xinran Liu, Yi-fan Bai, Zheng Pan, Mu Xu, and Xing Wei. Futuresightdrive: Thinking visually with spatio-temporal cot for autonomous driving. arXiv preprint arXiv:2505.17685 , 2025. 2 [54] Jimuyang Zhang, Zanming Huang, Arijit Ray, and Eshed Ohn-Bar. Feedback-guided autonomous driving. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 15000–15011, 2024. 3 [55] Jiawei Zhang, Xuan Yang, Taiqi Wang, Yu Yao, Aleksandr Petiushko, and Bo Li. Safeauto: Knowledge-enhanced safe autonomous driving with multimodal foundation models. In 
+
+Proceedings of the 42nd International Conference on Machine Learning , pages 76497–76517. PMLR, 2025. 6 [56] Licheng Zhang, Zhendong Mao, Yixing Peng, Zheren Fu, and Yongdong Zhang. Multi-prototype grouping for continual learning in visual question answering. In ICASSP 2025-2025 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 1–5. IEEE, 2025. 3 [57] Songyan Zhang, Wenhui Huang, Zihui Gao, Hao Chen, and Chen Lv. Wisead: Knowledge augmented end-to-end autonomous driving with vision-language model. 
+
+arXiv:2412.09951 , 2024. 6 [58] Xi Zhang, Feifei Zhang, and Changsheng Xu. Vqacl: A novel visual question answering continual learning setting. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 19102–19112, 2023. 3 [59] Hengyuan Zhao, Ziqin Wang, Qixin Sun, Kaiyou Song, Yilin Li, Xiaolin Hu, Qingpei Guo, and Si Liu. Llava-cmoe: To-wards continual mixture of experts for large vision-language models. arXiv preprint arXiv:2503.21227 , 2025. 3 [60] Rui Zhao, Qirui Yuan, Jinyu Li, Haofeng Hu, Yun Li, Zhen-hai Gao, and Fei Gao. Sce2drivex: A generalized mllm framework for scene-to-drive learning. IEEE Robotics and Automation Letters , 2025. 2 [61] Xingcheng Zhou, Xuyuan Han, Feng Yang, Yunpu Ma, and Alois C Knoll. Opendrivevla: Towards end-to-end au-tonomous driving with large vision language action model. 
+
+arXiv preprint arXiv:2503.23463 , 2025. 2 [62] Zewei Zhou, Tianhui Cai, Seth Z Zhao, Yun Zhang, Zhiyu Huang, Bolei Zhou, and Jiaqi Ma. Autovla: A vision-language-action model for end-to-end autonomous driv-ing with adaptive reasoning and reinforcement fine-tuning. 
+
+arXiv:2506.13757 , 2025. 1, 3 [63] Jinguo Zhu, Weiyun Wang, Zhe Chen, Zhaoyang Liu, Shen-glong Ye, Lixin Gu, Hao Tian, Yuchen Duan, Weijie Su, Jie Shao, et al. Internvl3: Exploring advanced training and test-time recipes for open-source multimodal models. arXiv preprint arXiv:2504.10479 , 2025. 2 
+
+11

@@ -1,0 +1,302 @@
+Title: Geo-EVS: Geometry-Conditioned Extrapolative View Synthesis for Autonomous Driving
+
+URL Source: https://arxiv.org/pdf/2604.07250v1
+
+Published Time: Thu, 09 Apr 2026 01:15:53 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Geo-EVS: Geometry-Conditioned Extrapolative View Synthesis for Autonomous Driving 
+
+# Yatong Lan 
+
+School of Vehicle and Mobility, Tsinghua University Beijing, China State Key Laboratory of Intelligent Green Vehicle and Mobility, Tsinghua University Beijing, China School of Science, Minzu University Beijing, China 
+
+# Rongkui Tang 
+
+Chongqing Changan Automobile Co., Ltd. Chongqing, China 
+
+# Lei He ∗
+
+School of Vehicle and Mobility, Tsinghua University Beijing, China State Key Laboratory of Intelligent Green Vehicle and Mobility, Tsinghua University Beijing, China 
+
+## Abstract 
+
+Extrapolative novel view synthesis can reduce camera-rig depen-dency in autonomous driving by generating standardized virtual views from heterogeneous sensors. Existing methods degrade out-side recorded trajectories because extrapolated poses provide weak geometric support and no dense target-view supervision. The key is to explicitly expose the model to out-of-trajectory condition defects during training. We propose Geo-EVS , a geometry-conditioned framework under sparse supervision. Geo-EVS has two compo-nents. Geometry-Aware Reprojection (GAR) uses fine-tuned VGGT to reconstruct colored point clouds and reproject them to observed and virtual target poses, producing geometric condition maps. This design unifies the reprojection path between training and infer-ence. Artifact-Guided Latent Diffusion (AGLD) injects reprojection-derived artifact masks during training so the model learns to recover structure under missing support. For evaluation, we use a LiDAR-Projected Sparse-Reference (LPSR) protocol when dense extrapolated-view ground truth is unavailable. On Waymo, Geo-EVS improves sparse-view synthesis quality and geometric accuracy, especially in high-angle and low-coverage settings. It also improves downstream 3D detection. 
+
+## 1 Introduction 
+
+As autonomous driving systems scale, cross-platform data reuse re-mains a major bottleneck. A primary reason is sensor heterogeneity. Different vehicle lines adopt different camera counts, mounting po-sitions, and fields of view, making data and models tightly coupled to specific rig configurations [ 1, 2]. As a consequence, launching a new platform often requires expensive recollection and relabeling. This increases both engineering cost and development cycle. Extrapolative view synthesis offers a direct route to this problem by generating standardized virtual views beyond native camera layouts. If reliable extrapolated views can be produced from exist-ing onboard images, training data can be reorganized into a shared camera space across heterogeneous vehicles. However, this set-ting is substantially more challenging than in-manifold novel-view synthesis within overlapping view manifolds. In real driving logs, capture is constrained by a single trajectory and yields sparse, bi-ased 3D observations. Once the target viewpoint departs from the 
+
+> ∗Corresponding author: Lei He (helei2023@tsinghua.edu.cn).
+
+observed manifold, dense target-view supervision is unavailable and geometric reprojection becomes severely under-supported. Existing methods remain unstable in this regime. Diffusion-based approaches learn strong image priors, but may hallucinate textures over geometrically unsupported regions when viewpoint cover-age is sparse. Reconstruction pipelines based on NeRF or Gauss-ian Splatting are geometrically grounded, yet remain sensitive to wide-baseline support sparsity and often exhibit topology breaks, stretched structures, and large invalid regions in extrapolated views. Across both families, a shared limitation persists: extrapolated re-projections contain large holes and discontinuities that are rare in observed-pose training conditions, causing a systematic train–test mismatch. To address this gap, we propose Geo-EVS , a geometry-conditioned extrapolative synthesis framework under sparse supervision. Geo-EVS combines geometry-consistent construction and artifact-aware generation, as detailed below. A Geometry-Aware Reprojection (GAR) module first builds train-ing pairs in which the condition is a reprojected point-cloud ren-dering and the supervision label is the target-view supervision-domain image at the same camera pose. Both training and in-ference therefore use the same geometric reprojection pathway. An Artifact-Guided Latent Diffusion (AGLD) backbone performs geometry-to-image synthesis with early spatial alignment to pre-serve structure while recovering details. During optimization, pre-computed reprojection-derived artifact masks are injected into conditions. This trains the model to recover valid structure under missing-support patterns. Together, these designs target reliable extrapolated-view generation as a practical interface for cross-rig data reuse. Since dense target-view ground truth is unavailable, we establish a LiDAR-Projected Sparse-Reference (LPSR) protocol for principled quantitative evaluation. Metrics are computed only on valid pro-jected regions, enabling fair comparison under realistic extrapola-tion constraints. On the Waymo Open Dataset, Geo-EVS consis-tently improves sparse-view fidelity and geometric consistency. The generated views further provide measurable gains in downstream 3D detection. 
+
+Contributions. 
+
+• A unified task formulation of autonomous-driving extrap-olative view synthesis for cross-rig reuse, where generation 
+
+> 1
+> arXiv:2604.07250v1 [cs.CV] 8 Apr 2026 Yatong Lan, Rongkui Tang, and Lei He
+
+is cast as geometry-conditioned learning under sparse su-pervision rather than dense target-view reconstruction. 
+
+• A GAR-based geometry-aligned data construction strategy that preserves the projection pathway and artifact forma-tion mechanism, enabling tractable training when dense supervision at extrapolated poses is unavailable. 
+
+• An extrapolation-oriented generator, built on AGLD with artifact-aware optimization, that better preserves geometric structure while recovering photorealistic details under large pose gaps and limited support. 
+
+• A practical evaluation protocol (LPSR) for no-dense-ground-truth settings, enabling principled comparison under real-istic extrapolation constraints. 
+
+## 2 Related Work 
+
+Novel View Synthesis for Autonomous Driving. Autonomous-driving view synthesis has evolved from image-based rendering and lay-ered plane representations [ 3, 4 ] to neural scene models. NeRF-style methods and large-scale extensions (e.g., Mip-NeRF 360, Block-NeRF, Mega-NeRF, CityNeRF) substantially improve realism and scalability in outdoor environments [ 5–9 ]. For dynamic street scenes, motion-aware formulations and Gaussian-based rendering further improve efficiency and temporal modeling [10–15]. These lines of work establish strong reconstruction quality, espe-cially when viewpoint overlap is adequate [ 16 , 17 ]. Their common evaluation setting remains predominantly dense-ground-truth or near-trajectory novel-view reconstruction. By comparison, our tar-get setting is extrapolative synthesis with sparse, partially unverifi-able supervision regions, which defines a different task objective and evaluation regime rather than a minor variant of standard reconstruction [18, 19]. 
+
+Conditional Generative Modeling for View Synthesis. Diffusion models (DDPM, latent diffusion) provide a strong foundation for high-fidelity generation [ 20 , 21 ]. Conditioning strategies such as ControlNet, T2I-Adapter, and GLIGEN show that structural guid-ance can effectively control generation [ 22 –24 ]. In novel-view generation, Zero123, SyncDreamer, and MVDiffusion demonstrate promising viewpoint generalization from sparse observations [ 25 –27 ]. In driving, related generative systems extend conditioning to BEV-, box-, and LiDAR-guided synthesis [ 28 –31 ]. Our experimental baseline FreeVS also belongs to this diffusion-based family [32]. Why these methods remain insufficient in our setting is more spe-cific than “diffusion vs. reconstruction”. Existing pipelines often as-sume cleaner condition distributions than those induced by out-of-trajectory reprojection, so robustness to structured holes/discontinuities is under-modeled [ 33 – 35 ]. A concise closest-method contrast is as follows. Reconstruction-heavy baselines, including 3DGS [ 18 ], Street Gaussians [ 15 ], and EmerNeRF [ 13 ], rely more on overlap-consistent geometry and degrade under sparse support. The dif-fusion baseline FreeVS [ 32 ] improves perceptual plausibility but does not explicitly target extrapolation-induced condition defects during training. We therefore position Geo-EVS at the task level: extrapolative synthesis under sparse and partially unverifiable su-pervision, rather than dense/near-trajectory reconstruction with stable support. 
+
+## 3 Method 3.1 Overview 
+
+Given a target camera pose 𝑣 ′, our goal is to synthesize its target-view image from geometric condition maps derived from observed views. We formulate the task as geometry-conditioned generation: 
+
+ˆ𝐼 𝑣 ′
+
+= 𝐺 𝜃 (𝑋 𝑣 ′
+
+), (1) where 𝑋 𝑣 ′
+
+∈ R𝐻 ×𝑊 ×3 is a reprojection-based geometric condition map and 𝐺 𝜃 is a conditional latent diffusion model. Geo-EVS contains three components: (i) geometry-conditioned pair construction, (ii) geometry-to-image diffusion generation, and (iii) artifact-aware robustness training. Training uses observed-pose supervision pairs (𝑋 𝑣 , 𝑌 𝑣 ), while inference applies the same generator architecture to out-of-trajectory geometric condition maps 𝑋 𝑣 ′
+
+. As shown in Fig. 1, Sec. 3.2 defines geometric condition map construction, Sec. 3.3 defines conditional diffusion training and inference, and Sec. 3.4 defines artifact-mask injection for robustness. Our core insight is to recast extrapolative view synthesis from cross-view generation into structure recovery under sparse geomet-ric condition maps. GAR keeps the projection operator consistent between training and inference, but the input distribution can still shift: extrapolated poses yield geometric condition maps with more missing support than observed poses, inducing a shift between 
+
+𝑝 (𝑋 | 𝑣 ∈ V obs ) and 𝑝 (𝑋 | 𝑣 ∈ V ext ).
+
+## 3.2 Geometry-Conditioned Pair Construction 
+
+Motivation. To ensure trainability under no extrapolated-view labels, we first construct condition–label pairs from observed poses only. 
+
+Design. For a source image 𝐼 𝑢 ∈ R𝐻 ×𝑊 ×3 with calibration (𝐾 𝑢 ,𝑇 𝑢 ),we use VGGT (Visual Geometry Grounded Transformer, [ 36 ]), a geo-metric foundation model for dense 3D-aware geometric prediction, as a geometric feature extractor to provide geometry-consistent point-map priors for GAR. Specifically, we first fine-tune VGGT with fixed camera poses to adapt it to driving-scene geometry, and then freeze it during Geo-EVS training to extract geometric fea-tures only (no VGGT parameter update in the diffusion stage). We then estimate a dense point map M𝑢 and convert it to a colored point cloud. The source for this construction is single-frame (no multi-frame point-cloud fusion is used in GAR): 
+
+P = F ( M𝑢 , 𝐼 𝑢 ). (2) In training, we set 𝑢 = 𝑣 and project P back to the same cam-era pose to obtain a sparse geometric condition map aligned with supervision-domain targets. Cross-view construction at 𝑢 ≠ 𝑣 
+
+would require target-view supervision at those poses, which is un-available for out-of-trajectory viewpoints; this motivates learning from clean observed-pose pairs and explicitly simulating missing-support patterns in Sec. 3.4. Functionally, GAR is not restricted to interpolation; it defines a unified reprojection interface that can instantiate any virtual target pose, including outward lateral offsets used in our extrapolative experiments. Given a camera (𝐾 𝑣 ,𝑇 𝑣 ), we project and rasterize P as 
+
+𝑋 𝑣 = R ( Π(P, 𝐾 𝑣 ,𝑇 𝑣 )) . (3) 
+
+> 2Geo-EVS: Geometry-Conditioned Extrapolative View Synthesis for Autonomous Driving
+
+Figure 1: Overview of Geo-EVS. GAR constructs geometry-conditioned maps through reprojection with a unified projection interface for training and inference, and AGLD performs geometry-to-image generation with artifact-aware optimization. 
+
+Here Π(·) denotes perspective projection and R (·) denotes z-buffer rasterization. For training, each pair is formed as (𝑋 𝑣 , 𝑌 𝑣 ), where 
+
+𝑌 𝑣 is the dense RGB image captured at the same camera pose as 
+
+𝑋 𝑣 . At inference, we apply the same generator to 𝑋 𝑣 ′
+
+rendered at novel poses 𝑣 ′.Projection validity is determined by a deterministic visibility rule. A projected point is considered valid only if it satisfies three constraints: positive depth, in-frame coordinates, and front-most visibility under z-buffering. When multiple 3D points map to the same pixel, we keep the point with minimum depth and discard the others. Pixels without surviving projections are zero-filled in 𝑋 𝑣 ,yielding a unique sparse condition map for downstream generation. This calibration-driven construction is scalable on raw driving logs and provides supervised geometry-to-image pairs without requiring dense labels at extrapolated poses. It also keeps the geo-metric interface consistent between training and inference. The outputs of this stage, (𝑋 𝑣 , 𝑌 𝑣 ), are directly consumed by later mod-ules. Section 3.3 uses them for diffusion training, and Section 3.4 replaces 𝑋 𝑣 with ˜𝑋 𝑣 while keeping the same training objective. 
+
+## 3.3 Geometry-to-Image Conditional Diffusion 
+
+Motivation. Given the trainable pairs from Sec. 3.2, the next problem is generability: geometric condition maps are sparse and discontinuous, so the generator must preserve structure on valid support while recovering plausible textures in missing regions. 
+
+Design. We train a latent diffusion model with standard noise-prediction training. For each sample, the supervision target 𝑌 𝑣 is encoded to clean latent 𝑧 0; a timestep 𝑡 is sampled and Gaussian noise is added to obtain 𝑧 𝑡 . The geometric condition map (clean 𝑋 𝑣 
+
+or artifact-injected ˜𝑋 𝑣 ) is encoded by E𝑔𝑒𝑜 (·) to condition features 
+
+𝑐 , which are concatenated with 𝑧 𝑡 at the UNet input: 
+
+˜𝑧 𝑡 = [𝑧 𝑡 ⊕ 𝑐 ], (4) and optimize the denoiser with the standard objective: 
+
+Ldiff = E𝑧 0,𝜖,𝑡 
+
+∥𝜖 − 𝜖 𝜃 ([ 𝑧 𝑡 ⊕ 𝑐 ], 𝑡 )∥ 22
+
+ . (5) In implementation, the training objective uses per-sample weight-ing consistent with the dataloader: 
+
+Ltrain = 1
+
+𝐵 
+
+> 𝐵
+
+∑︁ 
+
+> 𝑖 =1
+
+𝑤 𝑖 𝜖 𝑖 − 𝜖 𝜃 ([ 𝑧 𝑡,𝑖 ⊕ 𝑐 𝑖 ], 𝑡 𝑖 ) 22 . (6) To enable classifier-free guidance at inference, we apply conditional dropout during training: with probability 𝑝 drop , the geometric con-dition is replaced by a null condition token ∅. Training samples one timestep per instance (standard diffusion training) and does not require unrolling the full denoising chain. Multi-step denoising is used only at inference. At inference, we start from Gaussian noise and denoise for 𝑇 steps conditioned on 𝑋 𝑣 ′
+
+to obtain ˆ𝐼 𝑣 ′
+
+after VAE decoding. For completeness, classifier-free guidance can be written as 
+
+ˆ𝜖 cfg (𝑧 𝑡 , 𝑡, 𝑐 ) = ˆ𝜖 𝜃 (𝑧 𝑡 , 𝑡, ∅) + 𝑠 cfg 
+
+
+
+ˆ𝜖 𝜃 (𝑧 𝑡 , 𝑡, 𝑐 ) − ˆ𝜖 𝜃 (𝑧 𝑡 , 𝑡, ∅) 
+
+
+
+, (7) where 𝑐 = E𝑔𝑒𝑜 (𝑋 𝑣 ′
+
+) and 𝑠 cfg is the guidance scale. In our setting, this reduces to standard conditional denoising when 𝑠 cfg = 1. The noise-prediction objective implicitly fits the conditional distribution 
+
+𝑝 (𝑌 | 𝑋 ), so the model learns a structured image prior consistent with the observed geometry. When the condition map contains missing pixels, these locations contribute no geometric constraint; the denoiser therefore relies on the learned prior to complete plau-sible content while remaining anchored by valid-condition regions. In other words, hole filling is not introduced by an extra inpaint-ing loss but emerges from conditional likelihood training once the 
+
+> 3Yatong Lan, Rongkui Tang, and Lei He
+
+model is exposed to missing-support conditions. This is why Sec. 3.4 is critical: artifact-mask injection makes the global loss cover the same defect patterns seen at test time, enabling reliable completion under sparse support. Input-stage conditioning enforces explicit spatial alignment with low overhead. Under sparse support, this acts as a pixel-level hard constraint at the denoiser input. By contrast, attention-based con-trol tends to treat sparse geometric cues as weaker high-level guid-ance. This makes the design well-suited for geometry-sensitive extrapolation, where local support patterns are more critical than high-level semantic control. 
+
+## 3.4 Artifact-Aware Prior Learning for Extrapolation Robustness 
+
+Motivation. A core supervision bottleneck in our setting is that we cannot obtain dense, fully reliable RGB targets at truly extrapo-lated poses during training. Consequently, direct supervised learn-ing on real out-of-trajectory condition–target pairs is intractable. If trained only on self-projected observed-pose pairs, the model mostly sees cleaner geometric conditions than those encountered at extrapolated inference, and thus under-learns recovery under severe support loss. Sec. 3.4 is designed to convert this weakness into a trainable signal: we inject extrapolation-like artifact priors into otherwise aligned training conditions, forcing the generator to learn structure restoration from intentionally degraded geometric evidence. 
+
+Design. We precompute an artifact mask library A = {𝑎 𝑖 } from virtual-pose reprojection, where each 𝑎 𝑖 ∈ { 0, 1}𝐻 ×𝑊 is a valid-ity mask generated by the same reprojection validity test (depth-positive, in-frame, z-buffer-visible). These defects share the same mechanism—support loss after geometric reprojection—and mainly vary in severity and spatial coverage; the resulting mask library therefore provides transferable morphology priors for robust out-of-trajectory synthesis. During training, we sample a Bernoulli variable 𝑏 ∼ Bernoulli (𝑝 ); if 𝑏 = 1, an artifact mask is drawn uni-formly at random from A and applied to the geometric condition map: 
+
+˜𝑋 𝑣 =
+
+(
+
+𝑋 𝑣 ⊙ 𝑎, 𝑏 = 1, 𝑎 ∼ Uniform (A) 
+
+𝑋 𝑣 , 𝑏 = 0. (8) Artifact injection uses a two-stage sampling scheme. First, a Bernoulli gate with probability 𝑝 decides whether to perturb the current condition. Second, if activated, one mask is sampled uni-formly from the library A. This decouples injection frequency from morphology diversity and avoids over-concentration on a small subset of defect patterns. Training uses the same mask-and-weighted objective Ltrain from Sec. 3.3, with ˜𝑋 𝑣 as the conditioning input. Thus, artifact-mask injection acts as condition-space robustness augmentation while leaving the optimization target and timestep sampling unchanged. No extra branch is introduced at inference. This strategy exposes the model to extrapolation-like defects during optimization and improves robustness under large pose offsets, while keeping inference unchanged. 
+
+## 3.5 LiDAR-Projected Sparse-Reference (LPSR) Protocol Formulation 
+
+Because dense target-view ground truth is unavailable at extrapo-lated poses, evaluation must be defined on sparse valid regions. Let 
+
+𝑅 ∈ R𝐻 ×𝑊 ×3 denote the LiDAR-projected sparse reference image and 𝑀 ∈ { 0, 1}𝐻 ×𝑊 its validity mask. We define the valid pixel set 
+
+Ω = {𝑝 | 𝑀 (𝑝 ) = 1}. (9) Given a synthesized image ˆ𝐼 , all reconstruction metrics are com-puted only on Ω. The masked error operator is 
+
+EΩ ( ˆ𝐼, 𝑅 ) = 1
+
+|Ω|∑︁ 𝑝 ∈Ω
+
+ˆ𝐼 (𝑝 ) − 𝑅 (𝑝 ) 22 . (10) Accordingly, sparse PSNR is defined as S-PSNR = 10 log 10 
+
+MAX 2
+
+EΩ ( ˆ𝐼, 𝑅 ) , (11) and sparse MAE / RMSE follow the same masked-valid-set rule as in Sec. 4. This formulation ensures that quantitative comparison is restricted to geometrically supported regions and avoids penalizing unverifiable pixels at extrapolated viewpoints. 
+
+## 3.6 Implementation Details 
+
+Data interface and pair construction. Our implementation uses a fixed condition/supervision interface: 𝑋 𝑣 is a 3-channel reprojected geometric condition map (invalid pixels zero-filled), and 𝑌 𝑣 is the RGB supervision image at the same frame–camera identity. Pair matching is deterministic by shared frame and camera indices, independent of variable naming in different code modules. 
+
+Geometric validity consistency. A single validity operator (depth-positive, in-frame, z-buffer-visible) is reused throughout GAR pro-jection, artifact-mask generation, and sparse-reference evaluation. This shared definition guarantees that condition construction, ro-bustness training, and metric computation are geometrically con-sistent. 
+
+Training objective implementation. We follow the single-timestep latent-diffusion objective in Sec. 3.3 with per-sample weighting from the dataloader. Artifact-mask injection only perturbs condi-tioning inputs and does not alter denoiser architecture or loss form, so training and inference differ only by whether masks are injected. 
+
+## 4 Experiments 
+
+We evaluate Geo-EVS from three complementary perspectives: (i) in-manifold perceptual fidelity, (ii) out-of-manifold extrapolation robustness under sparse geometric support, and (iii) downstream 3D detection utility of synthesized views. Following a unified eval-uation protocol, we first define a global baseline pool and then report task-specific subsets based on metric availability and proto-col compatibility. All compared methods use identical data splits, preprocessing, and evaluation settings to ensure fairness. 
+
+## 4.1 Experimental Setup 
+
+4.1.1 Datasets. All experiments are conducted on Waymo-mini-1/5 (one-fifth of Waymo v1.3 training data) using fixed train/val/test scene partitions to reduce leakage risk. Geometric pretraining stages 
+
+> 4Geo-EVS: Geometry-Conditioned Extrapolative View Synthesis for Autonomous Driving
+
+(e.g., VGGT adaptation) are performed on scenes disjoint from synthesis evaluation scenes. 
+
+4.1.2 Evaluation Protocol. For in-manifold synthesis in this paper, we use FID as the primary perceptual metric (Table 1), and adopt the LPSR protocol (Sec. 3.5) for extrapolated-view evaluation, where metrics are computed only on LiDAR-projected valid pixels. For downstream evaluation, we follow Waymo’s official 3D detection protocol and report LET-mAP L, LET-mAPH, and L1/mAPH. 
+
+4.1.3 Baselines and Re-implementation. We build a global baseline pool spanning reconstruction and generative paradigms: 3DGS [ 18 ], Street Gaussians, EmerNeRF [ 13 ], and FreeVS [ 32 ], together with additional generative methods in the observed-view FID compari-son (BEVGen as autoregression; Panacea [ 37 ], MagicDrive, Driv-ingDiffusion [ 38 ], and DriveWM [ 39 ] as diffusion). We intentionally use different baseline subsets satisfying protocol requirements per benchmark to avoid selecting baselines that favor our method and to keep comparisons aligned with each evaluation goal. Concretely, Table 1 includes a broader diffusion/autoregressive subset to test whether Geo-EVS remains competitive against methods with strong generative priors under observed-view FID evaluation. In contrast, Table 2 and Table 5 use the same executable core subset (3DGS, EmerNeRF, Street Gaussians, and FreeVS) to provide controlled, protocol-consistent comparisons for sparse-reference extrapolation and NVS interpolation. All baselines with reproducible and runnable training pipelines are run on our Waymo split with unified preprocessing and evalua-tion scripts. 
+
+4.1.4 Training and Inference Configuration. We train with AdamW (learning rate 1×10 −4) for a fixed number of iterations. At inference, Geo-EVS uses 𝑇 = 30 denoising steps with classifier-free guidance scale 𝑠 cfg = 1.5. Ablations use the same setting. All compared meth-ods share identical input resolution ( 512 × 512 ) and evaluation splits. 
+
+## 4.2 Perceptual Fidelity Under Observed-View Reconstruction 
+
+We first verify whether extrapolation-oriented training preserves in-manifold visual quality. For each frame, we reconstruct recorded camera views and compare predictions against dense RGB super-vision. This experiment serves as a controlled base-quality check before moving to sparse-supervision extrapolation. Table 1 reports the baseline subset satisfying the protocol require-ments for observed-view FID evaluation, covering representative reconstruction, autoregressive, and diffusion methods with avail-able FID. Within this baseline subset, Geo-EVS achieves the best FID, showing that geometry-conditioned diffusion with artifact-aware optimization does not weaken standard in-manifold reconstruction quality. Compared with strong baselines, Geo-EVS improves markedly over Street Gaussians (20.5), BEVGen (31.27), and prior Stable Diffusion-based methods (best baseline: 14.62). These gains establish a stronger in-manifold starting point for the subsequent out-of-manifold eval-uation. All methods listed in Table 1 provide FID values, so ranking statements are made directly on complete entries. 
+
+Table 1: Perceptual comparison on Waymo with method tax-onomy. We report each baseline’s paradigm and external prior to clarify comparison context; within this baseline sub-set satisfying the protocol requirements, Geo-EVS achieves the best FID. 
+
+Method Paradigm Extra Prior FID ↓
+
+Street Gaussians Reconstruction None 20.5 BEVGen Autoregression None 31.27 Panacea Diffusion Stable Diffusion 19.63 MagicDrive Diffusion Stable Diffusion 18.45 DrivingDiffusion Diffusion Stable Diffusion 17.81 DriveWM Diffusion Stable Diffusion 14.62 Geo-EVS (Ours) Diffusion Stable Diffusion 3.9 
+
+## 4.3 Robustness Under Out-of-Manifold Extrapolation 
+
+We first evaluate the key target regime: out-of-manifold extrapola-tion with limited geometric support. Table 2 reports the extrapolation-compatible baseline subset under a unified sparse-reference proto-col. Concretely, we use the front ( 0◦) and front-side ( 45 ◦) cameras to construct an intermediate view at 22 .5◦, and then apply 1 m lateral shifts in the world coordinate system to both left and right direc-tions to obtain extrapolated targets. This setting explicitly departs from pure interpolation and directly measures robustness under pose extrapolation. 
+
+Protocol and metrics. Because dense RGB supervision is un-available after the lateral translation, we follow the LPSR proto-col and evaluate only on LiDAR-projected valid pixels. We report sparse-PSNR and sparse-SSIM, which measure reconstruction fi-delity on geometrically verifiable regions and avoid penalizing unverifiable pixels in unsupported areas. Within the baseline subset satisfying the protocol requirements in Table 2, Geo-EVS achieves the best sparse-PSNR and sparse-SSIM, outperforming both reconstruction-based and diffusion-based base-lines under the same sparse-reference protocol. In particular, com-pared with the strongest reconstruction baseline (Street Gaussians), our method yields consistent gains on both metrics, indicating that geometry-conditioned diffusion with artifact-aware training better handles support discontinuities introduced by lateral extrapolation. The detailed analysis in the lower part of Table 2 further vali-dates robustness trends. As the pose offset increases, performance degrades smoothly rather than collapsing, suggesting stronger tol-erance to wider viewpoint gaps. Across sparsity bins, the model maintains stable quality under reduced valid support, consistent with our objective of exposing training to reprojection-induced defect patterns. Overall, these results verify that Geo-EVS improves not only average extrapolation fidelity but also stability in harder geometric conditions, which is essential for reliable virtual-view deployment. Qualitative comparisons in Fig. 2 are consistent with the quantita-tive gains in Table 2. 
+
+> 5Yatong Lan, Rongkui Tang, and Lei He
+
+Table 2: Extrapolation robustness on Waymo. Top: Overall method comparison. Bottom: Geo-EVS detailed analysis by pose offset and geometric sparsity, showing consistent performance across extrapolation conditions. Method sparse-PSNR ↑ sparse-SSIM ↑
+
+3DGS 19.840 0.824 EmerNeRF 21.850 0.876 Street Gaussians 23.000 0.932 FreeVS 22.920 0.895 Geo-EVS (Ours) 23.650 0.941 Geo-EVS Detailed Analysis (Ours) By Pose Offset ( ◦) By Sparsity Metric [0-5] [5-10] [10-15] [15-20] [20-30] [0-0.02] [0.02-0.05] [0.05-0.1] sparse-PSNR ↑ 24.17 23.80 23.57 23.42 23.30 24.39 20.73 26.37 
+
+sparse-SSIM ↑ 0.944 0.942 0.940 0.939 0.938 0.984 0.926 0.955 
+
+Table 3: Downstream 3D detection with BEVFormer on Waymo-mini-1/5. We compare the default 5-view setting and 45-view setting with 40 generated views. All metrics are evaluated on the Waymo validation split. 
+
+Setting LET-mAP L ↑ LET-mAPH ↑ L1/mAPH (Car) ↑
+
+Original 5 Views 34.9 46.3 25.5 5 Native + 40 Generated Views (Ours) 35.9 47.1 26.8 
+
+Gain +1.0 +0.8 +1.3 
+
+Table 4: Core ablation study on extrapolative synthesis (evaluated on view extrapolation split). The three-variant design isolates artifact-prior quality under fixed concat conditioning. 
+
+Variant Artifact Lib. Mask Type 𝑝 Conditioning S-PSNR ↑ Contribution V1: Baseline (no artifacts) ✗ – 0.0 Concat 21.73 baseline V2: + Random masks ✗ Random Box 0.4 Concat 22.34 +0.61 dB V3: Full model (Reproj masks) ✓ Reproj Mask 0.4 Concat 23.65 +1.92 dB Table 5: Comparison with NVS counterparts on novel camera synthesis. For all NVS methods, we use all front-side camera views as source views to synthesize the front camera views. 
+
+Methods SSIM ↑ PSNR ↑ LPIPS ↓
+
+3DGS 0.624 18.06 0.335 Street Gaussians 0.741 21.72 0.221 EmerNeRF 0.678 19.51 0.287 FreeVS 0.768 22.85 0.179 Geo-EVS (Ours) 0.736 23.42 0.154 
+
+## 4.4 In-Manifold View Interpolation 
+
+We next examine whether optimizing for extrapolation compro-mises standard in-manifold synthesis. Following Table 5, we use all front-side camera views as source inputs and synthesize the front camera view as target. As shown in Table 5, Geo-EVS remains highly competitive on in-manifold synthesis and delivers the strongest PSNR/LPIPS trade-off among compared methods. Fig. 3 provides visual comparisons aligned with this protocol. These results indicate that the gains ob-served in extrapolation are not obtained by sacrificing interpolation performance; instead, the proposed design preserves conventional NVS quality while improving out-of-manifold robustness. 
+
+## 4.5 Qualitative Evidence 
+
+To assess whether the quantitative gains correspond to meaningful structural improvements, we compare extrapolated view genera-tions across methods in Fig. 2 and in-manifold interpolation quality in Fig. 3. Reconstruction-based methods (3DGS, Street Gaussians) show topology breaks and stretched structures in unsupported regions. EmerNeRF produces floating artifacts and blur. FreeVS, although diffusion-based, still hallucinates content inconsistent with sparse geometric support under large extrapolation. In contrast, Geo-EVS 
+
+> 6Geo-EVS: Geometry-Conditioned Extrapolative View Synthesis for Autonomous Driving
+
+Figure 2: Qualitative extrapolation comparison aligned with Table 2. We first construct an intermediate target at 22 .5◦ from the front ( 0◦) and front-side ( 45 ◦) views, then apply 1 m left/right lateral translations in the world frame to form out-of-manifold targets. Geo-EVS yields more coherent structures and cleaner local details than competing methods under this setting. 
+
+better preserves geometric layout while recovering plausible tex-ture. Edges are more aligned with projected structure, valid-support regions remain sharper, and missing regions are completed with fewer structural conflicts. This visual evidence is consistent with the sparse-reference gains in Table 2. 
+
+## 4.6 Downstream Utility for 3D Detection 
+
+Beyond image-level quality, we further evaluate whether synthe-sized views improve downstream perception. Table 3 reports a controlled BEVFormer study comparing the default 5-view setting against a 45-view setting with 40 generated views. 
+
+Setup. We train BEVFormer on Waymo-mini-1/5 and evaluate on the Waymo validation split. All settings share the same detector architecture, optimization schedule, and preprocessing pipeline; only camera input configuration changes (5 native views vs. 5 native + 40 generated views). We report LET-mAP L, LET-mAPH, and L1/mAPH (Car). All results use PNG-format data. The 45-view setting consistently improves all metrics: +1.0 LET-mAP L, +0.8 LET-mAPH, and +1.3 L1/mAPH. The concurrent gains in localization and heading quality indicate that generated views provide complementary geometric cues rather than redundant ap-pearance information. 
+
+## 4.7 Ablation Causality 
+
+To identify which design choice is responsible for extrapolation gains, we perform targeted ablations tied to our core claim that artifact-aware robustness training is a key factor for extrapolation quality. Relative to V1, reprojection-derived masks (V3) improve S-PSNR by +1.92 dB, substantially larger than random-mask augmenta-tion (V2, +0.61 dB). This indicates that morphology-matched defect priors, not generic corruption alone, are responsible for most ro-bustness gains. 
+
+## 4.8 Failure Boundaries and Limitations 
+
+Geo-EVS still has three main failure modes: (i) dynamic-object in-consistency when moving objects appear at conflicting positions across source views; (ii) severe hallucination under extremely sparse support (e.g., < 5% valid pixels), where priors dominate geometry; and (iii) texture bleeding near occlusion boundaries when point-cloud detail is insufficient. These boundaries clarify where current 
+
+> 7Yatong Lan, Rongkui Tang, and Lei He
+
+Figure 3: Qualitative interpolation comparison aligned with Table 5. Following the same protocol, all methods take only front-side camera views as input and synthesize the front camera view. Geo-EVS preserves sharper structures and more consistent textures while remaining competitive with strong NVS baselines. 
+
+gains may degrade and motivate future extensions in temporal consistency and multi-frame fusion. 
+
+## 5 Conclusion 
+
+This paper studies extrapolative view synthesis for autonomous driving under sparse supervision and introduces Geo-EVS , a geometry-conditioned generation framework for this setting. The core in-sight is to treat virtual-pose reprojection defects as a structured projection-domain shift and to train the generator explicitly on this shift rather than relying on clean observed-pose conditions alone. Concretely, GAR preserves a unified reprojection interface between training and inference, and AGLD with artifact-aware mask injection improves robustness to missing geometric support. Experiments on Waymo validate this design from three perspec-tives: in-manifold perceptual quality, out-of-manifold extrapolation robustness under sparse-reference evaluation, and downstream util-ity for 3D detection. Across these evaluations, Geo-EVS achieves consistent gains over representative reconstruction and diffusion baselines, with the largest advantages appearing in high-offset and low-support regimes where extrapolation is most difficult. A current limitation is that performance still degrades under extreme sparsity and highly dynamic scenes, where temporal in-consistency and structural hallucination can remain. Extending the framework with stronger temporal modeling and multi-frame geometric fusion is an important next step toward more reliable long-horizon deployment. 
+
+## Acknowledgments 
+
+This work was supported by Chongqing Changan Automobile Co., Ltd., Project “Research on Controllable Long-Horizon Video Gener-ation for Autonomous Driving Scenarios Based on World Models” (Grant No. 20252002218). 
+
+## References                   
+
+> [1] Pei Sun, Henrik Kretzschmar, Xerxes Dotiwalla, Aurelien Chouard, Vijaysai Patnaik, Paul Tsui, James Guo, Yin Zhou, Yuning Chai, Benjamin Caine, et al. Scalability in perception for autonomous driving: Waymo open dataset. In
+> Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 2446–2454, Seattle, WA, USA, 2020. IEEE. [2] Holger Caesar, Varun Bankiti, Alex H Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Giancarlo Baldan, and Oscar Beijbom. nuscenes: A multimodal dataset for autonomous driving. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 11621– 11631, Seattle, WA, USA, 2020. IEEE. [3] Tinghui Zhou, Richard Tucker, John Flynn, Graham Fyffe, and Noah Snavely. Stereo magnification: learning view synthesis using multiplane images. ACM Transactions on Graphics (TOG) , 37(4):1–12, 2018. [4] John Flynn, Ivan Neulander, James Philbin, and Noah Snavely. Deepstereo: Learning to predict new views from the world’s imagery. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 5515–5524, Las Vegas, NV, USA, 2016. IEEE. [5] Ben Mildenhall, Pratul P Srinivasan, Matthew Tancik, Jonathan T Barron, Ravi Ramamoorthi, and Ren Ng. Nerf: Representing scenes as neural radiance fields for view synthesis. Communications of the ACM , 65(1):99–106, 2021. [6] Jonathan T Barron, Ben Mildenhall, Dor Verbin, Pratul P Srinivasan, and Peter Hedman. Mip-nerf 360: Unbounded anti-aliased neural radiance fields. In
+> Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 5470–5479, New Orleans, LA, USA, 2022. IEEE. [7] Matthew Tancik, Vincent Casser, Xinchen Yan, Sabeek Pradhan, Ben Mildenhall, Pratul P Srinivasan, Jonathan T Barron, and Henrik Kretzschmar. Block-nerf: Scalable large scene neural view synthesis. In Proceedings of the IEEE/CVF
+> 8
+
+Geo-EVS: Geometry-Conditioned Extrapolative View Synthesis for Autonomous Driving 
+
+conference on computer vision and pattern recognition , pages 8248–8258, New Orleans, LA, USA, 2022. IEEE. [8] Haithem Turki, Deva Ramanan, and Mahadev Satyanarayanan. Mega-nerf: Scalable construction of large-scale nerfs for virtual fly-throughs. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 12922–12931, New Orleans, LA, USA, 2022. IEEE. [9] Yuanbo Xiangli, Linning Xu, Xingang Pan, Nanxuan Zhao, Anyi Rao, Christian Theobalt, Bo Dai, and Dahua Lin. Bungeenerf: Progressive neural radiance field for extreme multi-scale scene rendering. In European conference on computer vision , pages 106–122, Tel Aviv, Israel, 2022. Springer. [10] Zhengqi Li, Simon Niklaus, Noah Snavely, and Oliver Wang. Neural scene flow fields for space-time view synthesis of dynamic scenes. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 6498–6508, Nashville, TN, USA, 2021. IEEE. [11] Zachary Teed and Jia Deng. Raft-3d: Scene flow using rigid-motion embed-dings. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 8375–8384, Nashville, TN, USA, 2021. IEEE. [12] Haithem Turki, Jason Y Zhang, Francesco Ferroni, and Deva Ramanan. Suds: Scalable urban dynamic scenes. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 12375–12385, Vancouver, Canada, 2023. IEEE. [13] Jiawei Yang, Boris Ivanovic, Or Litany, Xinshuo Weng, Seung Wook Kim, Boyi Li, Tong Che, Danfei Xu, Sanja Fidler, Marco Pavone, et al. Emernerf: Emergent spatial-temporal scene decomposition via self-supervision. In International Con-ference on Learning Representations , Vienna, Austria, 2024. http://OpenReview.net. [14] Xiaoyu Zhou, Zhiwei Lin, Xiaojun Shan, Yongtao Wang, Deqing Sun, and Ming-Hsuan Yang. Drivinggaussian: Composite gaussian splatting for surrounding dynamic autonomous driving scenes. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 21634–21643, Vancouver, Canada, 2023. IEEE. [15] Yunzhi Yan, Haotong Lin, Chenxu Zhou, Weijie Wang, Haiyang Sun, Kun Zhan, Xianpeng Lang, Xiaowei Zhou, and Sida Peng. Street gaussians: Modeling dy-namic urban scenes with gaussian splatting. In European Conference on Computer Vision , pages 156–173, Milan, Italy, 2024. Springer. [16] Qianqian Wang, Zhicheng Wang, Kyle Genova, Pratul P Srinivasan, Howard Zhou, Jonathan T Barron, Ricardo Martin-Brualla, Noah Snavely, and Thomas Funkhouser. Ibrnet: Learning multi-view image-based rendering. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 4690–4699, Nashville, TN, USA, 2021. IEEE. [17] Jonathan T Barron, Ben Mildenhall, Matthew Tancik, Peter Hedman, Ricardo Martin-Brualla, and Pratul P Srinivasan. Mip-nerf: A multiscale representation for anti-aliasing neural radiance fields. In Proceedings of the IEEE/CVF international conference on computer vision , pages 5855–5864, Montreal, QC, Canada, 2021. IEEE. [18] Bernhard Kerbl, Georgios Kopanas, Thomas Leimkühler, George Drettakis, et al. 3d gaussian splatting for real-time radiance field rendering. ACM Transactions on Graphics (TOG) , 42(4):139–1, 2023. [19] Jonah Philion and Sanja Fidler. Lift, splat, shoot: Encoding images from arbitrary camera rigs by implicitly unprojecting to 3d. In European conference on computer vision , pages 194–210, Glasgow, UK, 2020. Springer. [20] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in neural information processing systems , 33:6840–6851, 2020. [21] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution image synthesis with latent diffusion models. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 10684–10695, New Orleans, LA, USA, 2022. IEEE. [22] Lvmin Zhang, Anyi Rao, and Maneesh Agrawala. Adding conditional control to text-to-image diffusion models. In Proceedings of the IEEE/CVF international conference on computer vision , pages 3836–3847, Paris, France, 2023. IEEE. [23] Chong Mou, Xintao Wang, Liangbin Xie, Yanze Wu, Jian Zhang, Zhongang Qi, and Ying Shan. T2i-adapter: Learning adapters to dig out more controllable ability for text-to-image diffusion models. In Proceedings of the AAAI conference on artificial intelligence , volume 38, pages 4296–4304, Vancouver, Canada, 2024. AAAI. [24] Yuheng Li, Haotian Liu, Qingyang Wu, Fangzhou Mu, Jianwei Yang, Jianfeng Gao, Chunyuan Li, and Yong Jae Lee. Gligen: Open-set grounded text-to-image generation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 22511–22521, Vancouver, Canada, 2023. IEEE. [25] Ruoshi Liu, Rundi Wu, Basile Van Hoorick, Pavel Tokmakov, Sergey Zakharov, and Carl Vondrick. Zero-1-to-3: Zero-shot one image to 3d object. In Proceedings of the IEEE/CVF international conference on computer vision , pages 9298–9309, Paris, France, 2023. IEEE. [26] Yuan Liu, Cheng Lin, Zijiao Zeng, Xiaoxiao Long, Lingjie Liu, Taku Komura, and Wenping Wang. Syncdreamer: Generating multiview-consistent images from a single-view image. In International Conference on Learning Representations ,Vienna, Austria, 2024. http://OpenReview.net. [27] Shitao Tang, Fuyang Zhang, Jiacheng Chen, Peng Wang, and Yasutaka Fu-rukawa. Mvdiffusion: Enabling holistic multi-view image generation with correspondence-aware diffusion. Advances in Neural Information Processing Systems , 36:51202–51233, 2023. [28] Xiaofeng Wang, Zheng Zhu, Guan Huang, Xinze Chen, Jiagang Zhu, and Jiwen Lu. Drivedreamer: Towards real-world-driven world models for autonomous driving. In European Conference on Computer Vision , pages 55–72, Milan, Italy, 2024. Springer. [29] Anthony Hu, Lloyd Russell, Hudson Yeo, Zak Murez, George Fedoseev, Alex Kendall, Jamie Shotton, and Gianluca Corrado. Gaia-1: A generative world model for autonomous driving, 2023. [30] Alexander Swerdlow, Runsheng Xu, and Bolei Zhou. Street-view image gen-eration from a bird’s-eye view layout. IEEE Robotics and Automation Letters ,9(4):3578–3585, 2024. [31] Ruiyuan Gao, Kai Chen, Enze Xie, Lanqing HONG, Zhenguo Li, Dit-Yan Yeung, and Qiang Xu. Magicdrive: Street view generation with diverse 3d geometry control. In International Conference on Learning Representations , Vienna, Austria, 2024. http://OpenReview.net. [32] Qitai Wang, Lue Fan, Yuqi Wang, Yuntao Chen, and Zhaoxiang Zhang. Freevs: Generative view synthesis on free driving trajectory. In International Conference on Learning Representations , Singapore EXPO, 2025. http://OpenReview.net. [33] Yang Song, Jascha Sohl-Dickstein, Diederik P Kingma, Abhishek Kumar, Stefano Ermon, and Ben Poole. Score-based generative modeling through stochastic differential equations. In International Conference on Learning Representations ,Virtual, 2021. http://OpenReview.net. [34] Alexander Quinn Nichol and Prafulla Dhariwal. Improved denoising diffusion probabilistic models. In International conference on machine learning , pages 8162–8171, Virtual, 2021. ACM New York, NY, USA. [35] Deepak Pathak, Philipp Krahenbuhl, Jeff Donahue, Trevor Darrell, and Alexei A Efros. Context encoders: Feature learning by inpainting. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 2536–2544, Las Vegas, NV, USA, 2016. IEEE. [36] Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rup-precht, and David Novotny. Vggt: Visual geometry grounded transformer. In 
+
+Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pages 5294–5306, Music City Center, Nashville TN, 2025. IEEE. [37] Yuqing Wen, Yucheng Zhao, Yingfei Liu, Fan Jia, Yanhui Wang, Chong Luo, Chi Zhang, Tiancai Wang, Xiaoyan Sun, and Xiangyu Zhang. Panacea: Panoramic and controllable video generation for autonomous driving. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 6902–6912, Seattle,WA, USA, 2024. IEEE. [38] Xiaofan Li, Yifu Zhang, and Xiaoqing Ye. Drivingdiffusion: Layout-guided multi-view driving scenarios video generation with latent diffusion model. In European Conference on Computer Vision , pages 469–485, Milan, Italy, 2024. Springer. [39] Yuqi Wang, Jiawei He, Lue Fan, Hongxin Li, Yuntao Chen, and Zhaoxiang Zhang. Driving into the future: Multiview visual forecasting and planning with world model for autonomous driving. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 14749–14759, Seattle,WA, USA, 2024. IEEE. 9

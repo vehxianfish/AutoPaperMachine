@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.04857v1/fig-001.webp",
+      "caption": "Figure 1. Illustration of Fidelity Driving Bench. We introduce a benchmark to quantify knowledge forgetting in general VLMs after fine-tuning on driving data, spanning 180K frames and 900K long-tail QA pairs, covering 3 tasks across 15 data sources with 2 forgetting metrics, and revealing 3 forgetting phenomena.",
+      "page": 1,
+      "index": 1,
+      "width": 494,
+      "height": 329
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04857v1/fig-002.webp",
+      "caption": "Table 4. Results before/after fine-tuning (LoRA) on our benchmark.",
+      "page": 6,
+      "index": 2,
+      "width": 487,
+      "height": 308
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04857v1/fig-003.webp",
+      "caption": "Table 3. Evaluation of different foundation VLMs (without finetuning) on our proposed benchmark.",
+      "page": 6,
+      "index": 3,
+      "width": 462,
+      "height": 283
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04857v1/fig-004.webp",
+      "caption": "Figure 4. Noteworthy Objects’ Perception Noteworthy Objects’ Perception Recall across fine-tuning epochs on our benchmark. Each curve corresponds to a specific backbone and tuning strategy.",
+      "page": 7,
+      "index": 4,
+      "width": 496,
+      "height": 267
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04857v1/fig-005.webp",
+      "caption": "Figure 5. Illustration of Driving Expert Adapter. Our framework comprises a Prompt Adapter that selects the most suitable learnable prompt tokens for the current scenario, and a Task-Adaptive Expert Module that leverages a gated network over all tokens to activate the LoRA experts most appropriate for the current scene.",
+      "page": 7,
+      "index": 5,
+      "width": 496,
+      "height": 356
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04857v1/fig-006.webp",
+      "caption": "Figure 6. Comparison among different LLM judges.",
+      "page": 8,
+      "index": 6,
+      "width": 471,
+      "height": 447
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04857v1/fig-007.webp",
+      "caption": "Figure 7. Qualitative comparison. Bounding boxes indicate key objects and corresponding red text provides their descriptions.",
+      "page": 8,
+      "index": 7,
+      "width": 496,
+      "height": 399
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04857v1/fig-008.webp",
+      "caption": "Figure 3. The proposed dataset construction pipeline. We first integrated fifteen existing annotated datasets and additionally provided language annotations for the WOD-E2E dataset. After that, each scene is represented by a set of sparse elements, which are automatically extracted from annotations using GPT. Then, we conduct manual verification to ensure accuracy and diversity. Finally, we retain 1,000 representative images as the test set, and the corresponding statistical summaries are presented in the bottom-right pane.",
+      "page": 4,
+      "index": 8,
+      "width": 1002,
+      "height": 415
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-001.webp",
+      "caption": "Table 3",
+      "page": 15,
+      "index": 1,
+      "width": 974,
+      "height": 445
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-002.webp",
+      "caption": "Table 2",
+      "page": 15,
+      "index": 2,
+      "width": 1000,
+      "height": 455
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-003.webp",
+      "caption": "Figure 1: Overview of V2X-QA. Left: representative examples of the twelve viewpoint-aligned tasks under vehicle-side,",
+      "page": 2,
+      "index": 3,
+      "width": 973,
+      "height": 541
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-004.webp",
+      "caption": "Figure 2: Construction pipeline of V2X-QA. The pipeline starts from the twelve viewpoint-aligned tasks under three",
+      "page": 7,
+      "index": 4,
+      "width": 973,
+      "height": 241
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-005.webp",
+      "caption": "Table 8",
+      "page": 22,
+      "index": 5,
+      "width": 959,
+      "height": 681
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-006.webp",
+      "caption": "Figure 8: Reliability diagram and confidence distribution of V2X-MoE across vehicle-side, infrastructure-side, and",
+      "page": 18,
+      "index": 6,
+      "width": 731,
+      "height": 590
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-007.webp",
+      "caption": "Figure 4: Answer-distribution diagnostics of V2X-QA. Left: distribution of correct option positions across the twelve tasks.",
+      "page": 8,
+      "index": 7,
+      "width": 975,
+      "height": 293
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-008.webp",
+      "caption": "Figure 3: Statistics of V2X-QA. Left: overall task and functional distribution across the twelve viewpoint-aligned tasks.",
+      "page": 8,
+      "index": 8,
+      "width": 977,
+      "height": 571
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-009.webp",
+      "caption": "Table 5: Vehicle-side MCQA task bank for VS tasks.",
+      "page": 19,
+      "index": 9,
+      "width": 977,
+      "height": 922
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-010.webp",
+      "caption": "Table 6: Infrastructure-side MCQA task bank for IS tasks.",
+      "page": 19,
+      "index": 10,
+      "width": 977,
+      "height": 326
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-011.webp",
+      "caption": "Table 4",
+      "page": 17,
+      "index": 11,
+      "width": 690,
+      "height": 183
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-012.webp",
+      "caption": "Figure 7: Task-level and viewpoint-level model performance comparison on V2X-QA.",
+      "page": 17,
+      "index": 12,
+      "width": 973,
+      "height": 374
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-013.webp",
+      "caption": "Figure 6: View-specific LoRA injection with explicit hard routing in V2X-MoE. A viewpoint type signal selects one expert",
+      "page": 12,
+      "index": 13,
+      "width": 915,
+      "height": 586
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-014.webp",
+      "caption": "Figure 5: Overall architecture and staged training pipeline of V2X-MoE. The model takes viewpoint-aligned visual evidence",
+      "page": 9,
+      "index": 14,
+      "width": 973,
+      "height": 365
+    },
+    {
+      "url": "assets/figures/arxiv/2604.02710v1/fig-015.webp",
+      "caption": "Table 7: Cooperative MCQA task bank for CO tasks.",
+      "page": 20,
+      "index": 15,
+      "width": 977,
+      "height": 934
+    }
+  ]
+}

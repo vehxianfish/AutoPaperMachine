@@ -1,0 +1,134 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-001.webp",
+      "caption": "Figure 1. (a-b) The data pool is partitioned into a set of discrete domains which may each contribute to performance improvement of different evaluation tasks at varying rates. (c-d) Example application in autonomous driving: two clusters representing different driving contexts—Pittsburgh (curvy suburban roads) and Las Vegas (dense urban traffic). Data from separate contexts influence different rule-compliance metrics at distinct rates.",
+      "page": 1,
+      "index": 1,
+      "width": 494,
+      "height": 507
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-002.webp",
+      "caption": "Table 1. Validation EPDMS (higher is better) and BRMR (lower is better) reported in OpenScene (Section A) and Navtrain (Section B) settings. We report the results for all budgets in Section 8 of Appendix.",
+      "page": 6,
+      "index": 2,
+      "width": 487,
+      "height": 350
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-003.webp",
+      "caption": "Figure 11. Validation EPDMS vs. Compute Spent (GPU hours) for OpenScene experiments.",
+      "page": 15,
+      "index": 3,
+      "width": 428,
+      "height": 372
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-004.webp",
+      "caption": "Figure 10. Overall caption describing all six subfigures.",
+      "page": 15,
+      "index": 4,
+      "width": 483,
+      "height": 807
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-005.webp",
+      "caption": "Table 11. Breakdown of the nine EPDMS rule-compliance metrics for the base model and the models trained with data selected by various strategies at all budgets, shown for the Navtrain experiment when the clustering is performed on the clip captions.",
+      "page": 21,
+      "index": 5,
+      "width": 1026,
+      "height": 738
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-006.webp",
+      "caption": "Table 2. Breakdown of the nine EPDMS rule-compliance metrics for the base model and the models trained with data selected by various strategies at a single budget, shown for both the OpenScene and Navtrain experiments.",
+      "page": 7,
+      "index": 6,
+      "width": 1026,
+      "height": 295
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-007.webp",
+      "caption": "Figure 3. (Left) Performance scalings of different clusters, obtained by fitting the estimator in Equation 4 on 2 pilot runs, denoted by ⋆. (Right) Geolocation distributions at different budgets as a result of scaling-aware iterative selection.",
+      "page": 7,
+      "index": 7,
+      "width": 450,
+      "height": 356
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-008.webp",
+      "caption": "Figure 9. Overall caption describing all six subfigures.",
+      "page": 14,
+      "index": 8,
+      "width": 482,
+      "height": 824
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-009.webp",
+      "caption": "Table 8. Navtrain validation EPDMS and BRMR results under caption-based clustering.",
+      "page": 18,
+      "index": 9,
+      "width": 387,
+      "height": 921
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-010.webp",
+      "caption": "Figure 5. Validation EPDMS for various budgets obtained by different strategies when Navtrain data pool is clustered using clip captions. MOSAIC requires 61% and 52% fewer clips than Random selection to match its performance at the 1,600- and 2,400- clip budgets, respectively.",
+      "page": 8,
+      "index": 10,
+      "width": 446,
+      "height": 358
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-011.webp",
+      "caption": "Figure 6. Analyzing the contribution of different components of the MOSAIC framework.",
+      "page": 8,
+      "index": 11,
+      "width": 378,
+      "height": 333
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-012.webp",
+      "caption": "Figure 2. Overview of the proposed MOSAIC framework. (a) The pool Dpool is clustered and ranked by sample importance. (b) Clusterwise scaling laws are fitted on pilot runs to estimate how performance scales with added data. (c) Samples are then iteratively mined from the cluster with the highest estimated marginal gain under the fitted scaling laws.",
+      "page": 4,
+      "index": 12,
+      "width": 1036,
+      "height": 256
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-013.webp",
+      "caption": "Table 9. Breakdown of the nine EPDMS rule-compliance metrics for the base model and the models trained with data selected by various strategies at all budgets, shown for the OpenScene experiment.",
+      "page": 19,
+      "index": 13,
+      "width": 1026,
+      "height": 738
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-014.webp",
+      "caption": "Table 7. Navtrain validation EPDMS and BRMR results.",
+      "page": 17,
+      "index": 14,
+      "width": 387,
+      "height": 919
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-015.webp",
+      "caption": "Table 6. Openscene validation EPDM and BRMR results.",
+      "page": 17,
+      "index": 15,
+      "width": 387,
+      "height": 902
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08366v1/fig-016.webp",
+      "caption": "Table 10. Breakdown of the nine EPDMS rule-compliance metrics for the base model and the models trained with data selected by various strategies at all budgets, shown for the Navtrain experiment.",
+      "page": 20,
+      "index": 16,
+      "width": 1026,
+      "height": 738
+    }
+  ]
+}

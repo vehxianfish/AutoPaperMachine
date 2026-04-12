@@ -1,0 +1,308 @@
+Title: Not All Agents Matter: From Global Attention Dilution to Risk-Prioritized Game Planning
+
+URL Source: https://arxiv.org/pdf/2604.05449v1
+
+Published Time: Wed, 08 Apr 2026 00:33:52 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# Not All Agents Matter: From Global Attention Dilution to Risk-Prioritized Game Planning 
+
+Kang Ding 1, Hongsong Wang 2, Jie Gui 1, and Lei He 3 
+
+> 1
+
+School of Cyberspace Security, Southeast University  
+
+> 2
+
+School of Computer Science and Engineering, Southeast University  
+
+> 3
+
+Vehicle and Mobility School, Tsinghua University 
+
+Abstract. End-to-end autonomous driving resides not in the integra-tion of perception and planning, but rather in the dynamic multi-agent game within a unified representation space. Most existing end-to-end models treat all agents equally, hindering the decoupling of real colli-sion threats from complex backgrounds. To address this issue, We in-troduce the concept of Risk-Prioritized Game Planning, and propose GameAD, a novel framework that models end-to-end autonomous driv-ing as a risk-aware game problem. The GameAD integrates Risk-Aware Topology Anchoring, Strategic Payload Adapter, Minimax Risk-Aware Sparse Attention, and Risk Consistent Equilibrium Stabilization to en-able game theoretic decision making with risk prioritized interactions. We also present the Planning Risk Exposure metric, which quantifies the cumulative risk intensity of planned trajectories over a long horizon for safe autonomous driving. Extensive experiments on the nuScenes and Bench2Drive datasets show that our approach significantly outperforms state-of-the-art methods, especially in terms of trajectory safety. 
+
+Keywords: End-to-End Autonomous Driving · Risk-Aware Game · Tra-jectory Planning 
+
+## 1 Introduction 
+
+Autonomous driving [2, 32, 34] systems have traditionally relied on modular pipelines that decompose the task into perception [17,19,35], prediction [29,43], and planning [3, 4] stages. Although such architectures provide clear functional decomposition, errors may accumulate across stages and limit overall system per-formance. End-to-end methods [8, 15, 28] aim to learn a unified mapping from sensor observations to driving actions, allowing joint optimization of perception and planning. This paradigm improves representation sharing across tasks and has emerged as a promising direction for scalable autonomous driving systems. Current end-to-end methods [8,12,15,20,35,41] have made substantial progress with a unified framework. For example, UniAD [8] formulates driving as a multi-task learning framework that integrates perception and motion prediction to sup-port planning, while VAD [15] adopts query-based representations to directly retrieve surrounding context for trajectory generation. Despite their effective-ness, most existing approaches treat interactions between the ego vehicle and      
+
+> arXiv:2604.05449v1 [cs.CV] 7 Apr 2026 2K. Ding et al.
+> (a) Previous methods (b) Our GameAD
+> Fig. 1: Comparison between our proposed end-to-end autonomous driving paradigm and previous approaches. (a) Previous approaches apply uniform interactions between each plan query and all agents during planning, implicitly assuming that all agents are equally important. (b) Our method computes a collision-risk matrix between each planning mode and agents, which directs attention toward potential conflict agents instead of being diluted by globally irrelevant targets.
+
+surrounding agents in a uniform manner, implicitly assuming that all agents contribute equally to decision-making, as illustrated in Fig. 1(a). However, traf-fic interactions are inherently strategic and can be viewed as a game between the ego vehicle and other participants. To capture such dependencies, Game-Former [12] explores game-theoretic formulations and models multi-agent inter-actions through level-k reasoning, where agents iteratively respond to predicted behaviors of others. Although this mechanism improves behavioral modeling, it does not explicitly evaluate the collision risk posed by different agents and therefore lacks a principled way to prioritize safety-critical participants during planning. Under standard softmax attention, each agent receives approximately 
+
+1/K attention weight when the number of surrounding agents becomes large, leading to global attention dilution. As a result, planning decisions may over-look agents with geometric conflict, leading to risk-agnostic interaction reasoning and degraded safety under complex multi-agent conditions. Experienced drivers rapidly prioritize a small number of safety-critical agents while maintaining only coarse awareness of irrelevant vehicles. Inspired by this observation, we reformulate autonomous driving as a risk-aware interaction game and introduce GameAD. As shown in Fig. 1(b), instead of treating interaction modeling as uniform reasoning over all agents, GameAD explicitly models plan-ning as a minimax decision process in which the ego vehicle selects strategies under worst-case opponent behaviors. Our contributions are as follows: 
+
+– Risk-Prioritized Game Planning. We reformulate end-to-end autonomous driving as a risk-conditioned game problem, drawing an analogy to human selective attention in threat-aware driving. We show that standard cross-GameAD 3
+
+attention can be viewed as a special case of our formulation when the risk prior is removed, which provides an interpretable perspective on why risk-prioritized sparse game helps improve planning safety in multi-agent scenar-ios. 
+
+– GameAD Framework. We propose GameAD, an end-to-end autonomous driving framework based on risk-prioritized game planning. The framework combines Risk-Aware Topology Anchoring, Strategic Payload Adapter, Min-imax Risk-Aware Sparse Attention, and Risk-Consistent Equilibrium Stabi-lization to propagate collision risk information from perception to planning, improving safety and trajectory consistency in multi-agent interactions. 
+
+– Planning Risk Exposure Metric. We propose Planning Risk Exposure (PRE) metric, which first introduces spatiotemporal integration of risk ex-posure into autonomous driving planning evaluation and quantifies the cu-mulative risk intensity of a planned trajectory over the full time horizon. 
+
+– Performance Evaluation. Extensive experiments conducted on the nuScenes and Bench2Drive datasets demonstrate that GameAD significantly outper-forms state-of-the-art end-to-end autonomous driving planning methods in terms of trajectory safety. 
+
+## 2 Related Works 
+
+2.1 Perception for Autonomous Driving 
+
+Perception aims to understand the surrounding environment by 3D detection, multi-object tracking, and online mapping from multi-sensor inputs. For 3D detection, LSS [27] lifts multi-camera image features into 3D frustums and splats them onto a unified bird’s-eye-view representation for robust multi-view fusion and planning-oriented scene understanding. Follow-up works [9, 10, 23] extend BEV perception by improving multi-modal or temporal feature fusion. Recent methods [21, 34, 35] model long-term temporal dependencies through efficient sparse feature propagation. For multi-object tracking, some methods [34, 37] perform object-centric detection with temporal modeling for consistent dynamic object understanding, while others [26,38] achieve end-to-end tracking via query-based temporal propagation and association. For online mapping, HDMapNet [16] learns vectorized HD maps online from multi-sensor inputs in bird’s-eye-view space and VectorMapNet [22] predicts vectorized HD maps as polylines directly from onboard sensor observations in BEV. MapTR [19] formulates vectorized HD map construction as structured set prediction using a Transformer framework. 
+
+2.2 End-to-End Motion Prediction 
+
+Motion prediction is critical for autonomous systems to reason about traffic evo-lution and support decision-making. MTR++ [30] predicts multimodal futures via intention queries for efficient joint forecasting, while DeMo [40] disentan-gles trajectory queries into mode and state representations. ViP3D [5] unifies 4 K. Ding et al. 
+
+perception and prediction through query-based video modeling for differentiable vision-centric trajectory prediction. Trajectory Mamba [11] employs selective state-space modeling for linear-complexity multimodal trajectory prediction with joint polyline encoding and cross-state space interaction. PPT [36] pretrains mo-tion forecasting using pseudo-labeled trajectories from off-the-shelf detection and tracking to improve generalization. 
+
+2.3 End-to-End Planning 
+
+End-to-end planning directly maps raw sensor data to driving trajectories through integrated architectures. UniAD [8] unifies perception, prediction, and planning within a single network using shared query interfaces to reduce error accumula-tion and enable coordinated task optimization toward planning. VAD [15] mod-els driving scenes with vectorized representations, enabling instance-level plan-ning constraints, faster inference without rasterization. VADv2 [14] formulates end-to-end planning as probabilistic action modeling by discretizing continuous planning space into tokens interacting with scene representations under demon-stration supervision. GenAD [42] formulates end-to-end autonomous driving as generative modeling, using instance-centric tokenization, VAE-based structural latent trajectory learning, and temporal modeling to jointly perform motion pre-diction and planning. SparseDrive [33] introduces sparse scene representation with symmetric perception and parallel multimodal planning, reducing BEV computation while improving efficiency and planning safety in end-to-end au-tonomous driving. BridgeAD [39] reformulates motion and planning as multi-step queries, aligning historical aggregation with future prediction to improve percep-tion and planning coherence in end-to-end autonomous driving. MomAD [31] introduces trajectory and perception momentum with Hausdorff-based match-ing and temporal interaction, improving long-horizon consistency and robust-ness for end-to-end autonomous driving on nuScenes. GameFormer [12] explores game-theoretic formulations and models multi-agent interactions through level-
+
+k reasoning, where agents iteratively respond to predicted behaviors of others. While effective for interaction modeling, such formulations implicitly assume equal participation of all agents in decision making. In contrast, real-world driv-ing decisions are typically dominated by a small subset of safety-critical agents. GameAD addresses this challenge by reformulating end-to-end planning as a risk-conditioned sparse game, where interaction is selectively performed based on collision risk rather than uniformly across agents. This shifts the objective from interaction reasoning to risk-aware decision prioritization, distinguishing GameAD from prior interaction-centric game-based planning frameworks. 
+
+## 3 Methodology: Risk-Prioritized Game Planning 
+
+We reformulate end-to-end autonomous driving as a risk-prioritized sparse game problem. Unlike prior frameworks that assign uniform importance to all traf-fic participants, the core principle of our method is that planning decisions are GameAD 5
+
+Fig. 2: The overall architecture of GameAD. After multi-scale feature extraction from multi-view images, the framework integrates four core components. Risk-Aware Topol-ogy Anchoring transfers road topology information unidirectionally into detection an-chors, providing perception features enriched with risk-aware semantics. Strategic Pay-load Adapter subsequently combines candidate trajectories with perceived scene em-beddings through trajectory-scene cross-attention, enabling risk-aware trajectory rep-resentation. During decision making, Minimax Risk-aware Sparse Attention(MRSA) computes the worst-case collision risk for each pair of ego planning modes and sur-rounding agents, guiding attention toward potential conflict participants. Finally, Risk-Consistent Equilibrium Stabilization connects historical and current planning spaces to produce temporally consistent multimodal trajectories. 
+
+driven by a small set of safety-critical agents. As shown in Fig. 2, our GameAD propagates geometric collision risk through four integrated stages: (1) Risk-Aware Topology Anchoring (RTA), (2) Strategic Payload Adapter (SPA), (3) Minimax Risk-aware Sparse Attention (MRSA), and (4) Risk-Consistent Equi-librium Stabilization (RCES). 
+
+3.1 Risk-Aware Topology Anchoring 
+
+To enable accurate risk-aware game reasoning, the ego vehicle need to anchor its perception in geometrically sensitive regions. However, existing end-to-end frameworks design detection and mapping as parallel perception branches, which limits performance due to structural information isolation. We propose Risk-Aware Topology Anchoring (RTA) to bridge this gap. RTA moves beyond scene-agnostic anchors by unidirectionally injecting online reconstructed map topology elements into the detection query space. Specifically, map element embeddings Emap ∈ RNmap ×C are first compressed into a scene-level semantic embedding ¯Emap ∈ R1×C via mean pooling, where C
+
+denotes the feature dimension. Subsequently, ¯Emap generates a global gating em-bedding g ∈ R1×C through a residual connection and self-attention mechanism. This process is formulated as: 
+
+¯Emap = MeanPooling( Emap ), (1) 
+
+g = σ Attention( ¯Emap + Emap ) . (2) Meanwhile, detection instance embeddings Edet pass through convolutional layers and activation functions to produce instance-level modulation embeddings 6 K. Ding et al. 
+
+δ. Finally, following an asymmetric gated fusion strategy, the global gate g in-teracts with δ through element-wise multiplication and residual operations to generate geometrically sensitive detection representations ¯Edet . This design en-sures that the detection network prioritizes participants located within potential conflict zones. 
+
+3.2 Strategic Payload Adapter 
+
+The game-theoretic strategy space of the ego vehicle is defined by its candidate trajectories. To align this strategy set with the current risk landscape, we intro-duce the Strategic Payload Adapter (SPA). SPA transforms a static template set into a scene-conditioned differentiable function. By encoding ego motion, agent distribution, and map constraints into a unified context, SPA refines planning anchors to better encompass feasible evasive maneuvers. Specifically, we construct three types of tokens, including the ego motion token Mego ∈ R1×D, top-K detection instance features Fdet ∈ RK×D , and top-K′ map instance features Fmap ∈ RK′×D . These tokens encode ego speed and yaw, the spatial distribution of surrounding agents, and geometric road constraints, respectively. They are concatenated into a unified scene sequence 
+
+C = [ Sego ; Fdet ; Fmap ] ∈ RB×N ×D and processed by self-attention to enable cross-type interaction in a shared representation space. Meanwhile, each static template trajectory Tp is linearly projected into the D-dimensional space to form a trajectory query Qp, which then attends to C via trajectory-to-scene cross-attention, ensuring that each candidate is geometrically valid and scene-aware. To preserve stability in early training, a residual addition strategy is applied to the risk-aware trajectory representations. The above process is described as: 
+
+¯Tp = Decoder  CrossAttention( Q = Linear( Tp), K = C) + Tp. (3) 
+
+3.3 Minimax Risk-Aware Sparse Attention 
+
+Standard cross-attention suffers from global attention dilution, where safety-critical threats are obscured by irrelevant background agents.To address this limitation, we formally model the interaction between the ego vehicle and sur-rounding agents as a minimax decision process. The minimax risk formulation evaluates the worst-case collision risk for each ego planning mode p and agent 
+
+k by maximizing over the predicted motion modes a of agent k and prediction time steps t. This maximization reflects an adversarial assumption in which the planner accounts for the most dangerous feasible behavior of other agents. As illustrated in Fig. 3, in the first stage we compute relative position prel ,relative velocity vrel , and time-to-collision (TTC) between planning anchors A P
+
+and motion anchors M K,A , where P denotes the number of ego planning modes, and K and A denote the number of agents and their motion modes, respectively. GameAD 7
+
+Fig. 3: The architecture of the Minimax Risk-aware Sparse Attention (MRSA) module. In the first stage, Risk Matrix Computation, the framework evaluates the worst-case geometric collision risk by analyzing the motion relationship between the ego planning trajectories and surrounding agents, thereby generating an ego-agent risk matrix. The second stage, Sparse Game Graph Construction, filters the risk matrix to identify a small subset of high-risk adversaries for each planning mode, which establishes a sparse game interaction structure. In the third stage, Risk-Aware Sparse Attention, the normalized risk values are injected into the attention mechanism as an adversarial prior. This process ensures that the planning queries concentrate on safety-critical agents and facilitates risk-aware interactive reasoning. 
+
+The TTC is computed as: 
+
+prel = pagent − pego , (4) 
+
+vrel = vagent − vego , (5) 
+
+TTC = min   distance 
+
+max(0 , − prel ·vrel  
+
+> ∥prel ∥
+
+) + ϵ , σ , (6) where pagent and pego denote the positions of the agent and ego vehicle, re-spectively; vagent and vego represent the velocities of the agent and ego vehicle, respectively; distance refers to the Euclidean distance between the ego vehicle and the agent; the hyperparameters ϵ and σ are set to 10 −3 and 8.0, respectively. A joint exponential function combines TTC and spatial distance to produce a 8 K. Ding et al. 
+
+risk value r ∈ RP ×K×A×T , followed by maximization over motion modes and temporal steps, corresponding to worst-case opponent behavior and the most critical collision moment. Detection anchors are further weighted by detection confidence scores to obtain the risk matrix Rpk . The risk matrix is defined as: 
+
+Rpk = max  
+
+> a∈{ 1,...,A }
+
+max   
+
+> t∈{ 1,...,T }
+
+r, (7) 
+
+Rpk ← Rpk · clamp( sk, 0, 1) , (8) where sk denotes the detection confidence for agent k.In the second stage, we perform top-M agent selection such that, for each ego mode p, only the M agents with the highest risk values are retained. A sparse interaction mask is constructed accordingly, where only top-M entries remain active. The resulting risk matrix is then normalized using min-max normalization to map risk values into the range [0 , 1] .In the third stage, planning queries QP attend to the selected high-risk agent tokens through cross-attention, while the normalized risk matrix is injected as an adversarial risk prior into the attention logits, producing the refined planning queries ¯QP . Mathematically, ¯QP is computed as: 
+
+logits risk = Q · KT
+
+√dk
+
++ β · ¯Rpk , (9) 
+
+α = X
+
+> k
+
+softmax(logits risk ) · V, (10) 
+
+¯QP = FFN(LayerNorm( α)) . (11) This formulation interprets interaction as sparse game reasoning, in which the ego vehicle selectively responds to the most threatening agents, thereby effectively mitigating attention dilution. 
+
+3.4 Risk-Consistent Equilibrium Stabilization 
+
+Frame-wise planning often suffers from strategy oscillation when multiple inter-action responses have similar risk levels. To alleviate this issue, we introduce Risk-Consistent Equilibrium Stabilization, which encourages temporal consis-tency between the current best response and historical strategies. Specifically, we align the current trajectory proposal with historical strategies using the Haus-dorff distance, which provides robust global matching between trajectories and is less sensitive to local deviations than point-wise metrics. In addition, the ego command is used as an intention-aware gating signal. When the high-level com-mand changes, historical trajectories are ignored to avoid enforcing outdated strategic priors on new behaviors, ensuring that risk-prioritized decisions evolve into a stable Nash equilibrium over time. GameAD 9
+
+## 4 Experiments 
+
+4.1 Dataset and Evaluation Metrics Dataset. Experiments are conducted on the challenging nuScenes [1] dataset, which contains 1000 complex driving scenes, of which 700 and 150 sequences are used for training and validation, respectively. Each scene spans approxi-mately 20 seconds. The dataset provides semantic maps and 3D object detec-tion annotations for keyframes sampled at 2 Hz, and each keyframe contains six synchronized camera images. Following established protocols, open-loop evalu-ation is performed on nuScenes, while closed-loop evaluation is conducted on Bench2Drive [13]. Bench2Drive serves as a closed-loop evaluation protocol for end-to-end autonomous driving within the CARLA Leaderboard 2.0 framework. To ensure fair comparison with baseline methods, the official training set is adopted, including the base split consisting of 1000 video clips. Evaluation is performed using the official benchmark comprising 220 routes. 
+
+Evaluation Metrics. For planning evaluation, we employ the widely used the L2 Displacement Error and the Collision Rate [7] metric to measure planning performance. However, existing mainstream planning metrics primarily focus on binary safety at the outcome level, which fails to account for the duration of the ego vehicle stays within hazardous regions throughout the entire trajectory. To address this limitation, we introduce a novel metric, Planning Risk Exposure (PRE), to quantify the cumulative risk intensity of the planned trajectory across the entire temporal horizon. For each planning time step t ∈ { 1, . . . , T }, an instantaneous risk value Φ(t) is computed using ground-truth obstacle boxes, which is defined as: 
+
+Φ(t) = max 
+
+> k∈agents t
+
+  exp( − TTC kt 
+
+τ ) · exp( − dkt 
+
+σ ), (12) where dkt denotes the Euclidean distance between the ego vehicle and obstacle 
+
+k at time step t, while τ and σ serve as decay parameters. The PRE is then obtained by averaging Φ(t) over the temporal horizon: 
+
+PRE = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+Φ(t) ∈ [0 , 1) . (13) A lower PRE value indicates higher safety, whereas a PRE close to 1 signifies that the vehicle remains under extreme risk throughout the entire duration. 
+
+4.2 Implementation Details 
+
+Consistent with SparseDrive [33], ResNet50 [6] is adopted as the backbone for image feature encoding with an input resolution of 256 × 704 . Training employs the AdamW [24] optimizer with Cosine Annealing [25], a weight decay of 1×10 −3,10 K. Ding et al. 
+
+Table 1: Open-loop planning results on the nuScenes validation dataset. † denotes evaluation with the official checkpoint. PRE denotes Planning Risk Exposure met-ric. ∗ refers the re-implementation. As Ref. [18] states, we do not use the ego status information for a fair comparison. Method Reference Backbone L2 (m) ↓ Col. Rate (%) ↓ PRE (%) ↓ FPS ↑                                                     
+
+> 1s 2s 3s Avg. 1s 2s 3s Avg. 1s 2s 3s Avg. UniAD †[8] CVPR2023 ResNet101 0.45 0.70 1.04 0.73 0.62 0.58 0.63 0.61 ----1.8 (A100) VAD †[14] ICCV2023 ResNet50 0.41 0.70 1.05 0.72 0.03 0.19 0.43 0.21 ----4.5 (RTX3090) GenAD [42] ECCV2024 ResNet50 0.36 0.83 1.55 0.91 0.06 0.23 1.00 0.43 ----6.7 (RTX3090) SparseDrive †[33] ICRA2025 ResNet50 0.30 0.58 0.96 0.61 0.01 0.05 0.23 0.10 4.35 4.50 4.61 4.49 7.4 (A100) MomAD [31] CVPR2025 ResNet50 0.31 0.57 0.91 0.60 0.01 0.05 0.22 0.09 4.33 4.41 4.52 4.42 6.3 (A100) BridgeAD ∗[39] CVPR2025 ResNet50 0.30 0.58 0.92 0.60 0.01 0.05 0.22 0.09 3.88 3.94 4.05 3.96 4.4 (A100) GameAD -ResNet50 0.30 0.57 0.90 0.59 0.01 0.04 0.18 0.08 3.89 3.93 4.01 3.94 5.2 (A100)
+
+Table 2: Open-loop and Closed-loop results on Bench2Drive(V0.0.3) under base train-ing set. ‘mmt’ refers multi-modal trajectory variant of VAD.                                     
+
+> Method Open-loop Metric Closed-loop Metric Avg. L2 ↓DS ↑SR(%) ↑Effi ↑Comf ↑
+> VAD [14] 0.91 42.35 15.00 157.94 46.01 VAD mmt [14] 0.89 42.87 15.91 158.12 47.22 GenAD [42] -44.81 15.90 --SparseDrive [33] 0.87 44.54 16.71 170.21 48.63 MomAD [31] 0.82 47.91 18.11 174.91 51.20 GameAD 0.80 48.35 19.43 178.96 53.11
+
+and an initial learning rate of 1 × 10 −4. The training process consists of two stages: the first stage focuses on perception tasks and the second stage performs end-to-end training. All experiments are executed on 4 NVIDIA Tesla A100 GPUs. Additional implementation details and experiments are provided in the supplementary material. 
+
+4.3 Main Results Planning Results on nuScenes. As illustrated in Tab. 1, our GameAD is evaluated against recent state-of-the-art end-to-end autonomous driving frame-works. GameAD establishes a new performance benchmark on the nuScenes dataset. Specifically, our proposed method attains an average L2 error of 0.59 m, matching the performance of MomAD and remains highly competitive with BridgeAD. Regarding safety metrics, GameAD achieves the lowest average col-lision rate of 0.08% , representing a 11% reduction relative to BridgeAD. Fur-thermore, GameAD outperforms MomAD by 11% in terms of the PRE metric. These results indicate that GameAD further strengthens planning safety. 
+
+Planning Results on Bench2Drive. As shown in Tab. 2, we evaluate closed-loop performance on the Bench2Drive dataset. GameAD improves the success rate by 16 .3% and 7.3% relative to SparseDrive and MomAD, respectively, highlighting the importance of risk awareness for safe driving. Simultaneously, GameAD 11 
+
+Table 3: Perception and motion results on the nuScenes validation dataset. † de-notes evaluation with the official checkpoint. AP d denotes AP divider . AP b denotes AP boundary . mADE denotes minADE. mFDE denotes minFDE. Method 3D Object Detection Multi-Object Tracking Online Mapping Motion Prediction mAP ↑ NDS ↑ AMOTA ↑ AMOTP ↓ Recall ↑ IDS ↓ mAP ↑ AP ped ↑ AP d↑ AP b↑ mADE ↓ mFDE ↓ MR ↓ EPA ↑                                                                                   
+
+> UniAD [8] 0.380 0.498 0.359 1.320 0.467 906 ----0.71 1.02 0.151 0.456 VAD †[14] 0.312 0.435 ----47.6 40.6 51.5 50.6 ----SparseDrive [33] 0.418 0.525 0.386 1.254 0.499 886 55.1 49.9 57.0 58.4 0.62 0.99 0.136 0.482 MomAD [31] 0.423 0.531 0.391 1.243 0.509 853 55.9 50.7 58.1 58.9 0.61 0.98 0.137 0.499 BridgeAD [39] 0.423 0.534 0.398 1.232 0.501 639 ----0.62 0.98 0.134 0.504 GameAD 0.425 0.536 0.399 1.224 0.504 566 57.1 53.6 59.1 58.7 0.60 0.97 0.132 0.507
+
+Table 4: Ablation studies of the risk game planning on the nuScenes validation split. Distance denotes the metric used to measure trajectory consistency. risk β represents the factor that controls risk intensity, and t denotes the number of fused historical frames. TPC denotes Trajectory Prediction Consistency metric in [31]. ID Distance risk β t L2 (m) ↓ Col. Rate (%) ↓ TPC (m) ↓
+
+1s 2s 3s Avg. 1s 2s 3s Avg. 1s 2s 3s Avg. 0 Euclidean 1.0 1 0.350 0.672 1.091 0.704 0.053 0.102 0.256 0.137 0.302 0.524 0.769 0.532 1 Hausdorff 1.0 1 0.341 0.661 1.082 0.695 0.049 0.098 0.251 0.133 0.296 0.519 0.763 0.526 2 Hausdorff 2.0 1 0.326 0.622 1.000 0.649 0.010 0.059 0.195 0.088 0.287 0.501 0.736 0.508 
+
+3 Hausdorff 4.0 1 0.331 0.654 1.082 0.689 0.059 0.088 0.247 0.131 0.287 0.507 0.753 0.516 5 Hausdorff 2.0 2 0.321 0.614 0.999 0.645 0.020 0.054 0.234 0.103 0.298 0.519 0.759 0.525 6 Hausdorff 2.0 3 0.304 0.572 0.904 0.593 0.010 0.039 0.182 0.077 0.278 0.504 0.744 0.509 7 Hausdorff 2.0 4 0.314 0.603 0.987 0.635 0.020 0.047 0.212 0.093 0.290 0.511 0.751 0.517 
+
+GameAD achieves an Efficiency metric of 178.96, surpassing both MomAD at 174.91 and SparseDrive at 170.21. This improvement in efficiency demonstrates that risk-prioritized game-theoretic reasoning does not lead to overly conserva-tive driving behavior. 
+
+Perception and Motion Prediction Results. The parallel design of 3D detection and online mapping in SparseDrive [33] leads to structural information isolation. To address this issue, we injects the reconstructed road topology into the anchor space of the detection branch to strengthen perception. As shown in Tab. 3, our GameAD achieves a 3D detection mAP of 0.425 and an NDS of 
+
+0.536 on nuScenes, improving over SparseDrive by 1.7% in mAP and 2.1% in NDS. In terms of multi-object tracking, GameAD reaches an AMOTA of 39 .9% 
+
+with 566 IDS, outperforming MomAD by 2% in AMOTA and reducing IDS by 
+
+33 .6% . In terms of online mapping, GameAD achieves 57 .2% mAP, which is 2.3% 
+
+higher than MomAD. In terms of motion prediction, GameAD outperforms both MomAD and BridgeAD, achieving superior prediction performance. 
+
+4.4 Ablations and Analysis Impact of Hyperparameter Design on Planning. As shown in Tab. 4, we analyze the impact of trajectory distance metrics, risk intensity risk β , and 12 K. Ding et al. 
+
+Table 5: Ablation studies of the core modules in GameAD on the nuScenes valida-tion split. RTA represents Risk-Aware Topology Anchoring. SPA represents Strategic Payload Adapter. MRSA represents Minimax Risk-Aware Sparse Attention. RCES rep-resents Risk-Consistent Equilibrium Stabilization. ID RTA MRSA RCES SPA PRE (%) ↓ Coll. Rate (%) ↓ TPC (m) ↓
+
+1s 2s 3s Avg. 1s 2s 3s Avg. 1s 2s 3s Avg. 0 ✓ ✓ ✓ ✓ 3.89 3.93 4.01 3.94 0.01 0.04 0.18 0.08 0.28 0.50 0.74 0.51 
+
+1 ✓ ✓ ✓ 3.92 3.97 4.05 3.98 0.01 0.07 0.22 0.10 0.28 0.51 0.75 0.51 2 ✓ ✓ ✓ 3.95 4.01 4.10 4.02 0.02 0.10 0.33 0.15 0.30 0.52 0.76 0.53 3 ✓ ✓ ✓ 3.90 3.95 4.02 3.96 0.02 0.08 0.26 0.12 0.31 0.54 0.77 0.54 4 ✓ ✓ ✓ 3.91 3.99 4.04 3.98 0.01 0.08 0.29 0.13 0.29 0.51 0.75 0.52 
+
+Table 6: Ablation studies of perception. AP d denotes AP divider . AP b denotes AP boundary . ‘perception’ follows the setting of SparseDrive [33]. ‘instance robust’ is re-implemented based on MomAD [31]. ‘motion2det’ is re-implemented based on BridgeAD [39]. ‘uni. calibration’ indicates the flow from the map branch to the de-tection branch, while ‘bid. calibration’ indicates mutual influence between the two branches. ID Method 3D Object Detection Multi-Object Tracking Online Mapping mAP ↑ NDS ↑ AMOTA ↑ AMOTP ↓ Recall ↑ IDS ↓ mAP ↑ AP ped ↑ AP d↑ AP b↑                                                             
+
+> 0perception 0.418 0.525 0.386 1.254 0.499 886 55.1 49.9 57.0 58.4 1perception +instance robust 0.420 0.527 0.390 1.248 0.505 864 55.2 50.1 57.3 58.2 2perception +motion2det 0.421 0.537 0.396 1.234 0.502 574 54.2 52.1 54.3 56.2 3perception +uni. calibration 0.425 0.536 0.399 1.224 0.504 566 57.1 53.6 59.1 58.7
+> 4perception +bid. calibration 0.411 0.516 0.371 1.273 0.453 1022 51.4 49.1 52.9 52.3
+
+the number of fused historical frames on planning performance. Under identical settings, replacing Euclidean distance with Hausdorff distance consistently im-proves all evaluation metrics. We further fix the number of historical frames to 1
+
+while varying the risk β , and then fix the risk β to 2.0 while varying the number of historical frames. The combination of Hausdorff distance, a risk β of 2.0, and 
+
+3 historical frames achieves the best performance. 
+
+Impact of Modules Design on Planning. As shown in Tab. 5, we conduct ablation studies on the core modules to quantify their contributions to compre-hensive performance. From ID-1 to ID-4, we remove RTA, MRSA, RCES, and SPA, respectively. The results show that removing any single module consis-tently degrades planning performance, indicating that the performance gains of our GameAD stem from the synergy among multiple components rather than from a single dominant factor. 
+
+Impact of Design on Perception. As shown in Tab. 6, we analyze the in-fluence of different components on perception performance. From ID-1 to ID-4, we progressively add instance robust, motion2det, and topology calibration GameAD 13                   
+
+> Fig. 4: Visualization of attention heatmaps for the comparison between GameAD and SparseDrive in multi-agent interaction. GameAD exhibits sparse and mode-differentiated interaction structures compared to the dispersed distribution in SparseDrive.
+
+to enhance the baseline SparseDrive [33]. Unidirectional topology calibration achieves the best comprehensive performance in perception. In contrast, bidirec-tional topology calibration leads to a significant performance degradation. We attribute this degradation to optimization interference introduced by coupling the detection and mapping branches in both directions, whereas a unidirectional design supports more stable multi-task joint learning. 
+
+Efficiency Analysis. As shown in Tab. 1, we compare the Frames Per Second (FPS) of our GameAD and other end-to-end methods. The FPS for all models is evaluated on either a single NVIDIA RTX 3090 GPU or an NVIDIA Tesla A100 GPU with a batch size of 1. The inference latency of our model is 192.3 ms, faster than BridgeAD’s 227.3 ms but slower than MomAD’s 158.7 ms. 
+
+Qualitative Results. As illustrated in Fig. 4, the attention heatmaps reveal a distinct difference between GameAD and SparseDrive in terms of importance allocation during agent interactions. In SparseDrive, attention weights exhibit a dispersed distribution across a large number of agents. Furthermore, the atten-tion patterns in SparseDrive show minimal variation across different planning modes, suggesting a limited capability to distinguish between diverse ego behav-iors. In contrast, GameAD produces a sparser and more mode-differentiated interaction structure. Each planning mode concentrates high attention on a small subset of safety-critical agents. This indicates that the Minimax Risk-aware Sparse Attention (MRSA) enables each trajectory mode to selectively identify high-risk agents for refined interactive reasoning, while simultaneously reducing computational redundancy through this selective mechanism. In Fig. 5, we present a comprehensive visual comparison between GameAD, SparseDrive, and BridgeAD, focusing on both perception and planning performance. While SparseDrive demonstrates reasonable planning capabilities, it exhibits excessive trajectory magnitudes during left-turn maneuvers that introduce collision risks, alongside noticeable degradation in perception accuracy. Conversely, although 14 K. Ding et al.  
+
+> Fig. 5: Qualitative comparison of GameAD with SparseDrive and BridgeAD. Our GameAD achieves better performance in both perception and planning.
+
+BridgeAD performs well in perception tasks, its planning module appears to lack sensitivity to road topology. In contrast, the qualitative results indicate that our model, by integrating risk-aware topology anchoring with game-theoretic planning, achieves a precise understanding of surrounding agents. Consequently, GameAD generates reasonable planning trajectories that successfully avoid col-lisions. Additional qualitative results and failure cases are provided in the sup-plementary materials. 
+
+## 5 Conclusion 
+
+We revisit end-to-end autonomous driving from a game-theoretic perspective and identify global attention dilution as a key limitation of unified frameworks, where equal attention to all agents ignores geometrically critical interactions. Planning is reformulated as a risk-conditioned multi-agent game, leading to GameAD, which enables explicit risk propagation from perception to planning. GameAD integrates Risk-Aware Topology Anchoring, Strategic Payload Adapter, Mini-max Risk-Aware Sparse Attention, and Risk-Consistent Equilibrium Stabiliza-tion. Experiments on nuScenes and Bench2Drive demonstrate state-of-the-art performance in open-loop planning, closed-loop driving, and unified perception tasks. In future work, we plan to introduce the concept of risk-game planning into the research on VLA for autonomous driving. GameAD 15 
+
+## References 
+
+1. Caesar, H., Bankiti, V., Lang, A.H., Vora, S., Liong, V.E., Xu, Q., Krishnan, A., Pan, Y., Baldan, G., Beijbom, O.: nuscenes: A multimodal dataset for autonomous driving. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 11621–11631 (2020) 2. Chen, L., Wu, P., Chitta, K., Jaeger, B., Geiger, A., Li, H.: End-to-end autonomous driving: Challenges and frontiers. IEEE Transactions on Pattern Analysis and Ma-chine Intelligence 46 (12), 10164–10183 (2024) 3. Cheng, J., Chen, Y., Mei, X., Yang, B., Li, B., Liu, M.: Rethinking imitation-based planners for autonomous driving. 2024 IEEE International Conference on Robotics and Automation (ICRA) pp. 14123–14130 (2024), https://api. semanticscholar.org/CorpusID:271798811 
+
+4. Dauner, D., Hallgarten, M., Geiger, A., Chitta, K.: Parting with misconceptions about learning-based vehicle motion planning. In: Conference on Robot Learning. pp. 1268–1281. PMLR (2023) 5. Gu, J., Hu, C., Zhang, T., Chen, X., Wang, Y., Wang, Y., Zhao, H.: Vip3d: End-to-end visual trajectory prediction via 3d agent queries. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition. pp. 5496– 5506 (2023) 6. He, K., Zhang, X., Ren, S., Sun, J.: Deep residual learning for image recognition. 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR) pp. 770–778 (2015), https://api.semanticscholar.org/CorpusID:206594692 
+
+7. Hu, S., Chen, L., Wu, P., Li, H., Yan, J., Tao, D.: St-p3: End-to-end vision-based autonomous driving via spatial-temporal feature learning. In: European Confer-ence on Computer Vision (2022), https://api.semanticscholar.org/CorpusID: 250607597 
+
+8. Hu, Y., Yang, J., Chen, L., Li, K., Sima, C., Zhu, X., Chai, S., Du, S., Lin, T., Wang, W., Lu, L., Jia, X., Liu, Q., Dai, J., Qiao, Y., Li, H.: Planning-oriented autonomous driving. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (2023) 9. Huang, J., Huang, G.: Bevdet4d: Exploit temporal cues in multi-camera 3d object detection. arXiv preprint arXiv:2203.17054 (2022) 10. Huang, J., Huang, G., Zhu, Z., Yun, Y., Du, D.: Bevdet: High-performance multi-camera 3d object detection in bird-eye-view. arXiv preprint arXiv:2112.11790 (2021) 11. Huang, Y., Cheng, Y., Wang, K.: Trajectory mamba: Efficient attention-mamba forecasting model based on selective ssm. arXiv preprint arXiv:2503.10898 (2024) 12. Huang, Z., Liu, H., Lv, C.: Gameformer: Game-theoretic modeling and learning of transformer-based interactive prediction and planning for autonomous driving. In: Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV). pp. 3903–3913 (October 2023) 13. Jia, X., Yang, Z., Li, Q., Zhang, Z., Yan, J.: Bench2drive: Towards multi-ability benchmarking of closed-loop end-to-end autonomous driving. Advances in Neural Information Processing Systems 37 , 819–844 (2024) 14. Jiang, B., Chen, S., Gao, H., Liao, B., Zhang, Q., Liu, W., Wang, X.: VADv2: End-to-end autonomous driving via probabilistic planning. In: The Fourteenth In-ternational Conference on Learning Representations (2026), https://openreview. net/forum?id=0a4dA6eUHN 16 K. Ding et al. 15. Jiang, B., Chen, S., Xu, Q., Liao, B., Chen, J., Zhou, H., Zhang, Q., Liu, W., Huang, C., Wang, X.: Vad: Vectorized scene representation for efficient autonomous driving. In: ICCV. pp. 8306–8316 (2023), https://doi.org/10.1109/ICCV51070. 2023.00766 
+
+16. Li, Q., Wang, Y., Wang, Y., Zhao, H.: Hdmapnet: An online hd map construction and evaluation framework. CoRR abs/2107.06307 (2021), https://arxiv.org/ abs/2107.06307 
+
+17. Li, Z., Wang, W., Li, H., Xie, E., Sima, C., Lu, T., Yu, Q., Dai, J.: Bev-former: Learning bird’s-eye-view representation from multi-camera images via spa-tiotemporal transformers. In: European Conference on Computer Vision (2022), 
+
+https://api.semanticscholar.org/CorpusID:247839336 
+
+18. Li, Z., Yu, Z., Lan, S., Li, J., Kautz, J., Lu, T., Álvarez, J.M.: Is ego status all you need for open-loop end-to-end autonomous driving? In: CVPR. pp. 14864–14873 (2024), https://doi.org/10.1109/CVPR52733.2024.01408 
+
+19. Liao, B., Chen, S., Wang, X., Cheng, T., Zhang, Q., Liu, W., Huang, C.: Maptr: Structured modeling and learning for online vectorized hd map construction. In: International Conference on Learning Representations (2023) 20. Lin, X., Lin, T., Pei, Z.H., Huang, L., Su, Z.: Sparse4d v2: Recurrent tempo-ral fusion with sparse model. ArXiv abs/2305.14018 (2023), https://api. semanticscholar.org/CorpusID:258841133 
+
+21. Lin, X., Lin, T., Pei, Z., Huang, L., Su, Z.: Sparse4d: Multi-view 3d object detection with sparse spatial-temporal fusion. CoRR abs/2211.10581 (2022), https:// doi.org/10.48550/arXiv.2211.10581 
+
+22. Liu, Y., Yuan, T., Wang, Y., Wang, Y., Zhao, H.: Vectormapnet: End-to-end vec-torized hd map learning. In: International conference on machine learning. PMLR (2023) 23. Liu, Z., Tang, H., Amini, A., Yang, X., Mao, H., Rus, D., Han, S.: Bevfusion: Multi-task multi-sensor fusion with unified bird’s-eye view representation. In: IEEE International Conference on Robotics and Automation (ICRA) (2023) 24. Loshchilov, I., Hutter, F.: Decoupled weight decay regularization. In: International Conference on Learning Representations (2017), https://api.semanticscholar. org/CorpusID:53592270 
+
+25. Loshchilov, I., Hutter, F.: SGDR: Stochastic gradient descent with warm restarts. In: International Conference on Learning Representations (2017), https : / / openreview.net/forum?id=Skq89Scxx 
+
+26. Meinhardt, T., Kirillov, A., Leal-Taixe, L., Feichtenhofer, C.: Trackformer: Multi-object tracking with transformers. In: The IEEE Conference on Computer Vision and Pattern Recognition (CVPR) (June 2022) 27. Philion, J., Fidler, S.: Lift, splat, shoot: Encoding images from arbitrary camera rigs by implicitly unprojecting to 3d. In: Proceedings of the European Conference on Computer Vision (2020) 28. Prakash, A., Chitta, K., Geiger, A.: Multi-modal fusion transformer for end-to-end autonomous driving. 2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) pp. 7073–7083 (2021), https://api.semanticscholar.org/ CorpusID:233148602 
+
+29. Shi, S., Jiang, L., Dai, D., Schiele, B.: Motion transformer with global intention localization and local movement refinement. Advances in Neural Information Pro-cessing Systems 35 , 6531–6543 (2022) 30. Shi, S., Jiang, L., Dai, D., Schiele, B.: Mtr++: Multi-agent motion prediction with symmetric scene modeling and guided intention querying. arXiv preprint arXiv:2306.17770 (2023) GameAD 17 31. Song, Z., Jia, C., Liu, L., Pan, H., Zhang, Y., Wang, J., Zhang, X., Xu, S., Yang, L., Luo, Y.: Don’t shake the wheel: Momentum-aware planning in end-to-end au-tonomous driving. 2025 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) pp. 22432–22441 (2025), https://api.semanticscholar. org/CorpusID:276782149 
+
+32. Song, Z., Liu, L., Jia, F., Luo, Y., Jia, C., Zhang, G., Yang, L., Wang, L.: Robustness-aware 3d object detection in autonomous driving: A review and out-look. IEEE Transactions on Intelligent Transportation Systems 25 , 15407–15436 (2024), https://api.semanticscholar.org/CorpusID:266977207 
+
+33. Sun, W., Lin, X., Shi, Y., Zhang, C., Wu, H., Zheng, S.: Sparsedrive: End-to-end autonomous driving via sparse scene representation. 2025 IEEE International Conference on Robotics and Automation (ICRA) pp. 8795–8801 (2024), https: //api.semanticscholar.org/CorpusID:270123261 
+
+34. xilinx Wang, L., Zhang, X., Song, Z., Bi, J., Zhang, G., Wei, H., Tang, L., Yang, L., Li, J., Jia, C., Zhao, L.: Multi-modal 3d object detection in autonomous driving: A survey and taxonomy. IEEE Transactions on Intelligent Vehicles 8, 3781–3798 (2023), https://api.semanticscholar.org/CorpusID:260432447 
+
+35. Wang, S., Liu, Y., Wang, T., Li, Y., Zhang, X.: Exploring object-centric tempo-ral modeling for efficient multi-view 3d object detection. 2023 IEEE/CVF Inter-national Conference on Computer Vision (ICCV) pp. 3598–3608 (2023), https: //api.semanticscholar.org/CorpusID:257636991 
+
+36. Xu, Y., Yin, Y., Zablocki, E., Vu, T.H., Boulch, A., Cord, M.: PPT: Pretraining with pseudo-labeled trajectories for motion forecasting. In: Workshop on Making Sense of Data in Robotics: Composition, Curation, and Interpretability at Scale at CoRL 2025 (2025), https://openreview.net/forum?id=4SXdVmswuu 
+
+37. Yin, T., Zhou, X., Krähenbühl, P.: Center-based 3d object detection and tracking. CVPR (2021) 38. Zeng, F., Dong, B., Zhang, Y., Wang, T., Zhang, X., Wei, Y.: Motr: End-to-end multiple-object tracking with transformer. In: European Conference on Computer Vision (ECCV) (2022) 39. Zhang, B., Song, N., Jin, X., Zhang, L.: Bridging past and future: End-to-end autonomous driving with historical prediction and planning. In: CVPR (2025) 40. Zhang, B., Song, N., Zhang, L.: Demo: Decoupling motion forecasting into di-rectional intentions and dynamic states. In: NeurIPS (2024), http://papers. nips.cc/paper_files/paper/2024/hash/c0ff9e52e94ae331bc0f2d28be06a9ca-Abstract-Conference.html 
+
+41. Zhang, D., Wang, G., Zhu, R., Zhao, J., Chen, X., Zhang, S., Gong, J., Zhou, Q., Zhang, W., Wang, N., Tan, F., Zhou, H., Xu, Z., Yao, H., Zhang, C., Liu, X., Di, X., Li, B.: Sparsead: Sparse query-centric paradigm for efficient end-to-end autonomous driving. ArXiv abs/2404.06892 (2024), https://api. semanticscholar.org/CorpusID:269033031 
+
+42. Zheng, W., Song, R., Guo, X., Zhang, C., Chen, L.: Genad: Generative end-to-end autonomous driving. arXiv preprint arXiv: 2402.11502 (2024) 43. Zhou, Z., Wang, J., Li, Y.H., Huang, Y.K.: Query-centric trajectory predic-tion. 2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) pp. 17863–17873 (2023), https://api.semanticscholar.org/CorpusID: 259359908

@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-001.webp",
+      "caption": "Fig. 2: Overall pipeline of DriveVA. Given history observations, the ego state (current velocity vx, vy), and language instructions, the model first encodes conditional signals into latent tokens through a text encoder and a video VAE [53]. A unified diffusion transformer (DiT) [45] then jointly predicts future video latents and future action tokens in a shared generative process, ensuring strong video–trajectory consistency. To maintain long-horizon temporal coherence, a progressive video continuation strategy recursively rolls out future video clips while updating predicted trajectories.",
+      "page": 6,
+      "index": 1,
+      "width": 723,
+      "height": 396
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-002.webp",
+      "caption": "Table 3: End-to-end motion planning performance on nuScenes [5] dataset. ∗ represents only using the front camera as input.",
+      "page": 11,
+      "index": 2,
+      "width": 706,
+      "height": 210
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-003.webp",
+      "caption": "Fig. 5: Visualization of predicted video imaginations and corresponding trajectories. The predicted trajectories follow the scene evolution in the generated future video frames, demonstrating strong video–trajectory consistency enabled by our unified generation framework.",
+      "page": 15,
+      "index": 3,
+      "width": 719,
+      "height": 247
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-004.webp",
+      "caption": "Fig. 12: Zero-shot Generalization Results on Carla with predicted video imaginations and corresponding trajectories. The trajectories remain aligned with the generated video evolution even under domain shifts, indicating robust video–trajectory consistency and zero-shot generalization. Here, green denotes the GT trajectory and red the predicted trajectory.",
+      "page": 30,
+      "index": 4,
+      "width": 721,
+      "height": 247
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-005.webp",
+      "caption": "Fig. 11: Zero-shot Generalization Results on nuScenes with predicted video imaginations and corresponding trajectories. The trajectories remain aligned with the generated video evolution even under domain shifts, indicating robust video–trajectory consistency and zero-shot generalization. Here, green denotes the GT trajectory and red the predicted trajectory.",
+      "page": 30,
+      "index": 5,
+      "width": 716,
+      "height": 330
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-006.webp",
+      "caption": "Fig. 1: DriveVA: unified video–trajectory rollout for planning. Given history frames, DriveVA rolls out a future video clip (top). The ego trajectory is generated together with the video rollout and remains aligned with the visual scene evolution (middle). Bottom: zero-shot comparisons trained on NAVSIM and evaluated on nuScenes (cross dataset) and CARLA (cross domain from real to simulation), showing large relative improvements over PWM [69] in displacement error and collision rate.",
+      "page": 2,
+      "index": 6,
+      "width": 721,
+      "height": 406
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-007.webp",
+      "caption": "Fig. 10: More visualizations of predicted video imaginations and corresponding trajectories. The predicted trajectories follow the scene evolution in the generated future video frames, demonstrating strong video–trajectory consistency enabled by our unified generation framework. Here, green denotes the GT trajectory and red the predicted trajectory.",
+      "page": 29,
+      "index": 7,
+      "width": 717,
+      "height": 455
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-008.webp",
+      "caption": "Table 1: Performance comparison on NAVSIM Navtest using closed-loop metrics. Methods are grouped by whether they employ an explicit world model: Traditional End-to-End Methods and World Model Methods.",
+      "page": 10,
+      "index": 8,
+      "width": 729,
+      "height": 359
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-009.webp",
+      "caption": "Fig. 6: Additional zero-shot qualitative comparisons on unseen nuScenes scenarios. Complementary to the main-paper zero-shot visualization, we compare PWM [69] and DriveVA on two additional unseen nuScenes cases. For each case, we show imagined future frames at 1s, 2s, and 3s together with the predicted trajectory. PWM exhibits visible mismatch between future scene evolution and ego motion, while DriveVA preserves stronger alignment between generated videos and predicted trajectories. Here, green denotes the GT trajectory and red the predicted trajectory.",
+      "page": 23,
+      "index": 9,
+      "width": 719,
+      "height": 432
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-010.webp",
+      "caption": "Fig. 9: Qualitative examples of temporal video–trajectory consistency in zero-shot unseen nuScenes scenarios. We visualize three representative cases of DriveVA under zero-shot transfer to unseen nuScenes scenes: (a) smooth right turn, (b) early avoidance of a parked vehicle, and (c) early bypass of a stopped bus. From left to right, the generated future video frames and overlaid trajectories evolve consistently over time. These examples show that DriveVA maintains tight alignment between imagined scene evolution and planned ego motion, highlighting the strong temporal consistency enabled by our unified video–action generation framework. Here, green denotes the GT trajectory and red the predicted trajectory.",
+      "page": 28,
+      "index": 10,
+      "width": 717,
+      "height": 315
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04198v1/fig-011.webp",
+      "caption": "Fig. 8: Illustration of failure cases with consistent video–trajectory prediction. We visualize the generated future videos and their corresponding predicted trajectories, together with the ground-truth future videos and trajectories. These two examples show scenarios where the future prediction fails to match the ground-truth behavior, and the predicted trajectory follows the failed visual forecast. In (a), the ground-truth ego vehicle bypasses the cyclist, whereas DriveVA again predicts an incorrect stop and produces a corresponding stationary trajectory. In (b), the groundtruth ego vehicle proceeds through the intersection, whereas DriveVA predicts an incorrect stop and therefore outputs a nearly stationary trajectory. Although the predicted future mode is incorrect in both cases, the predicted trajectories remain consistent with the generated videos. Here, green denotes the GT trajectory and red the predicted trajectory.",
+      "page": 27,
+      "index": 11,
+      "width": 723,
+      "height": 461
+    }
+  ]
+}

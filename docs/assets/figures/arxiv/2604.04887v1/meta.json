@@ -1,0 +1,102 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-001.webp",
+      "caption": "Figure 12. HorizonWeaver Editing. Compound edits: The masks (projected as binary images) enable modifications to traffic while the text prompt informs the desired global appearance. We compare to Qwen [60], OmniGen2 [61], UltraEdit [72], and BAGEL [13].",
+      "page": 21,
+      "index": 1,
+      "width": 1036,
+      "height": 764
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-002.webp",
+      "caption": "Figure 11. HorizonWeaver Editing. Global edits: the text prompt informs the appearance of the scene. For brevity, only the portions relevant to the shown edits are displayed. We compare to Qwen [60], OmniGen2 [61], UltraEdit [72], and BAGEL [13].",
+      "page": 21,
+      "index": 2,
+      "width": 1036,
+      "height": 575
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-003.webp",
+      "caption": "Figure 1. In each example, from left to right are the input image, LangMasks, and output image. Masks for global edits are blank. The careful design of HorizonWeaver across data (Section 3.2), model (Section 3.3), and training (Section 3.4) addresses three critical challenges in driving scene editing: 1) mult-level granularity (rows 2, 3); 2) rich high-level semantics (rows 1, 2); 3) ubiquitous domains shifts (Tab. 1).",
+      "page": 2,
+      "index": 3,
+      "width": 727,
+      "height": 483
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-004.webp",
+      "caption": "Figure 5. HorizonWeaver Editing. Rows 1,2 Local edits: the masks (projected as binary images and stated in text for reference) enable modifications to traffic. Rows 3, 4 Global edits: the text prompt informs the appearance of the scene. For brevity, only the portions relevant to the shown edits are displayed. Rows 5, 6 Compound edits: The masks (projected as binary images) enable modifications to traffic while the text prompt informs the desired global appearance. We compare to Qwen [60], OmniGen2 [61], UltraEdit [72], and BAGEL [13].",
+      "page": 7,
+      "index": 4,
+      "width": 834,
+      "height": 833
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-005.webp",
+      "caption": "Figure 14. Temporal Consistency. Videos produced from an edited initial image by HorizonWeaver, UltraEdit, and Qwen (top to bottom). UltraEdit leaves the initial image unchanged. Prompt: Change the season to summer.",
+      "page": 22,
+      "index": 5,
+      "width": 730,
+      "height": 370
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-006.webp",
+      "caption": "Figure 13. Driving specific editor. MagicDrive [14], cannot preserve critical driving scene components (appearance of vehicles, construction infrastructure, road signs, etc.) Long-Trail Editing our edits can extend to rare scenarios, e.g., crosswalks, road signs, and specialized vehicles (cement mixer) which are not preserved by MagicDrive.",
+      "page": 22,
+      "index": 6,
+      "width": 727,
+      "height": 598
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-007.webp",
+      "caption": "Figure 8. Truncated annotation output corresponding to Fig. 7.",
+      "page": 18,
+      "index": 7,
+      "width": 699,
+      "height": 1058
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-008.webp",
+      "caption": "Figure 2. Dataset Construction. Real-world data (Sec. 3.2.1) are paired by camera pose and annotated using an image descriptor pipeline",
+      "page": 4,
+      "index": 8,
+      "width": 983,
+      "height": 377
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-009.webp",
+      "caption": "Figure 9. Prompt used to generate real-world image editing instructions.",
+      "page": 19,
+      "index": 9,
+      "width": 910,
+      "height": 606
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-010.webp",
+      "caption": "Figure 7. Example annotation produced by the annotation pipeline.",
+      "page": 17,
+      "index": 10,
+      "width": 776,
+      "height": 650
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-011.webp",
+      "caption": "Figure 10. HorizonWeaver Editing. Local edits: the masks (projected as binary images and stated in text for reference) enable modifications to traffic. We compare to Qwen [60], OmniGen2 [61], UltraEdit [72], and BAGEL [13].",
+      "page": 20,
+      "index": 11,
+      "width": 1036,
+      "height": 1143
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04887v1/fig-012.webp",
+      "caption": "Figure 6. Annotation pipeline prompt used for the VLM.",
+      "page": 16,
+      "index": 12,
+      "width": 928,
+      "height": 783
+    }
+  ]
+}

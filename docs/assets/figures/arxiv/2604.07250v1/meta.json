@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.07250v1/fig-001.webp",
+      "caption": "Table 2: Extrapolation robustness on Waymo. Top: Overall method comparison. Bottom: Geo-EVS detailed analysis by pose offset and geometric sparsity, showing consistent performance across extrapolation conditions.",
+      "page": 6,
+      "index": 1,
+      "width": 958,
+      "height": 342
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07250v1/fig-002.webp",
+      "caption": "Figure 2: Qualitative extrapolation comparison aligned with Table 2. We first construct an intermediate target at 22.5◦ from the front (0◦) and front-side (45◦) views, then apply 1 m left/right lateral translations in the world frame to form out-of-manifold targets. Geo-EVS yields more coherent structures and cleaner local details than competing methods under this setting.",
+      "page": 7,
+      "index": 2,
+      "width": 918,
+      "height": 688
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07250v1/fig-003.webp",
+      "caption": "Figure 1: Overview of Geo-EVS. GAR constructs geometry-conditioned maps through reprojection with a unified projection interface for training and inference, and AGLD performs geometry-to-image generation with artifact-aware optimization.",
+      "page": 3,
+      "index": 3,
+      "width": 1036,
+      "height": 477
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07250v1/fig-004.webp",
+      "caption": "Figure 3: Qualitative interpolation comparison aligned with Table 5. Following the same protocol, all methods take only front-side camera views as input and synthesize the front camera view. Geo-EVS preserves sharper structures and more consistent textures while remaining competitive with strong NVS baselines.",
+      "page": 8,
+      "index": 4,
+      "width": 918,
+      "height": 554
+    }
+  ]
+}

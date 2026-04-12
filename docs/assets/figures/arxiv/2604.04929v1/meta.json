@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.04929v1/fig-001.webp",
+      "caption": "Figure 2. Illustration of the proposed multi-agent inference framework. (a) shows our empirical observation that a large model with a short response can achieve a similar performance as the small model with additional reasoning tokens. (b) demonstrates the proposed reasoning transfer strategy that can reuse the reasoning tokens output by the small model for the large model to improve its performance. (c) Our final proposal adopts mutual verification to further reduce the number of expensive model calls for efficient inference.",
+      "page": 6,
+      "index": 1,
+      "width": 1017,
+      "height": 327
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04929v1/fig-002.webp",
+      "caption": "Table 15. Original 2B-R vs. 2B-R(S2) in the cascade.MV|N matches the main table MV2B(R)/8B(S) (count; % of all tests).RT|N matches the main RT column (count; % of all tests).Final: POPE/F1, InfoVQA/mean ANLS×100, others/accuracy.",
+      "page": 14,
+      "index": 2,
+      "width": 1017,
+      "height": 221
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04929v1/fig-003.webp",
+      "caption": "Figure 4. Head-wise attention weights of total reasoning tokens across different layers.",
+      "page": 18,
+      "index": 3,
+      "width": 995,
+      "height": 1245
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04929v1/fig-004.webp",
+      "caption": "Figure 5. Head-wise sparsity within reasoning tokens across different layers.",
+      "page": 19,
+      "index": 4,
+      "width": 995,
+      "height": 1245
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04929v1/fig-005.webp",
+      "caption": "Figure 3. Illustration of total attention weights of all reasoning tokens and sparsity within reasoning tokens averaged over 32 heads. Sparsity is measured by the ratio of reasoning tokens that contribute to 80% total attention weights of reasoning tokens.",
+      "page": 17,
+      "index": 5,
+      "width": 981,
+      "height": 353
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04929v1/fig-006.webp",
+      "caption": "Table 11. Comparison of total inference time (s) on benchmarks.",
+      "page": 9,
+      "index": 6,
+      "width": 492,
+      "height": 308
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04929v1/fig-007.webp",
+      "caption": "Table 10. Multi-Agent Inference based on Qwen3-VL-2B/8B. “MV” denotes the mutual verification and “RT” is for reasoning transfer. The best result is in bold.",
+      "page": 9,
+      "index": 7,
+      "width": 1008,
+      "height": 211
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04929v1/fig-008.webp",
+      "caption": "Table 16. Comparison of top tokens selected by 8B + 2B-R and 8B + 8B-R across different layers. Evidently, deeper layers focus on semantic reasoning tokens, where similar tokens can be selected from 2B-R and 8B-R tokens.",
+      "page": 20,
+      "index": 8,
+      "width": 1010,
+      "height": 525
+    }
+  ]
+}

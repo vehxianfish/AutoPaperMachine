@@ -1,0 +1,429 @@
+Title: Open-Ended Instruction Realization with LLM-Enabled Multi-Planner Scheduling in Autonomous Vehicles
+
+URL Source: https://arxiv.org/pdf/2604.08031v1
+
+Published Time: Fri, 10 Apr 2026 00:51:11 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Open-Ended Instruction Realization with LLM-Enabled Multi-Planner Scheduling in Autonomous Vehicles 
+
+## Jiawei Liu 1,6 Xun Gong 1,6* Fen Fang 2 Muli Yang 2 Bohao Qu 2 Yunfeng Hu 1 Hong Chen 3
+
+## Xulei Yang 2 Qing Guo 4,51Jilin University, China 2Agency for Science, Technology and Research (A*STAR), Singapore  
+
+> 3
+
+## Tongji University, China 4 NKIARI, China 5 Nankai University, China  
+
+> 6
+
+## Engineering Research Center of Knowledge-Driven Human-Machine Intelligence, MOE, China 
+
+## Abstract 
+
+Most Human-Machine Interaction (HMI) research over-looks the maneuvering needs of passengers in autonomous driving (AD). Natural language offers an intuitive interface, yet translating passenger open-ended instructions into con-trol signals—without sacrificing interpretability and trace-ability—remains a challenge. This study proposes an instruction-realization framework that leverages a large language model (LLM) to interpret instructions, generates executable scripts that schedule multiple model predictive control (MPC)-based motion planners based on real-time feedback, and converts planned trajectories into control sig-nals. This scheduling-centric design decouples semantic reasoning from vehicle control at different timescales, es-tablishing a transparent, traceable decision-making chain from high-level instructions to low-level actions. Due to the absence of high-fidelity evaluation tools, this study intro-duces a benchmark for open-ended instruction realization in a closed-loop setting. Comprehensive experiments reveal that the framework significantly improves task-completion rates over instruction-realization baselines, reduces LLM query costs, achieves safety and compliance on par with specialized AD approaches, and exhibits considerable tol-erance to LLM inference latency. For more qualitative il-lustrations and a clearer understanding. 
+
+## 1. Introduction 
+
+Existing Human-Machine Interaction (HMI) systems, de-veloped primarily for Society of Automotive Engineers (SAE) Levels 0-3, are insufficient for L4-L5 autonomous driving (AD) systems such as Robotaxi. Prevailing HMIs (e.g., lane-departure warning at L0 [41], lane-keeping assis-tance at L1-L2 [3], and takeover control at L3 [39]) presume 
+
+> *Corresponding author
+
+a driver ready to intervene. As shown in Figure 1, AD re-search shifts attention to broader traffic participants such as rear-seat passengers [46]. Driver-oriented cues, like flash-ing lights, haptic steering feedback, and takeover alerts, therefore lose relevance. This transition requires redesign-ing HMI for intuitive interaction with non-driving users. Recent advances in Large Language Model (LLM) offer a compelling path forward [25]. Achieving a human-like interaction has long been a goal of onboard HMI [46]. Nat-ural language, the most universal medium of communica-tion, offers clear advantages. Meanwhile, LLMs excel at comprehending language input and producing understand-able responses, making them well-suited for enabling bidi-rectional interaction between passengers and vehicles. LLM-driven HMI has gained momentum in research and industry in the last two years. Recent AD methods leveraging LLM agents and VLA models exemplify lan-guage–driving integration [19, 25]. Industrial progress mir-rors this trend. In May 2025, Apple introduced CarPlay Ultra, allowing drivers to control cabin climate and audio through Siri [1]. That same month, Li Auto unveiled its “Driver Agent” concept, identifying it as a focus for future research [7]. The global investment bank, Goldman Sachs, projects China’s Robotaxi market to increase from USD 54 million in 2025 to USD 12 billion by 2030 [37]. Despite this momentum, key challenges continue to hin-der making language the primary mode of human–vehicle interaction and supplanting the century-old steering wheel, accelerator, and brake. Challenge A: Underexplored Open-Ended and Maneuver-Level Instruction . Real-world pas-senger instructions vary culturally, and rarely follow stan-dard templates. Meanwhile, current onboard HMIs em-phasize infotainment, cabin control, and route guidance (or navigation), but offer limited access to driving maneuvers such as lane change, overtaking, or pulling over [36, 46]. Interpreting and executing open-ended, maneuver-level in-structions (Figure 1) remains an underexplored problem in                        
+
+> arXiv:2604.08031v1 [cs.RO] 9 Apr 2026 Autonomous Vehicles
+> Pedestrian :“There is an emergency ！”
+> Intelligent
+> Assistant :“I will make way.”
+> :“I feel unsafe now!”
+> Passenger
+> Intelligent
+> Assistant
+> :“I will make aleft lane change after
+> the intersection.”
+
+(a) Out -of -Cabin Interaction (b) In -Cabin Interaction Figure 1. Human-Like HMI Using Open-Ended Language Instructions. Here, “open-ended” refers to diverse natural-language phrasings. 
+
+designing human-centric interaction systems. Challenge B: Lack of Efficient Behavior Scheduling . Understanding in-tent is essential, but executing instructions adds more com-plexity, requiring the scheduling of multiple driving behav-iors. For example, the instruction “ I feel unsafe ” in Figure 1 invokes a behavior sequence—[ left lane change , accel-eration , lane keeping ]—each with distinct goals that can-not be managed by a single planner. To accurately per-form instruction tasks in evolving traffic, behavior schedul-ing or switching must operate concurrently based on real-time feedback, without blocking other AD modules. Chal-lenge C: Insufficient High-Fidelity and Closed-Loop Eval-uation . Most LLM-based AD research relies on open-loop evaluation using public datasets (e.g., Argoverse [5], NuScenes[4]) or game-style simulators (e.g., Highway[22], Carla[12]), while closed-loop evaluation in hybrid simula-tions built on realistic traffic data remains uncommon [25]. To tackle these issues, this study introduces an LLM-enabled, scheduling-centric framework. First, the LLM in-terprets open-ended instructions, resolves ambiguities by referencing traffic context, and outputs a driving behav-ior sequence. Next, it produces a script that schedules multiple motion planners to carry out the behavior se-quence, integrating coroutine mechanisms [26] and asyn-chronous triggers to enable adaptive planner switching within evolving traffic. Last, MPC-based motion plan-ner and dedicated controllers are employed to generate continuous control signals. This scheduling-centric archi-tecture confines language-trained model’s involvement to 
+
+high-level, low-frequency semantic reasoning, while a real-time feedback-driven schedule–plan–control loop enforces 
+
+low-level, high-frequency safe adaptation, establishing a transparent and traceable decision-making chain from lan-guage instructions to numerical control signals. The main contributions are summarized as follows: • POINT Benchmark : Due to the lack of testbeds for open-ended instructions, POINT augments the hybrid nu-Plan simulator [20] with 1,050 instruction–scenario pairs, enabling high-fidelity, closed-loop evaluation in simu-lated urban traffic. It also categorizes current LLM-based AD methods through a task-scheduling perspective and introduces several competitive baselines. • Scheduling-Centric Framework : The proposed frame-work leverages the LLM’s scheduling capability to co-ordinate explicit motion planners, enabling open-ended, maneuver-level instruction realization while maintaining a transparent language-to-control chain. • Comprehensive Evaluation : This work compares the proposed framework with LLM-based, data-driven, and rule-based methods across various metrics. It out-performs instruction-realization baselines by 64%-200% with a single LLM query, matches safety and compli-ance standards of leading specialized AD methods, and exhibits considerable tolerance to LLM inference latency. 
+
+## 2. Related Work 
+
+This section briefly reviews instruction-processing ap-proaches and VLA methods. 
+
+2.1. Conventional Methods 
+
+Conventional instruction processing typically adopts a two-stage pipeline: intent classification followed by key param-eter extraction (e.g., speed, cabin temperature, destination) [35, 46]. Approaches are typically either rule-based or 
+
+data-driven . Rule-based systems handcraft grammars and templates to capture frequent instruction patterns, whereas data-driven systems learn classifiers for intent recognition. For instance, SpatialRoutines [34] uses a manually designed grammar to parse commands into spatial-routine scripts that guide a robot through a simulated maze. AIME [27] col-lects multi-turn human-vehicle dialogs and trains separate RNNs for intent classification and key parameter extraction. A hierarchical framework [29] introduces a gated-attention encoder to convert commands into conditional inputs for a policy network, enabling language-guided control. While effective for limited, standardized commands, these approaches are brittle in the Robotaxi setting: (i) 
+
+Open-Domain Mismatch : Applying rule-based methods to passenger instructions requires enumerating massive rules over the cross-product of open language, driving scenes, and continuous vehicle actions (see Section 3), leading to combinatorial explosion, sparse coverage, and high main-tenance [50]. (ii) Intent-Slot Rigidity : Data-driven intent classification relies on a fixed set of labels and phrasing in training data, limiting OOD generalization [44]. Moreover, key parameter extraction assumes clearly specified parame-ters (or slots), which passenger instructions often violate. In this work, passenger instructions are only used for evaluation, with neither template/rule derivation nor model training to avoid data leakage. Thus, the benchmark aims to evaluate open-ended instruction realization rather than as-sess rule coverage or in-distribution generalization. 
+
+2.2. LLM-based Solutions 
+
+Recent vision–language–action (VLA) methods augment vision–language models (VLMs) with action heads or ex-perts, unifying perception, language, and control to exploit internet-scale knowledge and powerful reasoning for en-hanced driving performance [19]. For instance, LMDrive [31] consumes camera frames and navigation commands to control steering, throttle, and brake. AutoVLA [51] dis-cretizes trajectories into physically feasible tokens to gener-ate executable plans from multi-view image and language. AdaThinkDrive [24] adaptively determines, based on scene complexity, whether to perform reasoning before planning. Nonetheless, prior work faces the following gaps when applied to open-ended instructions: (i) Open-ended Instruc-tion Understanding : Most recent work focus on driving performance gain from language modality. This line of re-search therefore favors standardized, well-specified naviga-tion commands like “ turn left at next intersection ” [31], or standardized queries like “ what is the next action? ” [18, 45] and “ predict the future trajectory in the next three seconds ”[23, 24]. This emphasis leads to the overlooking of open-ended instructions common in Robotaxi. Our study shows that interpreting such instructions is non-trivial: it requires both advanced reasoning of high-capacity LLMs and ex-plicit use of traffic context to disambiguate intent. (ii) Lan-guage–Action Traceability : While end-to-end design curbs error accumulation and information loss, it can reduce VLA transparency [2]. Recent studies indicate that textual rea-soning (what VLAs say) and executed actions (what VLAs do) are not always closely aligned [14, 17, 42]. This in-consistency further complicates the compliance with safety standards such as ISO 26262, which encourage a traceable and transparent decision-making chain [2]. To tackle the above gaps, this work proposes ascheduling-centric framework enlightened by control-theoretic design principles including hierarchical decou-pling [16], timescale separation [21], and event-triggered scheduling [32]. This framework aims to exploit each component’s strength: the language-trained LLM inter-prets open-ended instruction and schedules explicit mo-tion planners through high-level textual reasoning, while the optimization-driven, MPC-based planner manages low-level continuous-valued control. 
+
+## 3. Problem Formulation 
+
+Passenger instruction realization can be formulated as an instruction-guided Partially Observable Markov Decision Process (POMDP), defined by 
+
+⟨S, A, O, T, O, Γ, R ⟩, (1) where st ∈ S is the state at time t, at ∈ A the action taken, 
+
+ot ∈ O the observation received. The state transition func-tion is T (s′|s, a ), and O(o|s) the observation model. As 
+
+st is not fully observable, the agent maintains a belief state 
+
+bt := P(st = s | ξt), where ξt := {o0, a 0, . . . , a t−1, o t} is the observation-action history. Given an instruction γ ∈ Γ, an interpreter fϕ should infer its intended task and map it into an ordered atomic driving behavior sequence (subtasks) {ci}m(γ) 
+
+> i=1
+
+where m(γ) ∈ N>0.Each behavior ci is associated with a completion set Ci ⊆ S
+
+and is considered complete when st ∈ C i.Let kt ∈ { 0, . . . , m (γ)} be the number of completed behaviors at time t and define the augmented state ¯st =(st, k t). Sequential progress through the driving behavior sequence can be rewarded by: 
+
+R(¯ st, a t, ¯st+1 ) = 
+
+(
+
+rkt+1 , kt+1 = kt + 1 ,
+
+0, otherwise  (2) with 
+
+kt+1 =
+
+(
+
+kt + 1 , st+1 ∈ C kt+1 ,kt, otherwise . (3) To jointly optimize the interpreter fϕ and a policy πθ ,the objective is to maximize the expected cumulative reward while ensuring safety: 
+
+max  
+
+> ϕ,θ
+
+Eγ∼P (Γ) 
+
+
+
+> δ(γ)
+
+X
+
+> t=0
+
+Eat∼πθ (·| bt)R(¯ st, a t, ¯st+1 )
+
+
+
+s.t. P [∀t ≤ δ(γ) : st ∈ Ssafe | b0] ≥ 1 − ε, 
+
+(4) where δ(γ) is the task time horizon, Ssafe is the set of ad-missible states, and ε bounds the acceptable risk. 
+
+## 4. Methodology 
+
+Equation (4) is challenging due to discrete instruction pars-ing, sparse stage-wise rewards, and safety constraints. This study therefore introduces a scheduling-centric framework that resorts to LLM capabilities (see Figure 2). “We are about to turn, don’t miss it.”                               
+
+> Given the traffic context…
+> The Passenger Intent is: right
+> lane change .
+> The Driving Behavior Sequence is:
+> [Decelerate, Right Lane Change,
+> Lane Keeping]
+> def Planner_Scheduling ():
+> """ This code is used for executing the Driving Behavior Sequence
+> [Decelerate, Right Lane Change, Lane Keeping] """
+> Decelerate() # Controller 1
+> def Right_Lane_Change_Condition (): …# Trigger 1 Defining
+> yield from wait_until (lambda :Right_Lane_Change_Condition )# Trigger 1
+> Right_Lane_Change () # Controller 2
+> def Lane_Keeping_Condition (): …# Trigger 2 Defining
+> …# Omitted: Trigger 2 and Lane -Keeping Controller Simulation Rollout
+
+Instruction 𝛾 
+
+Structured 
+
+Traffic Scene 
+
+> Input  Prompt  Template
+
+Motion Planner Scheduling                      
+
+> Vel. &
+> Pose
+> Stage 1: Instruction Understanding (What to do?) Stage 2: Scheduling Script Generation (How to do?) Stage 3: Closed -Loop Planning Execution
+> Stage  1:  Understanding
+> S3: Closed -Loop Planning
+> Execution
+> 0s
+> Trajectory
+
+LLM   
+
+> def Planner_Scheduling ():
+> Motion  Controller
+> Acceleration
+> & Yaw Rate
+> Actuation  Controller
+> Throttle, Brake,
+> & Steering
+
+Controller 
+
+Vehicle 
+
+Controlled Vehicle  
+
+> Stage  2:  Scheduling
+> Driving  Behavior
+> Sequence  {𝑐 !}
+> Scheduling Script
+> Observation 𝑜 "
+
+LLM 
+
+Initialization Data Figure 2. A Scheduling-Centric Framework Powered by LLM. It leverages an LLM to interpret passenger instruction and generate an executable script. The script then schedules multiple motion planners to realize the instruction using real-time feedback. 
+
+4.1. Instruction Intent Inference 
+
+Given an instruction γ and a textual scene description o0,the framework takes LLM as the interpreter fϕ to infer the instruction intent and map it into a driving behavior se-quence via fϕ(γ, o 0) = {ci}m(γ)
+
+i=1 . Each ci represents one of the five predefined atomic behaviors: lane keeping , left lane change , right lane change , accelerate , and brake . The context o0 resolves ambiguities by providing environmental constraints (e.g., disallowing a right lane change from the rightmost lane) and situational cues (e.g., initiating a lane change to pull over when necessary). Interpreting open-ended instructions with LLM offers several advantages: (i) Semantic Reasoning: Pretrained world knowledge enables intent inference for OOD instruc-tions via analogical [43] and compositional generalization [49]. (ii) Hallucination Mitigation: Textual scene descrip-tion reduce the risk of hallucination compared to visual fea-tures. Additionally, constraining outputs to a structured sequence of predefined behaviors further anchors the re-sponse, enhancing reliability. However, this reliance does not imply that the scheduling-centric framework operates on a purely text-represented traffic. Encoding fine-grained traffic cues (e.g., road geometry) as text inevitably loses detail, making tex-tual scene descriptions ill-suited for safety-critical vehicle control in complex urban traffic. In the framework, the fast schedule–plan–control loop operates directly on raw perception inputs. The scheduler monitors structured per-ception signals in real time to switch between planners, and the MPC planner further optimizes trajectories over a receding horizon using 3D detections and HD maps. In other words, the framework keeps safety-critical trajectory planning/vehicle control within a conventional modular AD stack, and avoids low-level control being directly exposed to LLM hallucination risk. 
+
+4.2. Motion Planner Scheduling 
+
+Executing the behavior sequence {ci} demands seamless coordination between discrete decisions (e.g., when to switch from acceleration to a lane change ) and continuous control. Integrating both in a single policy πθ is challeng-ing yet vital for safe, efficient driving [13]. For this purpose, the framework employs a hierarchical policy: the LLM han-dles high-level discrete decisions , while predefined motion planners manage low-level continuous control .
+
+4.2.1. High-Level Discrete Decision-Making 
+
+To elucidate the high-level decision-making of the frame-work, this study categorizes existing LLM-based AD meth-ods into three modes (Figure 3), providing a structured tax-onomy for formal comparison and discussion. 
+
+Mode I uses the LLM to configure AD system pa-rameters at startup, after which these parameters remain fixed [8, 40]. For example, given the instruction “ Drive safely ”, an LLM may increase the safety term weight in the controller’s cost function. Nonetheless, due to the static configuration, this mode lacks the ability to make dis-crete, context-aware decisions in dynamic scenarios, mak-ing it unsuitable for maneuver-level instructions requiring sequential and conditional behavior switching. 
+
+Mode II enables the LLM to make continuous decisions during driving. Such systems dynamically select discrete actions [9, 45], tune AD parameters [30], or emit low-level 0 1 2 … 𝛿             
+
+> LLM  Call  & Synchronously Scheduled  Motion  Planner s
+> Asynchronous Trigger Conditions (TCs)
+> Planner 1
+> TC 2-1
+> TC 1-2
+> Planner 1
+> Planner 2
+> TC 3-1
+> Planner 3
+> TC 1-1
+> Planner 1
+> 𝛿 +1
+
+…          
+
+> (c) Mode -III: Hybrid Scheduling
+> LLM
+> Scheduling Script
+> Finite Time Horizon for Instruction Completion
+> 012
+
+… 𝛿    
+
+> LLM  Call  & Discrete Action
+> 𝛿 +1
+
+…    
+
+> (b) Mode -II: Dynamic Decisio n
+> LLM
+> Autonomous Driving Algorithm
+> Time
+> 012
+
+… 𝛿 𝛿 + 1…Time 3 4
+
+# …  
+
+> (a) Mode -I: Static Configuration
+> Parameter Selection
+
+# …
+
+> LLM Call  & AD Algo.
+> Time
+
+Figure 3. Categorization of LLM-Driven AD Methods from a Scheduling Perspective. (a) Mode I: LLM sets system parameters at startup, suitable for static preference configurations. (b) Mode II: LLM continuously engages in driving decisions in dynamic traffic. (c) Mode III (Ours): LLM produces a scheduling script in a single call, using asynchronous triggers for contextual adaptability. TC 2-1 denotes the 
+
+Planner 2 ’s 1st trigger condition. 
+
+control signals [51], allowing robust management of evolv-ing traffic conditions. This flexibility, however, increases computational overhead and latency due to frequent LLM queries. Our experiments also show that maintaining de-cision coherence throughout behavior sequence execution poses a new challenge for Mode II. 
+
+Mode III , adopted by the proposed framework, executes the driving behavior sequence {ci} with a single LLM in-vocation while maintaining adaptability to evolving traffic. The LLM generates the executable script in a single pass ,which (i) schedules multiple motion planners to enact {ci}
+
+sequentially, and (ii) sets asynchronous triggers that moni-tor the scene graph and activate planner switches based on real-time conditions (e.g., when the gap exceeds 20 meters and..., switch from deceleration to a right lane change ). This hybrid mode achieves low overhead of Mode I and high contextual responsiveness of Mode II through script-based planner scheduling. 
+
+4.2.2. Low-Level Continuous Control 
+
+Following high-level LLM decisions, the cascaded motion planner and controller finally translate them into continuous control signals. The framework first invokes the behavior-specific MPC-based planner to generate trajectories, then applies a Linear Quadratic Regulator (LQR) for continu-ous control. At each step, MPC performs receding-horizon trajectory optimization with an explicit vehicle model, of-fering clear interpretability. The behavior-specific planner suite comprises: Lane Keeping , Left Lane Change , Right Lane Change , Acceleration , and Deceleration .This decoupled design brings the following advantages: (i) Expertise Domain Alignment: Constrain LLMs to high-level, discrete decisions while delegating low-level, contin-uous control to verifiable controllers. This keeps each com-ponent within its expertise domain, and prevents language-Percentage (%)               
+
+> 0
+> 5
+> 10
+> 15
+> 20
+> 25
+> Left Lane
+> Change
+> Right Lane
+> Change Decelerate Pull Over Overtake Accelerate Compositional Lane Keeping
+> 25.24%
+> 16.19%
+> 12.86% 12.86% 11.43% 10.00% 8.57%
+> 2.85%
+
+Figure 4. Instruction Intent Distribution. 
+
+trained, probabilistic LLM from directly generating numer-ical, safety-critical control signals [23, 33]. (ii) Decision-Making Traceability: Human-readable scripts serve as an interface, enabling a transparent mapping from LLM tex-tual reasoning to executed actions, simplifying inspection, debugging, and validation by developers or external audi-tors. (iii) Safety Robustness to Latency: Our decoupled de-sign safeguards safety through a fast schedule–plan–control loop, thus reducing the impact of LLM inference latency—a critical factor for LLM-in-the-loop AD methods [25]. 
+
+## 5. POINT Benchmark 
+
+POINT comprises the nuPlan simulator, open-ended in-structions, closed-loop evaluation metrics, and multiple competitive baselines. 
+
+5.1. nuPlan Simulator 
+
+POINT leverages the hybrid nuPlan simulator as its testing platform. nuPlan is the first publicly available simulator for real-world motion planning, designed to facilitate prototyp-ing and evaluation of AD methods in urban settings [20]. Built on 1,300 hours of real-world driving data, it recon-structs urban layouts, traffic patterns, and dynamic object states to provide high-fidelity simulation scenarios. 5.2. Open-Ended Instructions 
+
+POINT consists of 1,050 instructions paired with corre-sponding simulation-initialization data. Initially, real-world instructions were collected, and commercial large-language models (such as ChatGPT and Gemini) were then used to generate additional instructions at scale. All the instruction-simulation pairs undergo rigorous manual screening for quality and relevance. To evaluate how well LLM under-stand open-ended instructions, the prompts used for instruc-tion generation enforce conversational phrasing while sup-pressing explicit intent statements. Figure 4 reports high-level intent categories, where around 70% of instructions in-volve risky lateral maneuvers (e.g., lane change, overtaking, and pulling over), supporting focused evaluation in high-stakes urban scenarios. 
+
+5.3. Evaluation Metrics 
+
+The benchmark evaluates short-term instruction execution in urban traffic. Unlike standard AD tasks, it often requires instruction-conditioned, high-risk maneuvers (e.g., merging into heavy traffic). Accordingly, the evaluation focuses on task completion, safety, and rule compliance. Specifically, task-related metrics include: 1) Intent Recognition – fraction of instructions correctly parsed. 2) Instruction Realization – fraction of instructions success-fully executed. Safety-related metrics include: 3) Collision Avoidance – fraction of scenarios finished collision-free. 4) TTC – minimum time-to-collision margin. Compliance-related metrics include: 5) Drivable Area – time ratio within map-defined drivable space. 6) Speed Limit Score – time ratio adhering to posted limits. 7) Direction Consistency – time ratio traveling in the correct lane direction. An 
+
+efficiency-related metric is also considered for specialized methods, i.e., 8) Expert Trajectory Progress – distance cov-ered relative to a human expert. 
+
+5.4. Baseline Methods 
+
+The baseline methods of POINT include both specialized AD methods and instruction-realization methods. Special-ized methods are tasked with following global paths derived from expert demonstration trajectories, whereas instruction-realization methods prioritize executing passenger instruc-tions, often deviating from the global paths. The specialized methods are as follows: 1) LogReplay [20] replays the logged expert trajectories. 2) IDM [38] is a longitudinal controller focusing on intra-lane car-following. 3) DiLu+, an extension of Mode-II DiLu [45] originally developed for discrete action selection in Highway-Env, is proposed in this study as a baseline method. It selects mo-tion planners at 1 Hz, enabling continuous control in nu-Plan. 4) PDM [10] represents the SOTA solution for nuPlan closed-loop simulation. 0.8   
+
+> 0.9
+> 0.7
+> 0.6
+> 0.5
+> Intent Recognition Score
+> 10 110 210 3
+> Model Parameter (Billion, Log Scale)
+> Figure 5. Intent Recognition Score of Various LLMs.
+
+The instruction-realization methods are as follows: 5) Diffusion-ES [48] combines LLM with black-box diffusion models in the Mode-III paradigm, where the LLM modifies the objective function and test-time optimization further di-rects trajectory generation. 6) DiLu++, another introduced Mode-II baseline, enhances DiLu+ by incorporating histor-ical action and environment information into the LLM’s in-put, thus enabling instruction realization. 
+
+## 6. Experiments 
+
+To assess open-ended instruction realization and miti-gate model bias [28], this study generates instructions us-ing commercial LLMs, while the evaluation targets open-source LLM families such as Qwen [47] and DeepSeek [11]. Experiments are conducted on a workstation with Intel Xeon Gold 5220 CPUs and NVIDIA A40 GPUs. LLMs op-erated at their default conversational temperature. Baseline methods were run using the hyperparameters and check-points recommended in their original papers or project repositories to ensure fairness. 
+
+6.1. Quantitative Evaluation 
+
+Intent Recognition : Figure 5 shows that intent recog-nition accuracy improves with LLM scale. Only the large-volume models—Qwen-2.5-72B, DeepSeekV3, and DeepSeek-R1—exceed 85%, underscoring that interpret-ing open-ended instructions is a non-trivial task. Figure 5 also indicates that reasoning mechanisms and larger context windows further improve performance. 
+
+Instruction Realization : Table 1 compares the proposed framework with specialized and instruction-realization baselines. For fair comparison, all LLM-based baselines use the same DeepSeekV3 backbone and identi-cal behavior sequences per intent-scenario pair. Against specialized methods, the framework achieves leading safety and compliance. Expert Progress is lower due to occasional instruction-driven deviations from global paths. With the introduced motion planners, the proposed DiLu+ attains state-of-the-art results in Collision Avoidance Table 1. Quantitative Comparison of Instruction Realization Performance. All LLM-based methods use a shared backbone, with average metrics computed across multiple random seeds. Each metric is in the [0, 1] range. 
+
+Method Categorization Realization ↑ Collision ↑ TTC ↑ Drivable ↑ Speed ↑ Direction ↑ Progress ↑
+
+Specialized AD Methods 
+
+LogReplay Expert Demonstration - 0.86 0.84 1.00 0.98 1.00 1.00 
+
+IDM Rule-Based - 0.87 0.76 0.90 1.00 0.98 0.91 PDMClosed MPC-Based - 0.97 0.86 0.98 1.00 1.00 0.92 DiLu+ LLM+MPC - 1.00 0.84 0.96 0.99 1.00 0.92 
+
+Instruction-Realization Methods 
+
+Diffusion-ES LLM+Data-Driven 0.28 0.82 0.80 0.80 0.99 1.00 0.77 DiLu++ LLM+MPC 0.51 0.92 0.73 0.96 0.97 1.00 0.87 Ours LLM+MPC 0.84 0.99 0.88 0.97 1.00 1.00 0.82 Frame: 0 
+
+> Speed: 5.0 m/s
+> Frame: 30
+> Speed: 0.8 m/s
+> Frame: 60
+> Speed: 1.0 m/s
+> Frame: 90
+> Speed: 1.5 m/s
+> Frame: 120
+> Speed: 2.4 m/s
+> Frame: 150
+> Speed: 3.2 m/s
+
+(a) “I feel unsafe behind that truck.” 
+
+> Frame: 0
+> Speed: 6.3 m/s
+> Frame: 10
+> Speed: 6.7 m/s
+> Frame: 20
+> Speed: 4.5 m/s
+> Frame: 30
+> Speed: 3.1 m/s
+> Frame: 40
+> Speed: 2.2 m/s
+> Frame: 60
+> Speed: 0.0 m/s
+
+(b) “There’s a convenience store up ahead, mind if I grab something?” 
+
+Figure 6. Key Frames in Instruction Execution Process. Animated results are available in the Supplementary Material .REA              
+
+> Collision
+> TTC
+> Closed -Loop Evaluation Metrics
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> 01234
+> LLM Inference Latency (Second)
+> 0.84
+> 0.74 0.69
+> 0.54
+> 0.39
+> 0.88
+> 0.85 0.83 0.81 0.87
+> 0.99 0.97 0.96 0.95 0.98
+
+Figure 7. Latency Sensitivity Analysis. 
+
+and Expert Progress, showcasing the potential of combining high-level LLM with low-level planners for driving tasks. Notably, it is non-trivial that our framework can execute risky instructions while matching the safety of specialized AD methods that do not follow instructions. This stems from our decoupled design, in which the fast MPC-based control loop ensures instruction realization never overrides vehicle safety. Among instruction-realization methods, the framework achieves the highest Instruction Realization score of 0.84, balancing task execution and safety. DiLu++ ranks second with 0.51 but occasionally ignores past actions and con-text, leading to incoherent decisions such as redundant lane changes. Despite being trained on extensive expert trajecto-ries, Diffusion-ES underperforms in both effectiveness and safety, sometimes producing near-stationary trajectories. 
+
+Ablation Study : Table 2 shows performance drops in intent recognition and instruction realization when ablating traffic context and planner scheduling. Including contextual cues increases performance by about 10% for DeepSeek-V3, providing a more accurate instruction interpretation. The high-level LLM scheduling effectively coordinates the low-level motion planners, increasing task-completion rates without compromising safety. 
+
+Latency Sensitivity Analysis : Considering LLMs’ non-negligible inference overhead, this experiment introduces Table 2. Ablation Study on Traffic Context and LLM-Guided Plan-ner (PL) Scheduling. 
+
+Methods REC/REA ↑ Collision ↑ TTC ↑
+
+Intent Recognition (REC) 
+
+Ours w.o. Context 0.78 - -Ours 0.86 - -
+
+Instruction Realization (REA) 
+
+Lane Keeping PL 0.17 0.97 0.86 Left Lane Change PL 0.18 0.95 0.75 Right Lane Change PL 0.14 0.98 0.90 Acceleration PL 0.13 0.57 0.38 Deceleration PL 0.12 0.99 0.97 
+
+PL Scheduling (Ours) 0.84 0.99 0.88 
+
+controlled delays into the LLM decision process and track the instruction-realization score (REA) and safety indica-tors. Figure 7 shows that increasing latency causes a grad-ual decline in REA while safety metrics remain stable. This robustness also stems from the decoupled frame-work design: LLM is queried at low frequency to produce a global scheduling scheme, whereas a real-time, feedback-driven inner loop continuously runs at high frequency and enforces emergency behaviors. This separation yields con-siderable tolerance for LLM inference delays. 
+
+6.2. Qualitative Evaluation 
+
+Figure 6 illustrates key moments from the framework’s in-struction execution. In (a), the system infers an implicit lane-change intent, decelerates, and merges into a slower, denser lane. In (b), it responds to a pull-over request by changing lanes and stopping safely. 
+
+## 7. Conclusion & Discussion 
+
+This study presents a LLM-enabled, scheduling-centric framework to execute open-ended instructions, decoupling instruction interpretation, planner scheduling, and motion planning across different timescales while ensuring a trans-parent decision-making chain from high-level decision to low-level control. Due to the lack of testbeds, it also introduces POINT, a high-fidelity benchmark with mul-tiple closed-loop metrics and diverse baselines. Experi-ments show that: (i) Interpreting open-ended instructions is non-trivial and requires highly capable, large-scale LLMs; adding explicit reasoning and traffic context improves in-struction understanding. (ii) With a single LLM query, the proposed framework achieves an instruction realization score of 0.84, outperforms the baselines by 64% to 200%, meets the safety standards of specialized AD methods, and remains safety-robust to LLM inference delays. In LLM-involved instruction realization, passenger in-structions must be handled cautiously because LLM out-puts are probabilistic and can hallucinate, and passen-gers may have limited system understanding or driving ex-perience. The framework therefore restricts instruction-conditioned, LLM-generated scripts to schedule-stage tran-sitions, while all vehicle control is managed by atomic planners. This creates a passenger/LLM-in-the-loop safety mechanism that ensures every executed action comes from safety-constrained atomic planners despite risky instruc-tions, hallucinations, or LLM latency. Although the framework relies on a predefined library of atomic planners, it remains flexible through composi-tion. The supported instruction task space scales as “ trig-gers × planners × temporal ordering ”, so a small plan-ner set can cover diverse instructions. Meanwhile, adding verified planners and triggers can expand the task space combinatorially, enabling rapid capability growth with low marginal integration cost. Despite these gains, future efforts are still needed be-fore practical deployment: (i) Visual Integration : Since visual inputs convey richer semantics than text [15], inte-grating VLM for instruction understanding remains critical. (ii) Simulation Augmentation : nuPlan lacks ego-view im-age rendering, constraining closed-loop evaluation of VLA methods. Integrating advances such as 3D Gaussian splat-ting [6] for urban scenario reconstruction is essential for a comprehensive assessment. (iii) Trigger Expressiveness :Scheduling responsiveness is bounded by the expressive-ness of asynchronous triggers. Trial-and-error learning and adaptive re-invocation remain key to improving generality. 
+
+## 8. Acknowledgments 
+
+This work was supported by National Natural Science Foundation of China under Grant (62573209), Devel-opment and Reform Commission Foundation of Jilin Province under Grant (2024C003), Doctoral Student Re-search Innovation Capacity Enhancement Program of the Education Department of Jilin Province under Grant (JJKH20250236BS), and the Agency for Science, Technol-ogy and Research (A*STAR) under its MTC Programmatic Funds (Grant No. M23L7b0021). 
+
+## References      
+
+> [1] Apple, Inc. Carplay ultra, the next generation of carplay, begins rolling out today, 2025. Accessed: 2025-05-15. 1 [2] Shahin Atakishiyev, Mohammad Salameh, Hengshuai Yao, and Randy Goebel. Explainable artificial intelligence for autonomous driving: A comprehensive overview and field guide for future research directions. IEEE Access , 2024. 3 [3] Yougang Bian, Jieyun Ding, Manjiang Hu, Qing Xu, Jian-qiang Wang, and Keqiang Li. An advanced lane-keeping assistance system with switchable assistance modes. IEEE
+
+Transactions on Intelligent Transportation Systems , 21(1): 385–396, 2020. 1 [4] Holger Caesar, Varun Bankiti, Alex H Lang, Sourabh Vora, Venice Erin Liong, Qiang Xu, Anush Krishnan, Yu Pan, Gi-ancarlo Baldan, and Oscar Beijbom. nuscenes: A multi-modal dataset for autonomous driving. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 11621–11631, 2020. 2 [5] Ming-Fang Chang, John Lambert, Patsorn Sangkloy, Jag-jeet Singh, Slawomir Bak, Andrew Hartnett, De Wang, Peter Carr, Simon Lucey, Deva Ramanan, et al. Argoverse: 3d tracking and forecasting with rich maps. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 8748–8757, 2019. 2 [6] Ziyu Chen, Jiawei Yang, Jiahui Huang, Riccardo de Lutio, Janick Martinez Esturo, Boris Ivanovic, Or Litany, Zan Goj-cic, Sanja Fidler, Marco Pavone, et al. Omnire: Omni urban scene reconstruction. In The Thirteenth International Con-ference on Learning Representations , 2025. 8 [7] China Automotive News. Li auto unveils next-gen au-tonomous driving architecture mindvla, 2025. Accessed: 2025-05-18. 1 [8] Can Cui, Zichong Yang, Yupeng Zhou, Yunsheng Ma, Juanwu Lu, Lingxi Li, Yaobin Chen, Jitesh Panchal, and Zi-ran Wang. Personalized autonomous driving with large lan-guage models: Field experiments. In 2024 IEEE 27th Inter-national Conference on Intelligent Transportation Systems (ITSC) , pages 20–27, 2024. 4 [9] Erfei Cui, Wenhai Wang, Zhiqi Li, Jiangwei Xie, Haoming Zou, Hanming Deng, Gen Luo, Lewei Lu, Xizhou Zhu, and Jifeng Dai. Drivemlm: aligning multi-modal large language models with behavioral planning states for autonomous driv-ing. Visual Intelligence , 3(22), 2025. 4 [10] Daniel Dauner, Marcel Hallgarten, Andreas Geiger, and Kashyap Chitta. Parting with misconceptions about learning-based vehicle motion planning. In Proceedings of the Con-ference on Robot Learning , pages 1268–1281, 2023. 6 [11] DeepSeek-AI and et al. Deepseek-v3 technical report, 2025. 6[12] Alexey Dosovitskiy, German Ros, Felipe Codevilla, Antonio Lopez, and Vladlen Koltun. Carla: An open urban driving simulator. In Proceedings of the Conference on Robot Learn-ing , pages 1–16. PMLR, 2017. 2 [13] Jan Eilbrecht and Olaf Stursberg. Cooperative driving us-ing a hierarchy of mixed-integer programming and tracking control. In 2017 IEEE Intelligent Vehicles Symposium (IV) ,pages 673–678, 2017. 4 [14] Senyu Fei, Siyin Wang, Junhao Shi, Zihao Dai, Jikun Cai, Pengfang Qian, Li Ji, Xinzhe He, Shiduo Zhang, Zhaoye Fei, et al. Libero-plus: In-depth robustness analysis of vision-language-action models. arXiv preprint arXiv:2510.13626 ,2025. 3 [15] Yuxiang Fu, Jiakun Ding, Renzhi Wang, Qian Fu, Ivor W. Tsang, Ming-Ming Cheng, and Qing Guo. Benchmark-ing drag*for eye direction transformation and beyond. Visual Intelligence , 3(29), 2025. 8 [16] Xun Gong, Jieyu Wang, Baolin Ma, Liang Lu, Yunfeng Hu, and Hong Chen. Real-time integrated power and thermal management of connected hevs based on hierarchical model predictive control. IEEE/ASME Transactions on Mechatron-ics , 26(3):1271–1282, 2021. 3 [17] Zhijian Huang, Tao Tang, Shaoxiang Chen, Sihao Lin, Ze-qun Jie, Lin Ma, Guangrun Wang, and Xiaodan Liang. Mak-ing large language models better planners with reasoning-decision alignment. In European Conference on Computer Vision , pages 73–90, 2024. 3 [18] Bo Jiang, Shaoyu Chen, Qian Zhang, Wenyu Liu, and Xing-gang Wang. Alphadrive: Unleashing the power of vlms in autonomous driving via reinforcement learning and reason-ing. arXiv preprint arXiv:2503.07608 , 2025. 3 [19] Sicong Jiang, Zilin Huang, Kangan Qian, Ziang Luo, Tianze Zhu, Yang Zhong, Yihong Tang, Menglin Kong, Yunlong Wang, Siwen Jiao, Hao Ye, Zihao Sheng, Xin Zhao, Tuopu Wen, Zheng Fu, Sikai Chen, Kun Jiang, Diange Yang, Seongjin Choi, and Lijun Sun. A survey on vision-language-action models for autonomous driving, 2025. 1, 3 [20] Napat Karnchanachari, Dimitris Geromichalos, Kok Seang Tan, Nanxiang Li, Christopher Eriksen, Shakiba Yaghoubi, Noushin Mehdipour, Gianmarco Bernasconi, Whye Kit Fong, Yiluan Guo, and Holger Caesar. Towards learning-based planning: The nuplan benchmark for real-world au-tonomous driving. In 2024 IEEE International Conference on Robotics and Automation (ICRA) , pages 629–636, 2024. 2, 5, 6 [21] Petar V Kokotovic, Robert E O’Malley Jr, and Peddapullaiah Sannuti. Singular perturbations and order reduction in con-trol theory—an overview. Automatica , 12(2):123–132, 1976. 3[22] Edouard Leurent. An environment for autonomous driving decision-making, 2018. 2 [23] Jiawei Liu, Yanjiao Liu, Xun Gong, Tingting Wang, Hong Chen, and Yunfeng Hu. Harnessing and evaluating the intrin-sic extrapolation ability of large language models for vehicle trajectory prediction. In Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 4379–4391, 2025. 3, 5 [24] Yuechen Luo, Fang Li, Shaoqing Xu, Zhiyi Lai, Lei Yang, Qimao Chen, Ziang Luo, Zixun Xie, Shengyin Jiang, Ji-axin Liu, et al. Adathinkdrive: Adaptive thinking via rein-forcement learning for autonomous driving. arXiv preprint arXiv:2509.13769 , 2025. 3 [25] Doaa Mahmud, Hadeel Hajmohamed, Shamma Almentheri, Shamma Alqaydi, Lameya Aldhaheri, Ruhul Amin Khalil, and Nasir Saeed. Integrating llms with its: Recent advances, potentials, challenges, and future directions. IEEE Trans-actions on Intelligent Transportation Systems , 26(5):5674– 5709, 2025. 1, 2, 5 [26] Ana L´ ucia De Moura and Roberto Ierusalimschy. Revisiting coroutines. ACM Transactions on Programming Languages and Systems (TOPLAS) , 31(2):1–31, 2009. 2 [27] Eda Okur, Shachi H Kumar, Saurav Sahay, Asli Ar-slan Esme, and Lama Nachman. Natural language interac-tions in autonomous vehicles: Intent detection and slot fill-ing from passenger utterances. In International Conference on Computational Linguistics and Intelligent Text Process-ing , pages 334–350. Springer, 2019. 2 [28] Arjun Panickssery, Samuel Bowman, and Shi Feng. Llm evaluators recognize and favor their own generations. Ad-vances in Neural Information Processing Systems , 37: 68772–68802, 2024. 6 [29] Junha Roh, Chris Paxton, Andrzej Pronobis, Ali Farhadi, and Dieter Fox. Conditional driving from natural language instructions. In Proceedings of the Conference on Robot Learning , pages 540–551, 2020. 2 [30] Hao Sha, Yao Mu, Yuxuan Jiang, Li Chen, Chenfeng Xu, Ping Luo, Shengbo Eben Li, Masayoshi Tomizuka, Wei Zhan, and Mingyu Ding. Languagempc: Large language models as decision makers for autonomous driving, 2025. 4[31] Hao Shao, Yuxuan Hu, Letian Wang, Guanglu Song, Steven L Waslander, Yu Liu, and Hongsheng Li. Lmdrive: Closed-loop end-to-end driving with large language models. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 15120–15130, 2024. 3[32] Paulo Tabuada. Event-triggered real-time scheduling of sta-bilizing control tasks. IEEE Transactions on Automatic con-trol , 52(9):1680–1685, 2007. 3 [33] Mingtian Tan, Mike Merrill, Vinayak Gupta, Tim Althoff, and Tom Hartvigsen. Are language models actually useful for time series forecasting? Advances in Neural Information Processing Systems , 37:60162–60191, 2024. 5 [34] Stefanie Tellex and Deb Roy. Spatial routines for a simu-lated speech-controlled vehicle. In Proceedings of the 1st ACM SIGCHI/SIGART conference on Human-robot interac-tion , pages 156–163, 2006. 2 [35] Stefanie Tellex, Nakul Gopalan, Hadas Kress-Gazit, and Cynthia Matuszek. Robots that use language. Annual Re-view of Control, Robotics, and Autonomous Systems , 3(1): 25–55, 2020. 2 [36] Tesla, Inc. Tesla model 3 owner’s manual, 2025. Accessed: 2025. 1 [37] The Goldman Sachs Group, Inc. Global technology: China’s robotaxi market - the road to commercialization, 2025. Ac-cessed: 2025-05-15. 1 [38] Martin Treiber, Ansgar Hennecke, and Dirk Helbing. Con-gested traffic states in empirical observations and micro-scopic simulations. Physical review E , 62(2):1805, 2000. 6[39] Jingyan Wan and Changxu Wu. The effects of lead time of take-over request and nondriving tasks on taking-over con-trol of automated vehicles. IEEE Transactions on Human-Machine Systems , 48(6):582–591, 2018. 1 [40] Shiyi Wang, Yuxuan Zhu, Zhiheng Li, Yutong Wang, Li Li, and Zhengbing He. Chatgpt as your vehicle co-pilot: An initial attempt. IEEE Transactions on Intelligent Vehicles , 8 (12):4706–4721, 2023. 4 [41] Wenshuo Wang, Ding Zhao, Wei Han, and Junqiang Xi. A learning-based approach for lane departure warning systems with a personalized driver model. IEEE Transactions on Ve-hicular Technology , 67(10):9145–9157, 2018. 1 [42] Yan Wang, Wenjie Luo, Junjie Bai, Yulong Cao, Tong Che, Ke Chen, Yuxiao Chen, Jenna Diamond, Yifan Ding, Wen-hao Ding, et al. Alpamayo-r1: Bridging reasoning and action prediction for generalizable autonomous driving in the long tail. arXiv preprint arXiv:2511.00088 , 2025. 3 [43] Taylor Webb, Keith J Holyoak, and Hongjing Lu. Emergent analogical reasoning in large language models. Nature Hu-man Behaviour , 7(9):1526–1541, 2023. 4 [44] Henry Weld, Xiaoqi Huang, Siqu Long, Josiah Poon, and Soyeon Caren Han. A survey of joint intent detection and slot filling models in natural language understanding. ACM Computing Surveys , 55(8):1–38, 2022. 3 [45] Licheng Wen, Daocheng Fu, Xin Li, Xinyu Cai, MA Tao, Pinlong Cai, Min Dou, Botian Shi, Liang He, and Yu Qiao. Dilu: A knowledge-driven approach to autonomous driving with large language models. In The Twelfth International Conference on Learning Representations , 2024. 3, 4, 6 [46] Yang Xing, Chen Lv, Dongpu Cao, and Peng Hang. To-ward human-vehicle collaboration: Review and perspec-tives on human-centered collaborative automated driving. 
+
+Transportation research part C: emerging technologies , 128: 103199, 2021. 1, 2 [47] An Yang and et al. Qwen3 technical report, 2025. 6 [48] Brian Yang, Huangyuan Su, Nikolaos Gkanatsios, Tsung-Wei Ke, Ayush Jain, Jeff Schneider, and Katerina Fragki-adaki. Diffusion-es: Gradient-free planning with diffusion for autonomous and instruction-guided driving. In Proceed-ings of the IEEE/CVF conference on computer vision and pattern recognition , pages 15342–15353, 2024. 6 [49] Haoran Yang, Hongyuan Lu, Wai Lam, and Deng Cai. Ex-ploring compositional generalization of large language mod-els. In Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Lin-guistics: Human Language Technologies (Volume 4: Student Research Workshop) , pages 16–24, 2024. 4 [50] Hanlei Zhang, Hua Xu, and Ting-En Lin. Deep open intent classification with adaptive decision boundary. In Proceed-ings of the AAAI Conference on Artificial Intelligence , pages 14374–14382, 2021. 3 [51] Zewei Zhou, Tianhui Cai, Seth Z. Zhao, Yun Zhang, Zhiyu Huang, Bolei Zhou, and Jiaqi Ma. Autovla: A vision-language-action model for end-to-end autonomous driving with adaptive reasoning and reinforcement fine-tuning, 2025. 3, 5

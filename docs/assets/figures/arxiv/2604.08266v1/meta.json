@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.08266v1/fig-001.webp",
+      "caption": "Figure 3. Qualitative comparison in interactive scenarios. Top rows: rollouts from the Orion teacher model. Bottom rows: rollouts from our student model. Sequences are visualized at 5-frame intervals, with overlaid points indicating predicted future trajectories. Green checks (✓) denote successful, intervention-free maneuvers, while red crosses (×) indicate task failures. While Orion frequently hesitates or fails to safely merge or overtake behind obstacles, our student model demonstrates robust spatial awareness, successfully executing smooth and decisive maneuvers.",
+      "page": 6,
+      "index": 1,
+      "width": 1036,
+      "height": 509
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08266v1/fig-002.webp",
+      "caption": "Figure 2. Latency and Driving Score Comparison. Our distilled framework demonstrates a massive reduction in inference latency compared to the teacher model while improving the overall Driving Score. Latency is measured by the averaged inference steptime on CARLA evaluated on an A6000 GPU.",
+      "page": 4,
+      "index": 2,
+      "width": 482,
+      "height": 308
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08266v1/fig-003.webp",
+      "caption": "Table 1. Closed-loop and Open-loop Results of E2E-AD Methods in Bench2Drive. All models are trained on the standard base set (1K clips), except for SimLingo†, which utilizes extended external training data (e.g., 3.1M samples). C/L refers to camera/LiDAR. Avg. L2 is averaged over predictions in 2 seconds under 2Hz. Latency is measured by the average inference step-time during CARLA evaluation on an A6000 GPU. * denotes expert feature distillation. NC: navigation command, TP: target point, DS: Driving Score, SR: Success Rate. Note: 0.5B and 7B indicate the parameters of the LLM module alone, rather than the full model’s parameter count.",
+      "page": 5,
+      "index": 3,
+      "width": 1036,
+      "height": 394
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08266v1/fig-004.webp",
+      "caption": "Table 2. Multi-Ability Results of E2E-AD Methods under base set. * denote expert feature distillation. C/L refers to camera/LiDAR. NC: navigation command, TP: target point.",
+      "page": 5,
+      "index": 4,
+      "width": 1036,
+      "height": 380
+    },
+    {
+      "url": "assets/figures/arxiv/2604.08266v1/fig-005.webp",
+      "caption": "Figure 1. Overview of the proposed distillation framework. A joint distillation and trajectory supervision strategy (top) yields a student model, Orion-Lite, that is 3× faster than its teacher, establishing a new state-of-the-art on the closed-loop Bench2Drive benchmark (bottom).",
+      "page": 1,
+      "index": 5,
+      "width": 488,
+      "height": 468
+    }
+  ]
+}

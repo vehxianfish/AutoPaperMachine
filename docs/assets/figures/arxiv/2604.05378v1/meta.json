@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.05378v1/fig-001.webp",
+      "caption": "Figure 2. Qualitative closed-loop behavior under instruction counterfactuals. Each panel contrasts a counterfactual instruction (top) with the baseline instruction (bottom) executed on the same CARLA route with the same simulator seed. Left: front-camera view with the active instruction overlay. Right: bird’s-eye view showing the ego trajectory and deviations from the planned route.",
+      "page": 6,
+      "index": 1,
+      "width": 1029,
+      "height": 856
+    },
+    {
+      "url": "assets/figures/arxiv/2604.05378v1/fig-002.webp",
+      "caption": "Figure 4. Prompt used for LLM-based counterfactual instruction generation (GPT-4o). The same prompt is applied once per perturbation family across all route-level instructions. Template-based variants follow identical family definitions via a deterministic rewriting library.",
+      "page": 11,
+      "index": 2,
+      "width": 1036,
+      "height": 573
+    },
+    {
+      "url": "assets/figures/arxiv/2604.05378v1/fig-003.webp",
+      "caption": "Figure 1. ICR-Drive overview. Environment stochasticity is controlled by fixing the CARLA route and simulator seed, while only the navigation text is varied via counterfactual instruction families (Paraphrase, Ambiguity, Noise, Misleading). Differences in closed-loop behavior and Leaderboard metrics quantify instruction robustness on LangAuto.",
+      "page": 2,
+      "index": 3,
+      "width": 1026,
+      "height": 376
+    },
+    {
+      "url": "assets/figures/arxiv/2604.05378v1/fig-004.webp",
+      "caption": "Table 4. LangAuto-Full robustness under LLM-generated counterfactual instructions. Mean Driving Score (DS), Route Completion (RC), and Infraction Score (IS) over routes for four instruction families (Paraphrase, Ambiguity, Noise, Misleading). Baseline uses the original instruction; ∆ reports absolute change vs. baseline for each agent. Instructions generated via GPT-4o; see Fig. 4 for the generation prompt.",
+      "page": 13,
+      "index": 4,
+      "width": 1023,
+      "height": 508
+    },
+    {
+      "url": "assets/figures/arxiv/2604.05378v1/fig-005.webp",
+      "caption": "Figure 3. RD vs. TO termination signatures on LangAuto. Each point is a (family, agent) pair; marker shape encodes agent (◦ LMDrive, □ BEVDriver) and color encodes instruction family: Baseline (green), Paraphrase (blue), Ambiguity (orange), Noise (purple), Misleading (red). Points above the diagonal indicate passive failures (timeout/stuck); points below indicate active failures (route deviation). Stacked markers share the same (RD, TO) coordinate.",
+      "page": 8,
+      "index": 5,
+      "width": 496,
+      "height": 490
+    },
+    {
+      "url": "assets/figures/arxiv/2604.05378v1/fig-006.webp",
+      "caption": "Table 3. LangAuto-Tiny robustness under LLM-generated counterfactual instructions. Mean Driving Score (DS), Route Completion (RC), and Infraction Score (IS) over routes for four instruction families (Paraphrase, Ambiguity, Noise, Misleading). Baseline uses the original instruction; ∆ reports absolute change vs. baseline for each agent. Instructions generated via GPT-4o; see Fig. 4 for the generation prompt.",
+      "page": 12,
+      "index": 6,
+      "width": 1023,
+      "height": 508
+    },
+    {
+      "url": "assets/figures/arxiv/2604.05378v1/fig-007.webp",
+      "caption": "Table 1. LangAuto-Tiny robustness under counterfactual instructions. Mean Driving Score (DS), Route Completion (RC), and Infraction Score (IS) over routes for four instruction families (Paraphrase, Ambiguity, Noise, Misleading). Baseline uses the original instruction; ∆ reports absolute change vs. baseline for each agent (LMDrive [15], BEVDriver [20]).",
+      "page": 5,
+      "index": 7,
+      "width": 1023,
+      "height": 491
+    },
+    {
+      "url": "assets/figures/arxiv/2604.05378v1/fig-008.webp",
+      "caption": "Table 2. LangAuto (full) robustness under counterfactual instructions. Mean DS, RC, and IS over routes for instruction families (Paraphrase, Ambiguity, Noise, Misleading). Baseline uses the original instruction; ∆ reports absolute change vs. baseline for each agent (LMDrive [15], BEVDriver [20]).",
+      "page": 5,
+      "index": 8,
+      "width": 1023,
+      "height": 491
+    }
+  ]
+}

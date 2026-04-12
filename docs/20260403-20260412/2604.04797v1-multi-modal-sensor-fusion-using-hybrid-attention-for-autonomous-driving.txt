@@ -1,0 +1,581 @@
+Title: Multi-Modal Sensor Fusion using Hybrid Attention for Autonomous Driving
+
+URL Source: https://arxiv.org/pdf/2604.04797v1
+
+Published Time: Tue, 07 Apr 2026 02:04:16 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+# Multi-Modal Sensor Fusion using Hybrid Attention for Autonomous Driving 
+
+Mayank Mayank ∗† , Bharanidhar Duraisamy ∗, Florian Geiss ∗, Abhinav Valada †∗ Research and Development, Mercedes-Benz AG, Germany, Email: [firstname].[lastname]@mercedes-benz.com 
+
+† Department of Computer Science, University of Freiburg, Germany, Email : valada@cs.uni-freiburg.de 
+
+Abstract —Accurate 3D object detection for autonomous driv-ing requires complementary sensors. Cameras provide dense se-mantics but unreliable depth, while millimeter-wave radar offers precise range and velocity measurements with sparse geometry. We propose MMF-BEV, a radar–camera BEV fusion framework that leverages deformable attention for cross-modal feature align-ment on the View-of-Delft (VoD) 4D radar dataset [1]. MMF-BEV builds a BEVDepth [2] camera branch and a RadarBEVNet [3] radar branch, each enhanced with Deformable Self-Attention, and fuses them via a Deformable Cross-Attention module. We evaluate three configurations: camera-only, radar-only, and hy-brid fusion. A sensor contribution analysis quantifies per-distance modality weighting, providing interpretable evidence of sensor complementarity. A two-stage training strategy - pre-training the camera branch with depth supervision, then jointly training radar and fusion modules stabilizes learning. Experiments on VoD show that MMF-BEV consistently outperforms unimodal baselines and achieves competitive results against prior fusion methods across all object classes in both the full annotated area and near-range Region of Interest. 
+
+Index Terms —3D object detection, radar-camera fusion, Bird’s Eye View, deformable attention, sensor contribution, View-of-Delft, autonomous driving 
+
+I. I NTRODUCTION 
+
+Three-dimensional object detection is a safety-critical task in autonomous driving. Among available sensor modalities, cameras offer rich texture and semantic detail but fundamen-tally cannot measure depth directly [4], making them sensitive to depth estimation errors in BEV-based detectors. Millimeter-wave radar sensors complement this weakness with precise range measurements via time-of-flight and radial velocity via the Doppler effect; they also operate reliably in adverse lighting and weather conditions [5]. However, radar point clouds are geometrically sparse and carry no semantic infor-mation, making radar-only detection insufficient for reliable perception. A fusion approach that exploits both modalities in a shared BEV representation is therefore both practically appealing and technically well-motivated. The Lift-Splat-Shoot (LSS) framework [6] established a canonical pipeline for projecting image features into Bird’s Eye View (BEV) using predicted depth distributions. Building on this, BEVDepth [2] improved depth estimation by incorpo-rating explicit LiDAR supervision and a camera-aware depth 
+
+This work is a result of the joint research project STADT:up (19A22006O). The project is supported by the German Federal Ministry for Economic Affairs and Climate Action (BMWK), based on a decision of the German Bundestag. The author is solely responsible for the content of this publication. 
+
+prediction module, providing a strong camera-only baseline. RCBEVDet [3] extended BEV fusion to radar by introducing RadarBEVNet, a dual-stream radar encoder with Radar Cross-Section (RCS)-aware BEV scattering, and a Cross-Attention Multi-layer Fusion (CAMF) module that leverages deformable cross-attention [7] to align camera and radar features in BEV space. Despite the progress in BEV-based camera and radar fu-sion, two questions remain under-explored on the challenging View-of-Delft (VoD) 4D radar dataset [1]: (i) the quantitative impact of intra-modal deformable self-attention (DSA) on each modality independently, and (ii) how cross-modal attention attends to camera and radar features across object classes and distances. VoD’s emphasis on small, vulnerable road users (pedestrians and cyclists) and its use of elevation-resolved 4D radar measurements make it a particularly suitable benchmark for studying these effects. To address these limitations, we pro-pose MMF-BEV , a radar–camera BEV fusion framework that systematically evaluates deformable self- and cross-attention mechanisms while providing interpretable sensor contribution analysis. Its main contributions are summarized as follows:  
+
+> •
+
+Systematic study of deformable self-attention (DSA). 
+
+We investigate DSA as an intra-modal refinement mech-anism for both sensing branches, augmenting the camera BEV encoder (BEVDepth + DSA) and the radar BEV encoder (RadarBEVNet + DSA). Each enhanced branch is evaluated independently as a standalone 3D detector on the VoD benchmark to quantify the isolated effect of modality-specific deformable attention.  
+
+> •
+
+MultiLayer Hybrid Fusion. We propose a symmetric cross-modal fusion module in which (i) camera BEV features query radar BEV features and (ii) radar BEV features query camera BEV features. Cross-attention is applied after per-modality DSA refinement and followed by channel- and spatial-aware CBR-based feature aggre-gation, enabling structured and spatially adaptive inter-modal interaction.  
+
+> •
+
+Sensor contribution analysis in BEV space. We intro-duce an interpretable analysis framework that normalizes camera and radar BEV feature magnitudes at each spatial bin and estimates their relative contribution per detection. The resulting modality weights are analyzed across ob-ject classes (Car, Pedestrian, Cyclist) and radial distance intervals on the VoD validation set, providing insight into  
+
+> arXiv:2604.04797v1 [cs.CV] 6 Apr 2026 Fig. 1. BEVDepth Framework [2]
+
+how the model allocates reliance between modalities.  
+
+> •
+
+Two-stage training strategy for stable fusion. We adopt a staged optimization procedure: first training the BEVDepth-based camera branch with explicit depth su-pervision on VoD, followed by training the radar branch and fusion module while freezing camera parameters. Comprehensive results are reported for both the entire annotated area and the near-range Region of Interest (ROI). II. R ELATED WORK 
+
+A. Camera-Based BEV Detection 
+
+The Lift-Splat-Shoot (LSS) paradigm [6] transforms per-pixel depth distributions into 3D frustum features pooled into a BEV map. BEVDet [8] applied this for 3D detection with BEV-space augmentations; BEVDet4D [9] added temporal alignment of consecutive BEV frames. BEVDepth [2] showed that implicit lidar depth supervision as in Fig. 1 from detec-tion loss produces surprisingly poor depth estimates—even a detector achieving 30 mAP can have an AbsRel depth error of 3.03—and resolved this with explicit LiDAR-derived depth supervision, a camera-intrinsic-aware DepthNet, and a Depth Refinement Module, boosting mAP by nearly 20 points when using ground-truth depth. BEVDepth also introduced Efficient Voxel Pooling, an 80 × faster GPU-parallel alternative to the cumulative-sum trick. BEVFormer [10] instead used spatiotemporal BEV queries with deformable attention [7] to aggregate image features without explicit depth prediction. PETR [11] and PETRv2 [12] embedded 3D positional en-codings directly into image features, while StreamPETR [13] propagated object queries across frames for efficient temporal modeling. 
+
+B. Radar-Camera Fusion 
+
+Radar sensors are cheap, weather-robust, and provide Doppler velocity, motivating their use as a complementary modality. CenterFusion [14] associated radar points to cam-era detections via frustum-based matching for refinement. CRAFT [15] introduced a Soft-Polar-Association transformer for proposal-level radar-camera fusion. CRN [16] used radar         
+
+> Fig. 2. Architecture of the RCBEVDET’s dual-stream radar backbone (Pointbased Block and Transformer-based Block) [3].
+
+occupancy to augment camera view transformation and in-corporated cross-attention for BEV alignment. RCFusion [17] generated radar pseudo-images via a radar PillarNet and fused with camera BEV features. RCBEVDet [3], the primary base-line for this work, introduced a purpose-built RadarBEVNet with a dual-stream (point-based + transformer-based) back-bone as shown in Fig. 2, RCS-aware BEV scattering, and a de-formable cross-attention CAMF module. On VoD, RCBEVDet achieved 69.8% mAP in the ROI, outperforming prior fusion methods. Our MMF-BEV builds on this foundation, adding per-modality DSA refinement along with Deformable Cross Attention, and provides an interpretable sensor contribution analysis absent in prior work. 
+
+C. Deformable Attention 
+
+Standard self-attention exhibits quadratic complexity with respect to the spatial resolution, leading to O(H2W 2C)
+
+operations for BEV features of height H, width W , and channel dimension C. To mitigate this computational burden, Deformable DETR [7] introduces deformable attention, which restricts aggregation to a sparse set of K learnable reference sampling points instead of attending to all spatial locations. As a result, the complexity is reduced to O(HW C 2K).Beyond efficiency, the learnable spatial offsets provide an important geometric advantage: they enable dynamic com-pensation for spatial misalignment. This property is particu-larly beneficial in MMF-BEV, where deformable self-attention (DSA) operates within each modality and deformable cross-attention performs inter-modal fusion. In this setting, radar azimuth inaccuracies and monocular camera depth ambiguities induce distinct yet complementary spatial distortions, which the deformable attention mechanism can adaptively correct through learned offsets. 
+
+D. View-of-Delft Dataset 
+
+VoD [1] provides synchronized measurements from a stereo camera pair and a Continental ARS548 4D imaging radar (range, azimuth, elevation, and Doppler) recorded in urban Fig. 3. Overall pipeline of MMF-BEV. Front-view camera images are transformed into BEV features using a BEVDepth-based camera branch, while 4D radar point clouds are encoded via RadarBEVNet to produce radar BEV representations. Both modalities are refined with Deformable Self-Attention and fused through Multi Layer hybrid fusion module in BEV space. The fused multi-modal BEV features are used for 3D object detection and sensor specific confidence for detections. 
+
+traffic scenarios in Delft. The dataset includes annotations for cars, pedestrians, and cyclists, with IoU thresholds of 0.5 for cars and 0.25 for pedestrians and cyclists. Evaluation is conducted over both the full annotated area and a driving-corridor region of interest (ROI) defined as 20 m in front of the ego-vehicle and [−4, 4] m laterally. The inclusion of the radar elevation dimension and the dataset’s particular focus on vulnerable road users in close-range urban environments distinguish VoD from the more widely used nuScenes [18] benchmark. III. MMF-BEV: I MPLEMENTATION DETAILS 
+
+Fig. 3 illustrates the overall MMF-BEV pipeline. The cam-era branch transforms a front-view image into a camera BEV feature map Fc via BEVDepth [2], the radar branch encodes 4D radar point clouds into a radar BEV feature map Fr via RadarBEVNet [3], and the multi layer hybrid fusion module merges Fc and Fr through deformable attention before a shared CenterPoint [19] detection head. Each branch is ad-ditionally enhanced with a Deformable Self-Attention (DSA) block applied to its BEV encoder output before concatenation. 
+
+A. Camera Branch: BEVDepth with DSA 
+
+Given a front-view image I, a ResNet-50 [20] backbone extracts 2D features F 2d. The camera-aware DepthNet predicts a depth distribution: 
+
+Dpred = ψ SE  F 2d MLP( ξ(R) ⊕ ξ(t) ⊕ ξ(K))  , (1) conditioned on intrinsics K and extrinsics (R, t ) through Squeeze-and-excitation blocks [2]. Explicit depth supervision is applied with binary cross-entropy against LiDAR-projected ground-truth depth: 
+
+Ldepth = BCE( Dpred , D gt ). (2) The features of the points F 3d = F 2d⊗Dpred are not projected onto the ego-space and are pooled into F bev c via efficient vector pooling, followed by a Depth Refinement Module. A Deformable Self-Attention block is then applied to F bev c :
+
+ˆFc = DeformSelfAttn( F bev c ), (3) refining spatial features by attending to learned sparse refer-ence offsets within the camera BEV space. 
+
+VoD configuration. A single forward-facing camera is used with an input resolution of 512 × 800 . The BEV spatial extent is defined as [−51 .2, 51 .2] m in the lateral direction and [0 , 51 .2] m in the forward direction, discretized into a 
+
+128 × 128 BEV grid. 
+
+B. Radar Branch: RadarBEVNet with DSA 
+
+Aggregated raw 4D radar point measurements from five consecutive sweeps are represented as 
+
+(x, y, z, v comp  
+
+> x
+
+, v comp  
+
+> y
+
+, RCS , t ) and processed using RadarBEVNet [3]. Here, t denotes the timestamp associated with each radar point during temporal accumulation. 
+
+Dual-stream backbone. A point-based stream (PointNet-style MLP + global max-pool, S = 3 blocks) captures local geometric structure, while a transformer-based stream with Distance-Modulated Self-Attention (DMSA) captures global context: 
+
+DMSA( Q, K, V ) = Softmax 
+
+ QK ⊤ 
+
+> √d
+
+− βD 2
+
+V, (4) BEV Learnable    
+
+> Positional Encoding
+> key value
+> query
+> key value
+> Deformable
+> CrossAttention
+> Deformable
+> CrossAttention
+> query
+> Deformable
+> SelfAttention
+> C
+> Deformable
+> SelfAttention
+> C
+> query
+> query
+> C
+> C
+> CBR
+> CBR X 3
+> Fused BEV
+> Features
+> BEV Learnable
+> Positional Encoding
+> Image BEV
+> Features
+> Radar BEV
+> Features
+
+Fig. 4. MultiLayer Hybrid fusion module. After per-modality DSA refine-ment, camera features and radar features exchange information through de-formable cross-attention (top and bottom), with outputs concatenated through CBR fusion layers. 
+
+where D is the pairwise point-distance matrix and β is learnable. An Injection and Extraction module uses cross-attention to couple the two streams at each block. 
+
+RCS-aware BEV encoder. Each radar point scatters its feature over a disc of radius r =
+
+q
+
+c2 
+
+> x
+
++ c2 
+
+> y
+
+· vRCS in BEV, with a Gaussian weight map Gx,y , giving a dense radar BEV feature f ′ 
+
+> RCS
+
+. A SECOND-style encoder [21] produces the final radar BEV map F bev r .
+
+C. MultiLayer Hybrid Fusion Module 
+
+The proposed hybrid fusion module is illustrated in Fig. 4. Let ˆFc and ˆFr denote the camera and radar BEV fea-tures, respectively, after per-modality refinement using de-formable self-attention (DSA) and the addition of learnable BEV positional encodings. To enable bidirectional information exchange between modalities, we apply deformable cross-attention (DCA) similar to Deformable DETR[7] as 
+
+F ′ 
+
+> c
+
+= DeformCrossAttn( zqˆc, p qˆc, ˆFr ), (5) 
+
+F ′ 
+
+> r
+
+= DeformCrossAttn( zqˆr , p qˆr , ˆFc), (6) where Eq. (5) allows camera queries zqˆc with correspond-ing reference points pqˆc to attend to radar keys and values 
+
+ˆFr , thereby grounding semantically rich but depth-ambiguous image features to spatially precise radar representations. Con-versely, Eq. (6) enables radar queries zqˆr and reference points 
+
+pqˆr to sample camera features ˆFc, enriching geometrically accurate yet semantically sparse radar responses with dense visual context. For M attention heads and K learnable reference points per head, the deformable cross-attention operator is defined as 
+
+DCA( zq , p q , F ) = 
+
+> M
+
+X
+
+> m=1
+
+WmKX
+
+> k=1
+
+Amqk · W ′
+
+> m
+
+F (pq + ∆ pmqk ) ,
+
+(7) where ∆pmqk are learnable spatial offsets predicted from the query features, and Amqk are normalized attention weights. The learned offsets enable adaptive spatial sampling, which is particularly important for compensating geometric misalign-ment between radar and camera modalities. 
+
+a) Joint Self- and Cross-Attention Fusion: While de-formable cross-attention enables complementary information exchange between modalities, it does not explicitly guarantee the preservation of modality-specific structures, particularly in regions where one sensing modality provides weak or uncertain evidence (e.g., radar sparsity or monocular depth ambiguity). To address this limitation, we explicitly retain the modality-specific contextual features obtained from De-formable Self-Attention (DSA) and fuse them jointly with the cross-attended representations. Let Fc and Fr denote the camera and radar BEV features before attention. We define deformable self-attention (with superscript s) as 
+
+F sc = DeformSelfAttn( Fc), (8) 
+
+F sr = DeformSelfAttn( Fr ), (9) where F sc and F sr encode modality-specific contextual reason-ing. To preserve both modality-specific and cross-modal infor-mation, we concatenate the self-attended and cross-attended features: 
+
+Fconcat = Concat( F sc , F sr , F ′
+
+> c
+
+, F ′ 
+
+> r
+
+). (10) The final fused BEV representation is obtained through three consecutive CBR (Conv–BatchNorm–ReLU) blocks [3]: 
+
+Ffused = CBR 3(Fconcat ) . (11) This hybrid strategy combines:  
+
+> •
+
+Intra-modal consistency via deformable self-attention, which captures long-range spatial dependencies within each modality.  
+
+> •
+
+Inter-modal complementarity via deformable cross-attention, which aligns and integrates heterogeneous fea-tures. By jointly leveraging both mechanisms, the fusion module reduces the risk of information loss in unattended regions during cross-attention and improves robustness to modality-specific noise. In practice, this results in sharper object lo-calization (guided by radar geometry) while preserving rich semantic discrimination (from camera features), yielding a more spatially coherent and semantically expressive fused BEV representation. D. Sensor Contribution Analysis 
+
+We compute per-bin sensor contribution maps over the VoD validation set to interpret how each modality influences final detection outcomes. For each BEV grid cell (i, j ), we extract the L2-norm of the camera and radar BEV features: 
+
+¯Fc(i, j ) = ˆFc(i, j ) 2
+
+, ¯Fr (i, j ) = ˆFr (i, j ) 2
+
+. (12) The relative camera and radar weights are then: 
+
+C(i, j ) = ¯Fc(i, j )¯Fc(i, j ) + ¯Fr (i, j ) , R(i, j ) = 1 − C(i, j ). (13) We bin detections by object class and by radial distance from the ego vehicle and compute the mean C and R per bin. This yields class-stratified and distance-stratified sensor contribution maps, providing interpretable evidence of comple-mentary sensor roles. For example, we expect camera features to dominate at short range (where depth estimation is more reliable and objects subtend large image regions) and for pedestrians (where camera texture is discriminative), while radar dominates at longer ranges and for vehicles (which produce strong RCS returns). We considered this head as one of the vital feature that enables test and validation of required criteria to fulfil various rating guidelines outlined in ISO/PAS 8800:2024 [22]. IV. T RAINING STRATEGY 
+
+To stabilize optimization and prevent interference between depth estimation and cross-modal alignment, we adopt a two-stage training procedure that decouples camera depth learning from radar–camera fusion as in [3]. 
+
+A. Stage 1: Camera Branch Pre-training 
+
+In the first stage, the BEVDepth-based camera branch augmented with Deformable Self-Attention (DSA) is trained independently on the VoD training split for 12 epochs. The implementation is built upon the MMDetection3D frame-work [23]; however, we develop a custom dataset interface tailored to the View-of-Delft (VoD) benchmark, including adapted data loading, preprocessing, and evaluation routines to ensure compatibility with the 4D radar format and the official VoD metrics. The objective function is defined as 
+
+Lcam = Ldepth + Lcls + Lbox + Lvel , (14) where Ldepth supervises depth estimation, Lcls is the Cen-terPoint heatmap classification loss, Lbox denotes bounding-box regression loss, and Lvel corresponds to velocity regres-sion. Optimization is performed using AdamW [24] with an initial learning rate of 2×10 −4 and cosine annealing schedule. Image-space augmentations include random horizontal flip-ping and random crop–resize operations. In the BEV domain, random flipping and rotation are applied to enhance geometric invariance. 
+
+B. Stage 2: Radar–Camera Fusion Training 
+
+In the second stage, the pre-trained camera branch weights are loaded and kept frozen to preserve learned depth repre-sentations. The radar branch (RadarBEVNet) and the proposed multilayer hybrid fusion module are then jointly optimized for 12 epochs. The fusion training objective is defined as 
+
+Lfuse = Lcls + Lbox + Lvel (15) We employ AdamW with an initial learning rate of 1×10 −4
+
+and cosine annealing. Five temporally accumulated radar sweeps are used as input to improve motion awareness and spatial density. To enhance robustness against radar spar-sity and measurement noise, radar-specific augmentations are applied, including random point dropout and additive noise perturbation. This staged optimization strategy ensures stable conver-gence by first learning reliable monocular depth representa-tions and subsequently focusing on cross-modal alignment and fusion without changing the weights of camera branch. V. E XPERIMENTS 
+
+A. Dataset and Metrics 
+
+The View-of-Delft (VoD) dataset [1] comprises 8,693 anno-tated frames, partitioned into 5,139 training, 1,296 validation, and 2,258 test samples. Each frame provides synchronized measurements from a forward-facing monocular camera and a 4D millimeter-wave radar, the latter delivering range, azimuth, elevation, and Doppler velocity information. We adhere to the official evaluation protocol and report per-class Average Precision (AP) as well as mean Average Precision (mAP) for three object categories— Cars (IoU 
+
+≥ 0.5), Pedestrians, and Cyclists (IoU ≥ 0.25 ). Our analysis presents results for two distinct regions [1]: 1) Entire Annotated Region: This encompasses the full camera Field of View (FoV) up to 50 meters. 2) Driving Corridor: A more safety-relevant region, de-fined as a rectangular area on the ground plane directly in front of the ego-vehicle. Its boundaries in camera coordinates are specified as: 
+
+[−4 m < x < +4 m, z < 25 m]
+
+B. Main Detection Results 
+
+Tables I and II compare three MMF-BEV configurations against published baselines on the VoD validation set: C-only 
+
+(BEVDepth + DSA, Stage 1 only), R-only (RadarBEVNet + DSA, trained end-to-end), and C+R (full MMF-BEV fusion, Stage 2). 
+
+Camera-only performance is limited by single-view depth estimation. The C-only configuration exhibits a sub-stantial performance gap compared to radar-inclusive models, achieving 22.26% mAP in the full area and 38.15% in the ROI. This outcome is expected, as MMF-BEV relies on a single forward-facing monocular camera, in contrast to multi-camera setups commonly used in nuScenes-oriented pipelines. (a) Validation Scene Id - 00000 bicycle 
+
+> Car Pedestrian
+> Pedestrian Pedestrian
+> Pedestrian
+> truck
+> bicycle
+> Pedestrian
+> Pedestrian
+
+(a) (b) F ′
+
+c - DCA Camera bicycle 
+
+> Car Pedestrian
+> Pedestrian Pedestrian
+> Pedestrian
+> truck
+> bicycle
+> Pedestrian
+> Pedestrian
+
+(b) (c) F ′
+
+r - DCA Radar bicycle 
+
+R:0.33 C:0.67 
+
+> Car
+
+R:0.50 C:0.50 
+
+> Pedestrian
+
+R:0.41 C:0.59 
+
+> Pedestrian
+
+R:0.38 C:0.62 
+
+> Pedestrian
+
+R:0.38 C:0.62 
+
+> Pedestrian
+
+R:0.45 C:0.55 
+
+> truck
+
+R:0.41 C:0.59 
+
+> bicycle
+
+R:0.33 C:0.67 
+
+> Pedestrian
+
+R:0.38 C:0.62 
+
+> Pedestrian
+
+R:0.38 C:0.62 
+
+(c) (d) Ff - Fused Features 
+
+Fig. 5. Qualitative comparison of intermediate BEV feature representations for a VoD validation scene Id - 00000. 
+
+(a) Validation Scene Id - 00033 bicycle   
+
+> bicycle
+> bicycle
+> Pedestrian
+> Pedestrian
+> Pedestrian
+> Pedestrian Pedestrian
+> Pedestrian
+> bicycle
+> motor Pedestrian
+
+(a) (b) F ′
+
+c - DCA Camera bicycle   
+
+> bicycle
+> bicycle
+> Pedestrian
+> Pedestrian
+> Pedestrian
+> Pedestrian Pedestrian
+> Pedestrian
+> bicycle
+> motor Pedestrian
+
+(b) (c) F ′
+
+r - DCA Radar bicycle 
+
+R:0.38 C:0.62 
+
+> bicycle
+
+R:0.45 C:0.55 
+
+> bicycle
+
+R:0.34 C:0.66 
+
+> Pedestrian
+
+R:0.33 C:0.67 
+
+> Pedestrian
+
+R:0.33 C:0.67 
+
+> Pedestrian
+
+R:0.50 C:0.50 
+
+> Pedestrian
+
+R:0.41 C:0.59 
+
+> Pedestrian
+
+R:0.50 C:0.50 
+
+> Pedestrian
+
+R:0.38 C:0.62 
+
+> bicycle
+
+R:0.38 C:0.62 
+
+> motor
+
+R:0.33 C:0.67 
+
+> Pedestrian
+
+R:0.38 C:0.62 
+
+(c) (d) Ff - Fused Features 
+
+Fig. 6. Qualitative comparison of intermediate BEV feature representations for VoD validation scene Id - 00033. 
+
+(a) Validation Scene Id - 00102 bicycle 
+
+> bicycle bicycle
+> bicycle
+> Pedestrian
+> rider
+> bicycle
+> Pedestrian
+
+(a) (b) F ′
+
+c - DCA Camera bicycle 
+
+> bicycle bicycle
+> bicycle
+> Pedestrian
+> rider
+> bicycle
+> Pedestrian
+
+(b) (c) F ′
+
+r - DCA Radar bicycle 
+
+R:0.28 C:0.72 
+
+> bicycle
+
+R:0.41 C:0.59 
+
+> bicycle
+
+R:0.41 C:0.59 
+
+> bicycle
+
+R:0.28 C:0.72 
+
+> Pedestrian
+
+R:0.28 C:0.72 
+
+> rider
+
+R:0.28 C:0.72 bicycle 
+
+R:0.41 C:0.59 
+
+> Pedestrian
+
+R:0.28 C:0.72 
+
+(c) (d) Ff - Fused Features 
+
+Fig. 7. Qualitative comparison of intermediate BEV feature representations for VoD validation scene Id - 00102. TABLE I RESULTS ON VALIDATION SET — ENTIRE ANNOTATED AREA (%). 
+
+Method In Car Ped. Cyc. mAP 
+
+PointPillars [25] R 37.06 35.04 63.44 45.18 RCFusion [17] C+R 41.70 38.95 68.31 49.65 RCBEVDet [3] C+R 40.63 38.86 70.48 49.99 
+
+MMF-BEV C 16.28 15.14 35.37 22.26 MMF-BEV R 35.55 33.05 61.20 43.26 MMF-BEV* C+R 39.65 32.00 64.71 45.45 MMF-BEV C+R 40.10 37.80 68.88 48.92 
+
+> ∗
+
+Directly concatenating image and radar BEV features. TABLE II RESULTS ON VALIDATION SET — DRIVING CORRIDOR / ROI (%). 
+
+Method In Car Ped. Cyc. mAP 
+
+PointPillars [25] R 70.15 47.22 85.07 67.48 RCFusion [17] C+R 71.87 47.50 88.33 69.23 RCBEVDet [3] C+R 72.48 49.89 87.01 69.80 
+
+MMF-BEV C 55.01 15.78 43.67 38.15 MMF-BEV R 67.21 44.48 78.65 63.44 MMF-BEV ∗ C+R 70.36 39.23 87.27 65.62 MMF-BEV C+R 72.21 48.23 87.20 69.21 
+
+> ∗
+
+Directly concatenating image and radar BEV features. 0 10 20 30 40 50                                                   
+
+> 515 25 35 45
+> X forward (m)
+> 20
+> 10
+> 0
+> 10
+> 20
+> 15
+> 5
+> -5
+> -15
+> Y left (m)
+> 28% 34% 45% 53% 58%
+> 28% 38% 48% 56% 62%
+> 33% 41% 50% 59% 66%
+> 29% 38% 46% 56% 62%
+> Radar contribution
+> (mean Rper bin)
+> 010 20 30 40 50
+> 515 25 35 45
+> X forward (m)
+> 20
+> 10
+> 0
+> 10
+> 20
+> 15
+> 5
+> -5
+> -15
+> Y left (m)
+> 72% 66% 55% 47% 42%
+> 72% 62% 52% 44% 38%
+> 67% 59% 50% 41% 34%
+> 71% 62% 54% 44% 38%
+> Camera contribution
+> (mean Cper bin)
+> 0.22
+> 0.34
+> 0.47
+> 0.59
+> 0.72
+> Radar weight
+> 0.28
+> 0.41
+> 0.53
+> 0.66
+> 0.78
+> Camera weight
+> Sensor Contribution scores on VOD Validation Set Fig. 8. Sensor contribution maps on VoD validation set.
+
+The limited perspective diversity restricts depth estimation accuracy, even with explicit depth supervision in BEVDepth. The particularly low pedestrian AP (15.78% in the ROI) under-scores the impact of monocular depth ambiguity, where objects at similar depths are projected into overlapping BEV bins, leading to fragmented detections. These findings highlight the importance of radar as a complementary geometric reference. 
+
+Radar-only provides a strong spatial baseline. In contrast, the R-only branch attains 43.26% mAP in the full area and 63.44% in the ROI, substantially outperforming C-only and approaching published fusion methods. This demonstrates the reliability of 4D radar measurements and the effectiveness of the RCS-aware BEV encoding strategy in stabilizing spatial localization. The Car AP of 67.21% (ROI) is particularly strong, consistent with cars producing high, stable RCS returns as used in RadarBEVNet. 
+
+Naive concatenation reveals the cost of ignoring cross-modal alignment. MMF-BEV ∗, which directly concatenates camera and radar BEV features without any attention mech-anism, scores 45.45% (full) and 65.62% (ROI) — above camera-only but well below the full model. The pedestrian ROI AP drops sharply to 39.23% versus 48.23% for the full model, a relative degradation of 18.6%. Without attention-guided alignment, the geometric mismatch between diffuse camera projections and sparse radar returns cannot be resolved. Notably, cyclist AP remains competitive (87.27% vs. 87.20%), suggesting that for larger, radar-reflective objects spatial align-ment is less critical. This confirms that attention-based fusion is a functional requirement for small object detection, not merely an architectural choice. 
+
+Fusion narrows the gap to published methods. MMF-BEV (C+R) achieves 48.92% mAP over the full annotated area and 69.21% within the ROI, yielding performance competitive with RCFusion (49.65% / 69.23%) and RCBEVDet (49.99% / 69.80%). In the ROI, MMF-BEV surpasses RCFusion in car AP and remains close to both prior fusion approaches overall, reducing the gap to RCBEVDet to less than one mAP point. MMF-BEV framework is inspired by the cross attention framework of RCBEVDet [3] and we have consid-ered it as baseline to ensure the maintenance of the known performance. These results indicate that MMF-BEV achieves equivalent performance on VoD while introducing architectural modifications aimed at improving long-range fusion robustness and computational efficiency. Specifically, in-addition to the deformable cross attention, our design emphasizes structured deformable self-attention within each modality and enables each branch to function as a standalone detector, thereby increasing architectural flexibility. The VoD dataset contains only a limited number of long-range annotated objects ( > 50 m in the longitudinal direction), which constrains the assessment of distant detection perfor-mance. To better evaluate long-range fusion capabilities and generalization, future work will train and benchmark the pro-posed architecture on datasets with richer long-range ground truth, such as the aiMotive [26] and NVIDIA Physical AI datasets [27]. We are going to investigate further based on the architectural changes mentioned in our future work, through the help of additional internal and open-source datasets. 
+
+C. Qualitative BEV Feature Map Visualization 
+
+Figs. 5–7 illustrate representative BEV feature maps ex-tracted at three intermediate stages of MMF-BEV on VoD validation scenes. Ground-truth boxes are shown in green (dashed) and predictions in red. The contrast between the de-formable cross-attention (DCA) branches highlights their com-plementary spatial characteristics. The image-query branch (Fig. V-B) uses camera queries to attend to radar keys and values, resulting in a semantically rich but spatially diffuse BEV response; this is particularly noticeable around dense pedestrian clusters, where monocular depth ambiguity spreads activations across multiple depth bins. Conversely, the radar-query branch (Fig. V-B) uses radar queries anchored at precise physical returns to sample image features, producing compact, well-localized activations concentrated around object centers. Objects with strong radar returns, such as trucks and cyclists, generate the most focused responses. The fused BEV map (Fig. V-B) combines these effects, producing sharp, high-magnitude responses for large objects while pedestrian clusters remain comparatively diffuse, consistent with the pedestrian AP gaps reported in Table II. 
+
+D. Sensor Contribution Analysis 
+
+Fig. 8 presents sensor contribution maps computed on the VoD validation set. Each BEV bin visualizes the mean radar weight R(i, j ) (left) and the corresponding camera weight 
+
+C(i, j ) = 1 − R(i, j ) (right), averaged over all detections with the origin at LiDAR mounting position.  
+
+> •
+
+Distance-stratified analysis. Camera contributions dom-inate in the near-field region ( X < 15 m ), with C ≈ 65 –
+
+72 %, where objects occupy larger image regions and BEVDepth’s explicit depth supervision provides accurate projections. At greater distances ( X > 30 m ), radar contributions increase ( R > 55 %), reflecting the growing uncertainty of monocular depth estimation and the higher reliability of radar point clouds for spatial localization specially in radial direction to the sensor.  
+
+> •
+
+Class-stratified analysis. Radar contributions are higher for cars and cyclists, whose larger RCS returns and Doppler signatures provide reliable spatial anchors. Pedestrians show the strongest camera reliance, as their small RCS and irregular motion produce weak radar returns, making visual texture the more discriminative cue. These trends demonstrate that MMF-BEV’s cross-attention mechanism adaptively modulates modality weighting across BEV space, effectively leveraging the complementary charac-teristics of radar and camera features. VI. C ONCLUSION 
+
+We presented MMF-BEV, a multi modal BEV fusion frame-work that systematically investigates deformable attention both within individual modalities and across modalities for 3D object detection on the View-of-Delft (VoD) 4D radar dataset. By equipping the camera and radar branches with Deformable Self-Attention and coupling them through a deformable cross-attention module in BEV space, the proposed architecture enables structured and spatially adaptive information exchange between modalities. Experimental results on the VoD validation set demon-strate that cross-modal fusion consistently outperforms both unimodal variants across the entire annotated area and the Region of Interest. The substantial gains over the camera-only and radar-only branches confirm that the two sensing modalities provide complementary geometric and semantic cues. The sensor contribution analysis reveals a spatially structured, interpretable pattern of modality-specific contri-butions in BEV space: camera features dominate at short ranges, where monocular depth estimation is most reliable, while radar features increasingly contribute at longer dis-tances, particularly for dynamic objects and off-axis locations where camera depth uncertainty accumulates. This distance-and location-dependent complementarity directly validates the design rationale of the deformable cross-attention mechanism, which explicitly queries each modality from the perspective of the other. Future work will investigate alternative radar backbones tailored to 4D radar representations, improved image-based depth estimation strategies for the camera branch, and more advanced cross-modal transformer designs, including adaptive and uncertainty-aware attention mechanisms. In addition, we plan to extend the framework to multi-view camera setups on other datasets and benchmark its performance to further assess generalization and scalability. REFERENCES 
+
+[1] A. Palffy, E. Pool, S. Baratam, J. F. Kooij, and D. M. Gavrila, “Multi-class road user detection with 3+ 1d radar in the view-of-delft dataset,” IEEE Robotics and Automation Letters , vol. 7, no. 2, pp. 4961–4968, 2022. [2] Y. Li, Z. Ge, G. Yu, J. Yang, Z. Wang, Y. Shi, J. Sun, and Z. Li, “Bevdepth: Acquisition of reliable depth for multi-view 3d object detection,” in Proceedings of the AAAI conference on artificial intelligence , vol. 37, no. 2, 2023, pp. 1477–1485. [3] Z. Lin, Z. Liu, Z. Xia, X. Wang, Y. Wang, S. Qi, Y. Dong, N. Dong, L. Zhang, and C. Zhu, “Rcbevdet: Radar-camera fusion in bird’s eye view for 3d object detection,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 14 928–14 937. [4] X. Ma, Y. Zhang, D. Xu, D. Zhou, S. Yi, H. Li, and W. Ouyang, “Delving into localization errors for monocular 3d object detection,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2021, pp. 4721–4730. [5] Y. Zhou, L. Liu, H. Zhao, M. L´ opez-Ben´ ıtez, L. Yu, and Y. Yue, “Towards deep radar perception for autonomous driving: Datasets, methods, and challenges,” Sensors ,vol. 22, no. 11, p. 4208, 2022. [6] J. Philion and S. Fidler, “Lift, splat, shoot: Encoding images from arbitrary camera rigs by implicitly unpro-jecting to 3d,” in European conference on computer vision . Springer, 2020, pp. 194–210. [7] X. Zhu, W. Su, L. Lu, B. Li, X. Wang, and J. Dai, “Deformable detr: Deformable transformers for end-to-end object detection,” arXiv preprint arXiv:2010.04159 ,2020. [8] J. Huang, G. Huang, Z. Zhu, Y. Ye, and D. Du, “Bevdet: High-performance multi-camera 3d object detection in bird-eye-view,” arXiv preprint arXiv:2112.11790 , 2021. [9] J. Huang and G. Huang, “Bevdet4d: Exploit temporal cues in multi-camera 3d object detection,” arXiv preprint arXiv:2203.17054 , 2022. [10] Z. Li, W. Wang, H. Li, E. Xie, C. Sima, T. Lu, Q. Yu, and J. Dai, “Bevformer: Learning bird’s-eye-view representa-tion from multi-camera images via spatiotemporal trans-formers.(2022),” URL https://arxiv. org/abs/2203.17270 ,vol. 10, 2022. [11] Y. Liu, T. Wang, X. Zhang, and J. Sun, “Petr: Posi-tion embedding transformation for multi-view 3d object detection,” in European conference on computer vision .Springer, 2022, pp. 531–548. [12] Y. Liu, J. Yan, F. Jia, S. Li, A. Gao, T. Wang, and X. Zhang, “Petrv2: A unified framework for 3d percep-tion from multi-camera images,” in Proceedings of the IEEE/CVF international conference on computer vision ,2023, pp. 3262–3272. [13] S. Wang, Y. Liu, T. Wang, Y. Li, and X. Zhang, “Ex-ploring object-centric temporal modeling for efficient multi-view 3d object detection,” in Proceedings of the IEEE/CVF international conference on computer vision ,2023, pp. 3621–3631. [14] R. Nabati and H. Qi, “Centerfusion: Center-based radar and camera fusion for 3d object detection,” in Proceed-ings of the IEEE/CVF winter conference on applications of computer vision , 2021, pp. 1527–1536. [15] Y. Kim, S. Kim, J. W. Choi, and D. Kum, “Craft: Camera-radar 3d object detection with spatio-contextual fusion transformer,” in Proceedings of the AAAI Confer-ence on Artificial Intelligence , vol. 37, no. 1, 2023, pp. 1160–1168. [16] Y. Kim, J. Shin, S. Kim, I.-J. Lee, J. W. Choi, and D. Kum, “Crn: Camera radar net for accurate, robust, efficient 3d perception,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2023, pp. 17 615–17 626. [17] L. Zheng, S. Li, B. Tan, L. Yang, S. Chen, L. Huang, J. Bai, X. Zhu, and Z. Ma, “Rcfusion: Fusing 4-d radar and camera with bird’s-eye view features for 3-d object detection,” IEEE Transactions on Instrumentation and Measurement , vol. 72, pp. 1–14, 2023. [18] H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan, and O. Bei-jbom, “nuscenes: A multimodal dataset for autonomous driving,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 11 621–11 631. [19] T. Yin, X. Zhou, and P. Krahenbuhl, “Center-based 3d object detection and tracking,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2021, pp. 11 784–11 793. [20] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning for image recognition,” in Proceedings of the IEEE conference on computer vision and pattern recog-nition , 2016, pp. 770–778. [21] Y. Yan, Y. Mao, and B. Li, “Second: Sparsely embedded convolutional detection,” Sensors , vol. 18, no. 10, p. 3337, 2018. [22] ISO/PAS 8800:2024 — Road vehicles — Safety and verification framework for AI-enabled systems ,International Organization for Standardization (ISO) Std., 2024, accessed: 2026-03-02. [Online]. Available: https://www.iso.org/standard/83303.html [23] M. Contributors, “MMDetection3D: OpenMMLab next-generation platform for general 3D object detection,” https://github.com/open-mmlab/mmdetection3d, 2020. [24] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,” arXiv preprint arXiv:1711.05101 , 2017. [25] A. H. Lang, S. Vora, H. Caesar, L. Zhou, J. Yang, and O. Beijbom, “Pointpillars: Fast encoders for object detec-tion from point clouds,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,2019, pp. 12 697–12 705. [26] T. Matuszka, I. Barton, ´A. Butykai, P. Hajas, D. Kiss, D. Kov´ acs, S. Kuns´ agi-M´ at´ e, P. Lengyel, G. N´ emeth, L. Pet˝ o et al. , “aimotive dataset: A multimodal dataset for robust autonomous driving with long-range perception,” 
+
+arXiv preprint arXiv:2211.09445 , 2022. [27] NVIDIA NVlabs. (2024) Physical AI Autonomous Ve-hicles Dataset: Devkit and Documentation.

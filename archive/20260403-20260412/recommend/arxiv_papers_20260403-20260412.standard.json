@@ -1,16 +1,1158 @@
 {
   "mode": "standard",
-  "generated_at": "2026-04-12T07:21:36.593312+00:00",
+  "generated_at": "2026-04-12T07:26:36.344669+00:00",
   "stats": {
     "mode": "standard",
-    "tag_count": 0,
-    "deep_divecandidates": 0,
-    "deep_cap": null,
-    "deep_selected": 0,
-    "quick_candidates": 0,
-    "quick_skim_target": 10,
-    "quick_selected": 0
+    "tag_count": 1,
+    "deep_divecandidates": 20,
+    "deep_cap": 6,
+    "deep_selected": 18,
+    "quick_candidates": 13,
+    "quick_skim_target": 11,
+    "quick_selected": 11
   },
-  "deep_dive": [],
-  "quick_skim": []
+  "deep_dive": [
+    {
+      "id": "2604.02710v1",
+      "source": "arxiv",
+      "title": "V2X-QA: A Comprehensive Reasoning Dataset and Benchmark for Multimodal Large Language Models in Autonomous Driving Across Ego, Infrastructure, and Cooperative Views",
+      "abstract": "Multimodal large language models (MLLMs) have shown strong potential for autonomous driving, yet existing benchmarks remain largely ego-centric and therefore cannot systematically assess model performance in infrastructure-centric and cooperative driving conditions. In this work, we introduce V2X-QA, a real-world dataset and benchmark for evaluating MLLMs across vehicle-side, infrastructure-side, and cooperative viewpoints. V2X-QA is built around a view-decoupled evaluation protocol that enables controlled comparison under vehicle-only, infrastructure-only, and cooperative driving conditions within a unified multiple-choice question answering (MCQA) framework. The benchmark is organized into a twelve-task taxonomy spanning perception, prediction, and reasoning and planning, and is constructed through expert-verified MCQA annotation to enable fine-grained diagnosis of viewpoint-dependent capabilities. Benchmark results across ten representative state-of-the-art proprietary and open-source models show that viewpoint accessibility substantially affects performance, and infrastructure-side reasoning supports meaningful macroscopic traffic understanding. Results also indicate that cooperative reasoning remains challenging since it requires cross-view alignment and evidence integration rather than simply additional visual input. To address these challenges, we introduce V2X-MoE, a benchmark-aligned baseline with explicit view routing and viewpoint-specific LoRA experts. The strong performance of V2X-MoE further suggests that explicit viewpoint specialization is a promising direction for multi-view reasoning in autonomous driving. Overall, V2X-QA provides a foundation for studying multi-perspective reasoning, reliability, and cooperative physical intelligence in connected autonomous driving. The dataset and V2X-MoE resources are publicly available at: https://github.com/junwei0001/V2X-QA.",
+      "authors": [
+        "Junwei You",
+        "Pei Li",
+        "Zhuoyu Jiang",
+        "Weizhe Tang",
+        "Zilin Huang",
+        "Rui Gan",
+        "Jiaxi Liu",
+        "Yan Zhao",
+        "Sikai Chen",
+        "Bin Ran"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-04-03T04:07:35+00:00",
+      "link": "https://arxiv.org/pdf/2604.02710v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "MLLM benchmark for autonomous driving across V2X views",
+      "llm_evidence_cn": "自动驾驶中跨V2X视角的协同多模态大模型基准",
+      "llm_evidence": "自动驾驶中跨V2X视角的协同多模态大模型基准",
+      "canonical_evidence": "自动驾驶中跨V2X视角的协同多模态大模型基准",
+      "llm_tldr_en": "V2X-QA evaluates multimodal LLMs in autonomous driving across vehicle, infrastructure, and cooperative views.",
+      "llm_tldr_cn": "V2X-QA在车、路、云协同视角下评估多模态大语言模型在自动驾驶中的表现。",
+      "llm_tldr": "V2X-QA在车、路、云协同视角下评估多模态大语言模型在自动驾驶中的表现。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "最新关于自动驾驶的大模型研究论文和综述",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.02714v1",
+      "source": "arxiv",
+      "title": "ExploreVLA: Dense World Modeling and Exploration for End-to-End Autonomous Driving",
+      "abstract": "End-to-end autonomous driving models based on Vision-Language-Action (VLA) architectures have shown promising results by learning driving policies through behavior cloning on expert demonstrations. However, imitation learning inherently limits the model to replicating observed behaviors without exploring diverse driving strategies, leaving it brittle in novel or out-of-distribution scenarios. Reinforcement learning (RL) offers a natural remedy by enabling policy exploration beyond the expert distribution. Yet VLA models, typically trained on offline datasets, lack directly observable state transitions, necessitating a learned world model to anticipate action consequences. In this work, we propose a unified understanding-and-generation framework that leverages world modeling to simultaneously enable meaningful exploration and provide dense supervision. Specifically, we augment trajectory prediction with future RGB and depth image generation as dense world modeling objectives, requiring the model to learn fine-grained visual and geometric representations that substantially enrich the planning backbone. Beyond serving as a supervisory signal, the world model further acts as a source of intrinsic reward for policy exploration: its image prediction uncertainty naturally measures a trajectory's novelty relative to the training distribution, where high uncertainty indicates out-of-distribution scenarios that, if safe, represent valuable learning opportunities. We incorporate this exploration signal into a safety-gated reward and optimize the policy via Group Relative Policy Optimization (GRPO). Experiments on the NAVSIM and nuScenes benchmarks demonstrate the effectiveness of our approach, achieving a state-of-the-art PDMS score of 93.7 and an EPDMS of 88.8 on NAVSIM. The code and demo will be publicly available at https://zihaosheng.github.io/ExploreVLA/.",
+      "authors": [
+        "Zihao Sheng",
+        "Xin Ye",
+        "Jingru Luo",
+        "Sikai Chen",
+        "Liu Ren"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-03T04:14:13+00:00",
+      "link": "https://arxiv.org/pdf/2604.02714v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "End-to-end autonomous driving based on Vision-Language-Action (VLA) architectures",
+      "llm_evidence_cn": "基于视觉-语言-动作（VLA）架构的端到端自动驾驶",
+      "llm_evidence": "基于视觉-语言-动作（VLA）架构的端到端自动驾驶",
+      "canonical_evidence": "基于视觉-语言-动作（VLA）架构的端到端自动驾驶",
+      "llm_tldr_en": "Explores VLA architectures and world models for reinforcement learning in end-to-end autonomous driving.",
+      "llm_tldr_cn": "探讨了用于端到端自动驾驶强化学习的VLA架构和世界模型。",
+      "llm_tldr": "探讨了用于端到端自动驾驶强化学习的VLA架构和世界模型。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "end-to-end frameworks powered by large AI models for vehicle control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.04198v1",
+      "source": "arxiv",
+      "title": "DriveVA: Video Action Models are Zero-Shot Drivers",
+      "abstract": "Generalization is a central challenge in autonomous driving, as real-world deployment requires robust performance under unseen scenarios, sensor domains, and environmental conditions. Recent world-model-based planning methods have shown strong capabilities in scene understanding and multi-modal future prediction, yet their generalization across datasets and sensor configurations remains limited. In addition, their loosely coupled planning paradigm often leads to poor video-trajectory consistency during visual imagination. To overcome these limitations, we propose DriveVA, a novel autonomous driving world model that jointly decodes future visual forecasts and action sequences in a shared latent generative process. DriveVA inherits rich priors on motion dynamics and physical plausibility from well-pretrained large-scale video generation models to capture continuous spatiotemporal evolution and causal interaction patterns. To this end, DriveVA employs a DiT-based decoder to jointly predict future action sequences (trajectories) and videos, enabling tighter alignment between planning and scene evolution. We also introduce a video continuation strategy to strengthen long-duration rollout consistency. DriveVA achieves an impressive closed-loop performance of 90.9 PDM score on the challenge NAVSIM. Extensive experiments also demonstrate the zero-shot capability and cross-domain generalization of DriveVA, which reduces average L2 error and collision rate by 78.9% and 83.3% on nuScenes and 52.5% and 52.4% on the Bench2drive built on CARLA v2 compared with the state-of-the-art world-model-based planner.",
+      "authors": [
+        "Mengmeng Liu",
+        "Diankun Zhang",
+        "Jiuming Liu",
+        "Jianfeng Cui",
+        "Hongwei Xie",
+        "Guang Chen",
+        "Hangjun Ye",
+        "Michael Ying Yang",
+        "Francesco Nex",
+        "Hao Cheng"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-04-05T17:43:16+00:00",
+      "link": "https://arxiv.org/pdf/2604.04198v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Generative world model for autonomous driving decoding visual forecasts and actions",
+      "llm_evidence_cn": "用于自动驾驶的生成式世界模型，联合解码视觉预测与动作序列",
+      "llm_evidence": "用于自动驾驶的生成式世界模型，联合解码视觉预测与动作序列",
+      "canonical_evidence": "用于自动驾驶的生成式世界模型，联合解码视觉预测与动作序列",
+      "llm_tldr_en": "Introduces DriveVA, a generative world model that improves zero-shot generalization in autonomous driving.",
+      "llm_tldr_cn": "引入DriveVA，一种通过联合解码视觉预测和动作来提高自动驾驶零样本泛化能力的生成式世界模型。",
+      "llm_tldr": "引入DriveVA，一种通过联合解码视觉预测和动作来提高自动驾驶零样本泛化能力的生成式世界模型。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "应用大型生成模型于智能驾驶场景的研究",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.04857v1",
+      "source": "arxiv",
+      "title": "The Blind Spot of Adaptation: Quantifying and Mitigating Forgetting in Fine-tuned Driving Models",
+      "abstract": "The integration of Vision-Language Models (VLMs) into autonomous driving promises to solve long-tail scenarios, but this paradigm faces the critical and unaddressed challenge of catastrophic forgetting. The very fine-tuning process used to adapt these models to driving-specific data simultaneously erodes their invaluable pre-trained world knowledge, creating a self-defeating paradox that undermines the core reason for their use. This paper provides the first systematic investigation into this phenomenon. We introduce a new large-scale dataset of 180K scenes, which enables the first-ever benchmark specifically designed to quantify catastrophic forgetting in autonomous driving. Our analysis reveals that existing methods suffer from significant knowledge degradation. To address this, we propose the Drive Expert Adapter (DEA), a novel framework that circumvents this trade-off by shifting adaptation from the weight space to the prompt space. DEA dynamically routes inference through different knowledge experts based on scene-specific cues, enhancing driving-task performance without corrupting the model's foundational parameters. Extensive experiments demonstrate that our approach not only achieves state-of-the-art results on driving tasks but also effectively mitigates catastrophic forgetting, preserving the essential generalization capabilities that make VLMs a transformative force for autonomous systems. Data and model are released at FidelityDrivingBench.",
+      "authors": [
+        "Runhao Mao",
+        "Hanshi Wang",
+        "Yixiang Yang",
+        "Qianli Ma",
+        "Jingmeng Zhou",
+        "Zhipeng Zhang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-06T17:02:06+00:00",
+      "link": "https://arxiv.org/pdf/2604.04857v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "mitigating forgetting in fine-tuned Vision-Language Models for driving",
+      "llm_evidence_cn": "缓解驾驶场景下微调视觉语言模型的灾难性遗忘问题",
+      "llm_evidence": "缓解驾驶场景下微调视觉语言模型的灾难性遗忘问题",
+      "canonical_evidence": "缓解驾驶场景下微调视觉语言模型的灾难性遗忘问题",
+      "llm_tldr_en": "Investigates and mitigates catastrophic forgetting when adapting large VLMs to autonomous driving tasks.",
+      "llm_tldr_cn": "研究并缓解了大模型在适配自动驾驶任务时的灾难性遗忘问题。",
+      "llm_tldr": "研究并缓解了大模型在适配自动驾驶任务时的灾难性遗忘问题。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "大规模预训练模型在智能驾驶系统中的应用与挑战",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.05378v1",
+      "source": "arxiv",
+      "title": "ICR-Drive: Instruction Counterfactual Robustness for End-to-End Language-Driven Autonomous Driving",
+      "abstract": "Recent progress in vision-language-action (VLA) models has enabled language-conditioned driving agents to execute natural-language navigation commands in closed-loop simulation, yet standard evaluations largely assume instructions are precise and well-formed. In deployment, instructions vary in phrasing and specificity, may omit critical qualifiers, and can occasionally include misleading, authority-framed text, leaving instruction-level robustness under-measured. We introduce ICR-Drive, a diagnostic framework for instruction counterfactual robustness in end-to-end language-conditioned autonomous driving. ICR-Drive generates controlled instruction variants spanning four perturbation families: Paraphrase, Ambiguity, Noise, and Misleading, where Misleading variants conflict with the navigation goal and attempt to override intent. We replay identical CARLA routes under matched simulator configurations and seeds to isolate performance changes attributable to instruction language. Robustness is quantified using standard CARLA Leaderboard metrics and per-family performance degradation relative to the baseline instruction. Experiments on LMDrive and BEVDriver show that minor instruction changes can induce substantial performance drops and distinct failure modes, revealing a reliability gap for deploying embodied foundation models in safety-critical driving.",
+      "authors": [
+        "Kaiser Hamid",
+        "Can Cui",
+        "Nade Liang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.CV"
+      ],
+      "published": "2026-04-07T03:24:22+00:00",
+      "link": "https://arxiv.org/pdf/2604.05378v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Instruction robustness for end-to-end language-driven autonomous driving agents",
+      "llm_evidence_cn": "端到端语言驱动自动驾驶代理的指令鲁棒性研究",
+      "llm_evidence": "端到端语言驱动自动驾驶代理的指令鲁棒性研究",
+      "canonical_evidence": "端到端语言驱动自动驾驶代理的指令鲁棒性研究",
+      "llm_tldr_en": "Introduces ICR-Drive to evaluate the robustness of VLA-based driving agents against perturbed instructions.",
+      "llm_tldr_cn": "引入ICR-Drive框架，评估基于VLA模型的驾驶代理在面对扰动指令时的鲁棒性。",
+      "llm_tldr": "引入ICR-Drive框架，评估基于VLA模型的驾驶代理在面对扰动指令时的鲁棒性。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "end-to-end frameworks powered by large AI models for vehicle control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.05449v1",
+      "source": "arxiv",
+      "title": "Not All Agents Matter: From Global Attention Dilution to Risk-Prioritized Game Planning",
+      "abstract": "End-to-end autonomous driving resides not in the integration of perception and planning, but rather in the dynamic multi-agent game within a unified representation space. Most existing end-to-end models treat all agents equally, hindering the decoupling of real collision threats from complex backgrounds. To address this issue, We introduce the concept of Risk-Prioritized Game Planning, and propose GameAD, a novel framework that models end-to-end autonomous driving as a risk-aware game problem. The GameAD integrates Risk-Aware Topology Anchoring, Strategic Payload Adapter, Minimax Risk-Aware Sparse Attention, and Risk Consistent Equilibrium Stabilization to enable game theoretic decision making with risk prioritized interactions. We also present the Planning Risk Exposure metric, which quantifies the cumulative risk intensity of planned trajectories over a long horizon for safe autonomous driving. Extensive experiments on the nuScenes and Bench2Drive datasets show that our approach significantly outperforms state-of-the-art methods, especially in terms of trajectory safety.",
+      "authors": [
+        "Kang Ding",
+        "Hongsong Wang",
+        "Jie Gui",
+        "Lei He"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-07T05:33:54+00:00",
+      "link": "https://arxiv.org/pdf/2604.05449v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "end-to-end autonomous driving framework with risk-aware game planning",
+      "llm_evidence_cn": "具有风险感知博弈规划的端到端自动驾驶框架",
+      "llm_evidence": "具有风险感知博弈规划的端到端自动驾驶框架",
+      "canonical_evidence": "具有风险感知博弈规划的端到端自动驾驶框架",
+      "llm_tldr_en": "Introduces GameAD, an end-to-end autonomous driving framework using risk-prioritized game theoretic decision making.",
+      "llm_tldr_cn": "引入GameAD，一种利用风险优先博弈论决策的端到端自动驾驶框架。",
+      "llm_tldr": "引入GameAD，一种利用风险优先博弈论决策的端到端自动驾驶框架。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "end-to-end frameworks powered by large AI models for vehicle control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.06750v1",
+      "source": "arxiv",
+      "title": "How Well Do Vision-Language Models Understand Sequential Driving Scenes? A Sensitivity Study",
+      "abstract": "Vision-Language Models (VLMs) are increasingly proposed for autonomous driving tasks, yet their performance on sequential driving scenes remains poorly characterized, particularly regarding how input configurations affect their capabilities. We introduce VENUSS (VLM Evaluation oN Understanding Sequential Scenes), a framework for systematic sensitivity analysis of VLM performance on sequential driving scenes, establishing baselines for future research. Building upon existing datasets, VENUSS extracts temporal sequences from driving videos, and generates structured evaluations across custom categories. By comparing 25+ existing VLMs across 2,600+ scenarios, we reveal how even top models achieve only 57% accuracy, not matching human performance in similar constraints (65%) and exposing significant capability gaps. Our analysis shows that VLMs excel with static object detection but struggle with understanding the vehicle dynamics and temporal relations. VENUSS offers the first systematic sensitivity analysis of VLMs focused on how input image configurations - resolution, frame count, temporal intervals, spatial layouts, and presentation modes - affect performance on sequential driving scenes. Supplementary material available at https://V3NU55.github.io",
+      "authors": [
+        "Roberto Brusnicki",
+        "Mattia Piccinini",
+        "Johannes Betz"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-08T07:14:55+00:00",
+      "link": "https://arxiv.org/pdf/2604.06750v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Sensitivity study of Vision-Language Models on sequential driving scenes",
+      "llm_evidence_cn": "视觉语言模型在连续驾驶场景中的敏感性研究",
+      "llm_evidence": "视觉语言模型在连续驾驶场景中的敏感性研究",
+      "canonical_evidence": "视觉语言模型在连续驾驶场景中的敏感性研究",
+      "llm_tldr_en": "VENUSS evaluates 25+ VLMs on sequential driving scenes, revealing significant performance gaps compared to humans.",
+      "llm_tldr_cn": "VENUSS评估了25多个视觉语言模型在连续驾驶场景中的表现，揭示了与人类相比的显著差距。",
+      "llm_tldr": "VENUSS评估了25多个视觉语言模型在连续驾驶场景中的表现，揭示了与人类相比的显著差距。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "最新关于自动驾驶的大模型研究论文和综述",
+      "matched_requirement_id": "req-6",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.07944v1",
+      "source": "arxiv",
+      "title": "On-Policy Distillation of Language Models for Autonomous Vehicle Motion Planning",
+      "abstract": "Large language models (LLMs) have recently demonstrated strong potential for autonomous vehicle motion planning by reformulating trajectory prediction as a language generation problem. However, deploying capable LLMs in resource-constrained onboard systems remains a fundamental challenge. In this paper, we study how to effectively transfer motion planning knowledge from a large teacher LLM to a smaller, more deployable student model. We build on the GPT-Driver framework, which represents driving scenes as language prompts and generates waypoint trajectories with chain-of-thought reasoning, and investigate two student training paradigms: (i) on-policy generalized knowledge distillation (GKD), which trains the student on its own self-generated outputs using dense token-level feedback from the teacher, and (ii) a dense-feedback reinforcement learning (RL) baseline that uses the teacher's log-probabilities as per-token reward signals in a policy gradient framework. Experiments on the nuScenes benchmark show that GKD substantially outperforms the RL baseline and closely approaches teacher-level performance despite a 5$\\times$ reduction in model size. These results highlight the practical value of on-policy distillation as a principled and effective approach to deploying LLM-based planners in autonomous driving systems.",
+      "authors": [
+        "Amirhossein Afsharrad",
+        "Amirhesam Abedsoltan",
+        "Ahmadreza Moradipari",
+        "Sanjay Lall"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "eess.SY"
+      ],
+      "published": "2026-04-09T08:06:19+00:00",
+      "link": "https://arxiv.org/pdf/2604.07944v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Knowledge distillation from large teacher LLMs to deployable student models for motion planning",
+      "llm_evidence_cn": "将大模型运动规划知识蒸馏至可部署的小模型中",
+      "llm_evidence": "将大模型运动规划知识蒸馏至可部署的小模型中",
+      "canonical_evidence": "将大模型运动规划知识蒸馏至可部署的小模型中",
+      "llm_tldr_en": "Investigates on-policy distillation to transfer motion planning capabilities from large LLMs to smaller onboard models.",
+      "llm_tldr_cn": "研究了通过在线蒸馏将大语言模型的运动规划能力迁移到小型车载模型的方法。",
+      "llm_tldr": "研究了通过在线蒸馏将大语言模型的运动规划能力迁移到小型车载模型的方法。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "自动驾驶感知、决策和控制中采用大模型的系统架构研究",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.08031v1",
+      "source": "arxiv",
+      "title": "Open-Ended Instruction Realization with LLM-Enabled Multi-Planner Scheduling in Autonomous Vehicles",
+      "abstract": "Most Human-Machine Interaction (HMI) research overlooks the maneuvering needs of passengers in autonomous driving (AD). Natural language offers an intuitive interface, yet translating passenger open-ended instructions into control signals, without sacrificing interpretability and traceability, remains a challenge. This study proposes an instruction-realization framework that leverages a large language model (LLM) to interpret instructions, generates executable scripts that schedule multiple model predictive control (MPC)-based motion planners based on real-time feedback, and converts planned trajectories into control signals. This scheduling-centric design decouples semantic reasoning from vehicle control at different timescales, establishing a transparent, traceable decision-making chain from high-level instructions to low-level actions. Due to the absence of high-fidelity evaluation tools, this study introduces a benchmark for open-ended instruction realization in a closed-loop setting. Comprehensive experiments reveal that the framework significantly improves task-completion rates over instruction-realization baselines, reduces LLM query costs, achieves safety and compliance on par with specialized AD approaches, and exhibits considerable tolerance to LLM inference latency. For more qualitative illustrations and a clearer understanding.",
+      "authors": [
+        "Jiawei Liu",
+        "Xun Gong",
+        "Fen Fang",
+        "Muli Yang",
+        "Bohao Qu",
+        "Yunfeng Hu",
+        "Hong Chen",
+        "Xulei Yang",
+        "Qing Guo"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-04-09T09:32:21+00:00",
+      "link": "https://arxiv.org/pdf/2604.08031v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "LLM-enabled framework translating natural language instructions into vehicle control signals",
+      "llm_evidence_cn": "利用大语言模型将自然语言指令转化为车辆控制信号的框架",
+      "llm_evidence": "利用大语言模型将自然语言指令转化为车辆控制信号的框架",
+      "canonical_evidence": "利用大语言模型将自然语言指令转化为车辆控制信号的框架",
+      "llm_tldr_en": "Proposes an LLM-based framework to translate passenger instructions into vehicle control via MPC-based scheduling.",
+      "llm_tldr_cn": "提出一种基于大语言模型的框架，通过调度MPC规划器将乘客指令转化为车辆控制信号。",
+      "llm_tldr": "提出一种基于大语言模型的框架，通过调度MPC规划器将乘客指令转化为车辆控制信号。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "end-to-end frameworks powered by large AI models for vehicle control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.08266v1",
+      "source": "arxiv",
+      "title": "Orion-Lite: Distilling LLM Reasoning into Efficient Vision-Only Driving Models",
+      "abstract": "Leveraging the general world knowledge of Large Language Models (LLMs) holds significant promise for improving the ability of autonomous driving systems to handle rare and complex scenarios. While integrating LLMs into Vision-Language-Action (VLA) models has yielded state-of-the-art performance, their massive parameter counts pose severe challenges for latency-sensitive and energy-efficient deployment. Distilling LLM knowledge into a compact driving model offers a compelling solution to retain these reasoning capabilities while maintaining a manageable computational footprint. Although previous works have demonstrated the efficacy of distillation, these efforts have primarily focused on relatively simple scenarios and open-loop evaluations. Therefore, in this work, we investigate LLM distillation in more complex, interactive scenarios under closed-loop evaluation. We demonstrate that through a combination of latent feature distillation and ground-truth trajectory supervision, an efficient vision-only student model \\textbf{Orion-Lite} can even surpass the performance of its massive VLA teacher, ORION. Setting a new state-of-the-art on the rigorous Bench2Drive benchmark, with a Driving Score of 80.6. Ultimately, this reveals that vision-only architectures still possess significant, untapped potential for high-performance reactive planning.",
+      "authors": [
+        "Jing Gu",
+        "Niccolò Cavagnero",
+        "Gijs Dubbelman"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-09T13:51:55+00:00",
+      "link": "https://arxiv.org/pdf/2604.08266v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Distilling LLM reasoning into efficient driving models",
+      "llm_evidence_cn": "将大语言模型的推理能力蒸馏到高效的驾驶模型中",
+      "llm_evidence": "将大语言模型的推理能力蒸馏到高效的驾驶模型中",
+      "canonical_evidence": "将大语言模型的推理能力蒸馏到高效的驾驶模型中",
+      "llm_tldr_en": "Orion-Lite distills LLM knowledge into compact vision-only models for efficient autonomous driving deployment.",
+      "llm_tldr_cn": "Orion-Lite将大语言模型知识蒸馏到小型视觉驾驶模型中，以实现高效的自动驾驶部署。",
+      "llm_tldr": "Orion-Lite将大语言模型知识蒸馏到小型视觉驾驶模型中，以实现高效的自动驾驶部署。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "大规模预训练模型在智能驾驶系统中的应用与挑战",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.03497v1",
+      "source": "arxiv",
+      "title": "Sim2Real-AD: A Modular Sim-to-Real Framework for Deploying VLM-Guided Reinforcement Learning in Real-World Autonomous Driving",
+      "abstract": "Deploying reinforcement learning policies trained in simulation to real autonomous vehicles remains a fundamental challenge, particularly for VLM-guided RL frameworks whose policies are typically learned with simulator-native observations and simulator-coupled action semantics that are unavailable on physical platforms. This paper presents Sim2Real-AD, a modular framework for zero-shot sim-to-real transfer of CARLA-trained VLM-guided RL policies to full-scale vehicles without any real-world RL training data. The framework decomposes the transfer problem into four components: a Geometric Observation Bridge (GOB) that converts monocular front-view images into simulator-compatible bird's-eye-view (BEV) observations, a Physics-Aware Action Mapping (PAM) that translates policy outputs into platform-agnostic physical commands, a Two-Phase Progressive Training (TPT) strategy that stabilizes adaptation by separating action-space and observation-space transfer, and a Real-time Deployment Pipeline (RDP) that integrates perception, policy inference, control conversion, and safety monitoring for closed-loop execution. Simulation experiments show that the framework preserves the relative performance ordering of representative RL algorithms across different reward paradigms and validate the contribution of each module. Zero-shot deployment on a full-scale Ford E-Transit achieves success rates of 90%, 80%, and 75% in car-following, obstacle avoidance, and stop-sign interaction scenarios, respectively. To the best of our knowledge, this study is among the first to demonstrate zero-shot closed-loop deployment of a CARLA-trained VLM-guided RL policy on a full-scale real vehicle without any real-world RL training data. The demo video and code are available at: https://zilin-huang.github.io/Sim2Real-AD-website/.",
+      "authors": [
+        "Zilin Huang",
+        "Zhengyang Wan",
+        "Zihao Sheng",
+        "Boyue Wang",
+        "Junwei You",
+        "Yue Leng",
+        "Sikai Chen"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-04-03T22:41:45+00:00",
+      "link": "https://arxiv.org/pdf/2604.03497v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "VLM-guided reinforcement learning framework for real-world autonomous driving deployment",
+      "llm_evidence_cn": "用于真实世界自动驾驶部署的VLM引导强化学习框架",
+      "llm_evidence": "用于真实世界自动驾驶部署的VLM引导强化学习框架",
+      "canonical_evidence": "用于真实世界自动驾驶部署的VLM引导强化学习框架",
+      "llm_tldr_en": "Proposes Sim2Real-AD for zero-shot transfer of VLM-guided RL policies to physical autonomous vehicles.",
+      "llm_tldr_cn": "提出Sim2Real-AD框架，实现VLM引导的强化学习策略从仿真到真实自动驾驶车辆的零样本迁移。",
+      "llm_tldr": "提出Sim2Real-AD框架，实现VLM引导的强化学习策略从仿真到真实自动驾驶车辆的零样本迁移。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "自动驾驶感知、决策和控制中采用大模型的系统架构研究",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.03581v1",
+      "source": "arxiv",
+      "title": "HAD: Combining Hierarchical Diffusion with Metric-Decoupled RL for End-to-End Driving",
+      "abstract": "End-to-end planning has emerged as a dominant paradigm for autonomous driving, where recent models often adopt a scoring-selection framework to choose trajectories from a large set of candidates, with diffusion-based decoding showing strong promise. However, directly selecting from the entire candidate space remains difficult to optimize, and Gaussian perturbations used in diffusion often introduce unrealistic trajectories that complicate the denoising process. In addition, for training these models, reinforcement learning (RL) has shown promise, but existing end-to-end RL approaches typically rely on a single coupled reward without structured signals, limiting optimization effectiveness. To address these challenges, we propose HAD, an end-to-end planning framework with a Hierarchical Diffusion Policy that decomposes planning into a coarse-to-fine process. To improve trajectory generation, we introduce Structure-Preserved Trajectory Expansion, which produces realistic candidates while maintaining kinematic structure. For policy learning, we develop Metric-Decoupled Policy Optimization (MDPO) to enable structured RL optimization across multiple driving objectives. Extensive experiments show that HAD achieves new state-of-the-art performance on both NAVSIM and HUGSIM, outperforming prior arts by a huge margin: +2.3 EPDMS on NAVSIM and +4.9 Route Completion on HUGSIM.",
+      "authors": [
+        "Wenhao Yao",
+        "Xinglong Sun",
+        "Zhenxin Li",
+        "Shiyi Lan",
+        "Zi Wang",
+        "Jose M. Alvarez",
+        "Zuxuan Wu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-04-04T04:12:47+00:00",
+      "link": "https://arxiv.org/pdf/2604.03581v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "hierarchical diffusion and RL for end-to-end driving planning",
+      "llm_evidence_cn": "用于端到端驾驶规划的分层扩散与强化学习",
+      "llm_evidence": "用于端到端驾驶规划的分层扩散与强化学习",
+      "canonical_evidence": "用于端到端驾驶规划的分层扩散与强化学习",
+      "llm_tldr_en": "Proposes an end-to-end driving framework using hierarchical diffusion and metric-decoupled RL.",
+      "llm_tldr_cn": "提出了一种结合分层扩散和解耦强化学习的端到端驾驶框架。",
+      "llm_tldr": "提出了一种结合分层扩散和解耦强化学习的端到端驾驶框架。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "end-to-end frameworks powered by large AI models for vehicle control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.04630v1",
+      "source": "arxiv",
+      "title": "Multimodal Backdoor Attack on VLMs for Autonomous Driving via Graffiti and Cross-Lingual Triggers",
+      "abstract": "Visual language model (VLM) is rapidly being integrated into safety-critical systems such as autonomous driving, making it an important attack surface for potential backdoor attacks. Existing backdoor attacks mainly rely on unimodal, explicit, and easily detectable triggers, making it difficult to construct both covert and stable attack channels in autonomous driving scenarios. GLA introduces two naturalistic triggers: graffiti-based visual patterns generated via stable diffusion inpainting, which seamlessly blend into urban scenes, and cross-language text triggers, which introduce distributional shifts while maintaining semantic consistency to build robust language-side trigger signals. Experiments on DriveVLM show that GLA requires only a 10\\% poisoning ratio to achieve a 90\\% Attack Success Rate (ASR) and a 0\\% False Positive Rate (FPR). More insidiously, the backdoor does not weaken the model on clean tasks, but instead improves metrics such as BLEU-1, making it difficult for traditional performance-degradation-based detection methods to identify the attack. This study reveals underestimated security threats in self-driving VLMs and provides a new attack paradigm for backdoor evaluation in safety-critical multimodal systems.",
+      "authors": [
+        "Jiancheng Wang",
+        "Lidan Liang",
+        "Yong Wang",
+        "Zengzhen Su",
+        "Haifeng Xia",
+        "Yuanting Yan",
+        "Wei Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-06T12:29:49+00:00",
+      "link": "https://arxiv.org/pdf/2604.04630v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "backdoor attacks on VLMs integrated into autonomous driving systems",
+      "llm_evidence_cn": "针对集成到自动驾驶系统中的视觉语言模型（VLM）的后门攻击",
+      "llm_evidence": "针对集成到自动驾驶系统中的视觉语言模型（VLM）的后门攻击",
+      "canonical_evidence": "针对集成到自动驾驶系统中的视觉语言模型（VLM）的后门攻击",
+      "llm_tldr_en": "Investigates multimodal backdoor attacks on VLMs in autonomous driving using naturalistic triggers.",
+      "llm_tldr_cn": "研究了在自动驾驶场景下，利用自然触发器对视觉语言模型进行的跨模态后门攻击。",
+      "llm_tldr": "研究了在自动驾驶场景下，利用自然触发器对视觉语言模型进行的跨模态后门攻击。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "large model techniques applied to autonomous driving research",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.04887v1",
+      "source": "arxiv",
+      "title": "HorizonWeaver: Generalizable Multi-Level Semantic Editing for Driving Scenes",
+      "abstract": "Ensuring safety in autonomous driving requires scalable generation of realistic, controllable driving scenes beyond what real-world testing provides. Yet existing instruction guided image editors, trained on object-centric or artistic data, struggle with dense, safety-critical driving layouts. We propose HorizonWeaver, which tackles three fundamental challenges in driving scene editing: (1) multi-level granularity, requiring coherent object- and scene-level edits in dense environments; (2) rich high-level semantics, preserving diverse objects while following detailed instructions; and (3) ubiquitous domain shifts, handling changes in climate, layout, and traffic across unseen environments. The core of HorizonWeaver is a set of complementary contributions across data, model, and training: (1) Data: Large-scale dataset generation, where we build a paired real/synthetic dataset from Boreas, nuScenes, and Argoverse2 to improve generalization; (2) Model: Language-Guided Masks for fine-grained editing, where semantics-enriched masks and prompts enable precise, language-guided edits; and (3) Training: Content preservation and instruction alignment, where joint losses enforce scene consistency and instruction fidelity. Together, HorizonWeaver provides a scalable framework for photorealistic, instruction-driven editing of complex driving scenes, collecting 255K images across 13 editing categories and outperforming prior methods in L1, CLIP, and DINO metrics, achieving +46.4% user preference and improving BEV segmentation IoU by +33%. Project page: https://msoroco.github.io/horizonweaver/",
+      "authors": [
+        "Mauricio Soroco",
+        "Francesco Pittaluga",
+        "Zaid Tasneem",
+        "Abhishek Aich",
+        "Bingbing Zhuang",
+        "Wuyang Chen",
+        "Manmohan Chandraker",
+        "Ziyu Jiang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-06T17:36:05+00:00",
+      "link": "https://arxiv.org/pdf/2604.04887v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "generative model for semantic editing and controllable driving scene generation",
+      "llm_evidence_cn": "用于语义编辑和可控驾驶场景生成的生成模型",
+      "llm_evidence": "用于语义编辑和可控驾驶场景生成的生成模型",
+      "canonical_evidence": "用于语义编辑和可控驾驶场景生成的生成模型",
+      "llm_tldr_en": "Presents HorizonWeaver for scalable and controllable generation of realistic driving scenes via semantic editing.",
+      "llm_tldr_cn": "提出了HorizonWeaver，通过语义编辑实现真实驾驶场景的可扩展和可控生成。",
+      "llm_tldr": "提出了HorizonWeaver，通过语义编辑实现真实驾驶场景的可扩展和可控生成。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "应用大型生成模型于智能驾驶场景的研究",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.06832v1",
+      "source": "arxiv",
+      "title": "Fast-dVLM: Efficient Block-Diffusion VLM via Direct Conversion from Autoregressive VLM",
+      "abstract": "Vision-language models (VLMs) predominantly rely on autoregressive decoding, which generates tokens one at a time and fundamentally limits inference throughput. This limitation is especially acute in physical AI scenarios such as robotics and autonomous driving, where VLMs are deployed on edge devices at batch size one, making AR decoding memory-bandwidth-bound and leaving hardware parallelism underutilized. While block-wise discrete diffusion has shown promise for parallel text generation, extending it to VLMs remains challenging due to the need to jointly handle continuous visual representations and discrete text tokens while preserving pretrained multimodal capabilities. We present Fast-dVLM, a block-diffusion-based VLM that enables KV-cache-compatible parallel decoding and speculative block decoding for inference acceleration. We systematically compare two AR-to-diffusion conversion strategies: a two-stage approach that first adapts the LLM backbone with text-only diffusion fine-tuning before multimodal training, and a direct approach that converts the full AR VLM in one stage. Under comparable training budgets, direct conversion proves substantially more efficient by leveraging the already multimodally aligned VLM; we therefore adopt it as our recommended recipe. We introduce a suite of multimodal diffusion adaptations, block size annealing, causal context attention, auto-truncation masking, and vision efficient concatenation, that collectively enable effective block diffusion in the VLM setting. Extensive experiments across 11 multimodal benchmarks show Fast-dVLM matches its autoregressive counterpart in generation quality. With SGLang integration and FP8 quantization, Fast-dVLM achieves over 6x end-to-end inference speedup over the AR baseline.",
+      "authors": [
+        "Chengyue Wu",
+        "Shiyi Lan",
+        "Yonggan Fu",
+        "Sensen Gao",
+        "Jin Wang",
+        "Jincheng Yu",
+        "Jose M. Alvarez",
+        "Pavlo Molchanov",
+        "Ping Luo",
+        "Song Han",
+        "Ligeng Zhu",
+        "Enze Xie"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-04-08T08:50:08+00:00",
+      "link": "https://arxiv.org/pdf/2604.06832v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "efficient block-diffusion VLM for autonomous driving and robotics",
+      "llm_evidence_cn": "用于自动驾驶和机器人的高效块扩散视觉语言模型",
+      "llm_evidence": "用于自动驾驶和机器人的高效块扩散视觉语言模型",
+      "canonical_evidence": "用于自动驾驶和机器人的高效块扩散视觉语言模型",
+      "llm_tldr_en": "Presents Fast-dVLM, an efficient vision-language model optimized for edge deployment in autonomous driving.",
+      "llm_tldr_cn": "提出了Fast-dVLM，一种针对自动驾驶边缘部署优化的视觉语言模型。",
+      "llm_tldr": "提出了Fast-dVLM，一种针对自动驾驶边缘部署优化的视觉语言模型。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "large model techniques applied to autonomous driving research",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.07912v1",
+      "source": "arxiv",
+      "title": "ParkSense: Where Should a Delivery Driver Park? Leveraging Idle AV Compute and Vision-Language Models",
+      "abstract": "Finding parking consumes a disproportionate share of food delivery time, yet no system addresses precise parking-spot selection relative to merchant entrances. We propose ParkSense, a framework that repurposes idle compute during low-risk AV states -- queuing at red lights, traffic congestion, parking-lot crawl -- to run a Vision-Language Model (VLM) on pre-cached satellite and street view imagery, identifying entrances and legal parking zones. We formalize the Delivery-Aware Precision Parking (DAPP) problem, show that a quantized 7B VLM completes inference in 4-8 seconds on HW4-class hardware, and estimate annual per-driver income gains of 3,000-8,000 USD in the U.S. Five open research directions are identified at this unexplored intersection of autonomous driving, computer vision, and last-mile logistics.",
+      "authors": [
+        "Die Hu",
+        "Henan Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-04-09T07:28:57+00:00",
+      "link": "https://arxiv.org/pdf/2604.07912v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Leveraging Vision-Language Models for parking spot selection in autonomous driving scenarios",
+      "llm_evidence_cn": "利用视觉语言模型在自动驾驶场景中进行停车位选择",
+      "llm_evidence": "利用视觉语言模型在自动驾驶场景中进行停车位选择",
+      "canonical_evidence": "利用视觉语言模型在自动驾驶场景中进行停车位选择",
+      "llm_tldr_en": "ParkSense uses VLMs on AV hardware to identify legal parking zones and merchant entrances for delivery drivers.",
+      "llm_tldr_cn": "ParkSense利用自动驾驶硬件上的视觉语言模型，为外卖司机识别合法停车位和商户入口。",
+      "llm_tldr": "ParkSense利用自动驾驶硬件上的视觉语言模型，为外卖司机识别合法停车位和商户入口。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "应用大型生成模型于智能驾驶场景的研究",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.08008v1",
+      "source": "arxiv",
+      "title": "SearchAD: Large-Scale Rare Image Retrieval Dataset for Autonomous Driving",
+      "abstract": "Retrieving rare and safety-critical driving scenarios from large-scale datasets is essential for building robust autonomous driving (AD) systems. As dataset sizes continue to grow, the key challenge shifts from collecting more data to efficiently identifying the most relevant samples. We introduce SearchAD, a large-scale rare image retrieval dataset for AD containing over 423k frames drawn from 11 established datasets. SearchAD provides high-quality manual annotations of more than 513k bounding boxes covering 90 rare categories. It specifically targets the needle-in-a-haystack problem of locating extremely rare classes, with some appearing fewer than 50 times across the entire dataset. Unlike existing benchmarks, which focused on instance-level retrieval, SearchAD emphasizes semantic image retrieval with a well-defined data split, enabling text-to-image and image-to-image retrieval, few-shot learning, and fine-tuning of multi-modal retrieval models. Comprehensive evaluations show that text-based methods outperform image-based ones due to stronger inherent semantic grounding. While models directly aligning spatial visual features with language achieve the best zero-shot results, and our fine-tuning baseline significantly improves performance, absolute retrieval capabilities remain unsatisfactory. With a held-out test set on a public benchmark server, SearchAD establishes the first large-scale dataset for retrieval-driven data curation and long-tail perception research in AD: https://iis-esslingen.github.io/searchad/",
+      "authors": [
+        "Felix Embacher",
+        "Jonas Uhrig",
+        "Marius Cordts",
+        "Markus Enzweiler"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-04-09T09:10:41+00:00",
+      "link": "https://arxiv.org/pdf/2604.08008v1",
+      "tags": [
+        "keyword:AutoAI",
+        "query:AutoAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Large-scale rare image retrieval dataset specifically for autonomous driving systems",
+      "llm_evidence_cn": "专门针对自动驾驶系统的大规模稀有图像检索数据集",
+      "llm_evidence": "专门针对自动驾驶系统的大规模稀有图像检索数据集",
+      "canonical_evidence": "专门针对自动驾驶系统的大规模稀有图像检索数据集",
+      "llm_tldr_en": "SearchAD is a large-scale dataset for retrieving rare, safety-critical scenarios in autonomous driving.",
+      "llm_tldr_cn": "SearchAD是一个用于检索自动驾驶中稀有且安全关键场景的大规模数据集。",
+      "llm_tldr": "SearchAD是一个用于检索自动驾驶中稀有且安全关键场景的大规模数据集。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "large model techniques applied to autonomous driving research",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2604.08366v1",
+      "source": "arxiv",
+      "title": "Scaling-Aware Data Selection for End-to-End Autonomous Driving Systems",
+      "abstract": "Large-scale deep learning models for physical AI applications depend on diverse training data collection efforts. These models and correspondingly, the training data, must address different evaluation criteria necessary for the models to be deployable in real-world environments. Data selection policies can guide the development of the training set, but current frameworks do not account for the ambiguity in how data points affect different metrics. In this work, we propose Mixture Optimization via Scaling-Aware Iterative Collection (MOSAIC), a general data selection framework that operates by: (i) partitioning the dataset into domains; (ii) fitting neural scaling laws from each data domain to the evaluation metrics; and (iii) optimizing a data mixture by iteratively adding data from domains that maximize the change in metrics. We apply MOSAIC to autonomous driving (AD), where an End-to-End (E2E) planner model is evaluated on the Extended Predictive Driver Model Score (EPDMS), an aggregate of driving rule compliance metrics. Here, MOSAIC outperforms a diverse set of baselines on EPDMS with up to 80\\% less data.",
+      "authors": [
+        "Tolga Dimlioglu",
+        "Nadine Chang",
+        "Maying Shen",
+        "Rafid Mahmood",
+        "Jose M. Alvarez"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-04-09T15:33:00+00:00",
+      "link": "https://arxiv.org/pdf/2604.08366v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Data selection for end-to-end autonomous driving systems using neural scaling laws",
+      "llm_evidence_cn": "利用神经缩放定律为端到端自动驾驶系统进行数据选择",
+      "llm_evidence": "利用神经缩放定律为端到端自动驾驶系统进行数据选择",
+      "canonical_evidence": "利用神经缩放定律为端到端自动驾驶系统进行数据选择",
+      "llm_tldr_en": "Proposes MOSAIC, a framework to optimize training data mixtures for end-to-end autonomous driving models.",
+      "llm_tldr_cn": "提出MOSAIC框架，通过神经缩放定律优化端到端自动驾驶模型的训练数据组合。",
+      "llm_tldr": "提出MOSAIC框架，通过神经缩放定律优化端到端自动驾驶模型的训练数据组合。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "end-to-end frameworks powered by large AI models for vehicle control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2604.07250v1",
+      "source": "arxiv",
+      "title": "Geo-EVS: Geometry-Conditioned Extrapolative View Synthesis for Autonomous Driving",
+      "abstract": "Extrapolative novel view synthesis can reduce camera-rig dependency in autonomous driving by generating standardized virtual views from heterogeneous sensors. Existing methods degrade outside recorded trajectories because extrapolated poses provide weak geometric support and no dense target-view supervision. The key is to explicitly expose the model to out-of-trajectory condition defects during training. We propose Geo-EVS, a geometry-conditioned framework under sparse supervision. Geo-EVS has two components. Geometry-Aware Reprojection (GAR) uses fine-tuned VGGT to reconstruct colored point clouds and reproject them to observed and virtual target poses, producing geometric condition maps. This design unifies the reprojection path between training and inference. Artifact-Guided Latent Diffusion (AGLD) injects reprojection-derived artifact masks during training so the model learns to recover structure under missing support. For evaluation, we use a LiDAR-Projected Sparse-Reference (LPSR) protocol when dense extrapolated-view ground truth is unavailable. On Waymo, Geo-EVS improves sparse-view synthesis quality and geometric accuracy, especially in high-angle and low-coverage settings. It also improves downstream 3D detection.",
+      "authors": [
+        "Yatong Lan",
+        "Rongkui Tang",
+        "Lei He"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-08T16:13:10+00:00",
+      "link": "https://arxiv.org/pdf/2604.07250v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Geometry-conditioned view synthesis for autonomous driving sensors",
+      "llm_evidence_cn": "自动驾驶传感器的几何约束视图合成",
+      "llm_evidence": "自动驾驶传感器的几何约束视图合成",
+      "canonical_evidence": "自动驾驶传感器的几何约束视图合成",
+      "llm_tldr_en": "Geo-EVS generates standardized virtual views from heterogeneous AV sensors using geometry-aware reprojection.",
+      "llm_tldr_cn": "Geo-EVS利用几何感知重投影，从异构自动驾驶传感器生成标准化的虚拟视图。",
+      "llm_tldr": "Geo-EVS利用几何感知重投影，从异构自动驾驶传感器生成标准化的虚拟视图。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "large model techniques applied to autonomous driving research",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2604.02812v1",
+      "source": "arxiv",
+      "title": "Learning Structured Robot Policies from Vision-Language Models via Synthetic Neuro-Symbolic Supervision",
+      "abstract": "Vision-language models (VLMs) have recently demonstrated strong capabilities in mapping multimodal observations to robot behaviors. However, most current approaches rely on end-to-end visuomotor policies that remain opaque and difficult to analyze, limiting their use in safety-critical robotic applications. In contrast, classical robotic systems often rely on structured policy representations that provide interpretability, modularity, and reactive execution. This work investigates how foundation models can be specialized to generate structured robot policies grounded in multimodal perception, bridging high-dimensional learning and symbolic control. We propose a neuro-symbolic approach in which a VLM synthesizes executable Behavior Tree policies from visual observations, natural language instructions, and structured system specifications. To enable scalable supervision without manual annotation, we introduce an automated pipeline that generates a synthetic multimodal dataset of domain-randomized scenes paired with instruction-policy examples produced by a foundation model. Real-world experiments on two robotic manipulators show that structured policies learned entirely from synthetic supervision transfer successfully to physical systems. The results indicate that foundation models can be adapted to produce interpretable and structured robot policies, providing an alternative to opaque end-to-end approaches for multimodal robot decision making.",
+      "authors": [
+        "Alessandro Adami",
+        "Tommaso Tubaldo",
+        "Marco Todescato",
+        "Ruggero Carli",
+        "Pietro Falco"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-04-03T07:27:33+00:00",
+      "link": "https://arxiv.org/pdf/2604.02812v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "VLM specialized to generate structured robot policies",
+      "llm_evidence_cn": "专门用于生成结构化机器人策略的视觉语言模型",
+      "llm_evidence": "专门用于生成结构化机器人策略的视觉语言模型",
+      "canonical_evidence": "专门用于生成结构化机器人策略的视觉语言模型",
+      "llm_tldr_en": "This work uses VLMs to synthesize interpretable neuro-symbolic robot policies, bridging learning and control.",
+      "llm_tldr_cn": "该研究利用视觉语言模型合成可解释的神经符号机器人策略，连接了高维学习与符号控制。",
+      "llm_tldr": "该研究利用视觉语言模型合成可解释的神经符号机器人策略，连接了高维学习与符号控制。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "end-to-end frameworks powered by large AI models for vehicle control",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.04929v1",
+      "source": "arxiv",
+      "title": "Rethinking Model Efficiency: Multi-Agent Inference with Large Models",
+      "abstract": "Most vision-language models (VLMs) apply a large language model (LLM) as the decoder, where the response tokens are generated sequentially through autoregression. Therefore, the number of output tokens can be the bottleneck of the end-to-end latency. However, different models may require vastly different numbers of output tokens to achieve comparable performance. In this work, we conduct a comprehensive analysis of the latency across different components of VLMs on simulated data. The experiment shows that a large model with fewer output tokens can be more efficient than a small model with a long output sequence. The empirical study on diverse real-world benchmarks confirms the observation that a large model can achieve better or comparable performance as a small model with significantly fewer output tokens. To leverage the efficiency of large models, we propose a multi-agent inference framework that keeps large models with short responses but transfers the key reasoning tokens from the small model when necessary. The comparison on benchmark tasks demonstrates that by reusing the reasoning tokens from small models, it can help approach the performance of a large model with its own reasoning, which confirms the effectiveness of our proposal.",
+      "authors": [
+        "Sixun Dong",
+        "Juhua Hu",
+        "Steven Li",
+        "Wei Wen",
+        "Qi Qian"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-06T17:59:35+00:00",
+      "link": "https://arxiv.org/pdf/2604.04929v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Analysis of VLM efficiency and latency which is critical for real-time autonomous driving systems",
+      "llm_evidence_cn": "分析视觉语言模型的效率和延迟，这对实时自动驾驶系统至关重要",
+      "llm_evidence": "分析视觉语言模型的效率和延迟，这对实时自动驾驶系统至关重要",
+      "canonical_evidence": "分析视觉语言模型的效率和延迟，这对实时自动驾驶系统至关重要",
+      "llm_tldr_en": "This study analyzes VLM latency, showing that larger models with fewer output tokens can be more efficient.",
+      "llm_tldr_cn": "该研究分析了视觉语言模型的延迟，表明输出标记较少的大模型可能比小模型更高效。",
+      "llm_tldr": "该研究分析了视觉语言模型的延迟，表明输出标记较少的大模型可能比小模型更高效。",
+      "llm_tags": [
+        "query:autoai:composite"
+      ],
+      "matched_query_tag": "query:autoai:composite",
+      "matched_query_text": "Papers central to 自动驾驶相关大模型论文检索, especially work that connects or combines: E; A; large model techniques applied to autonomous driving research; 应用大型生成模型于智能驾驶场景的研究; end-to-end frameworks powered by large AI models for vehicle control; 最新关于自动驾驶的大模型研究论文和综述; 大规模预训练模型在智能驾驶系统中的应用与挑战; 自动驾驶感知、决策和控制中采用大模型的系统架构研究.",
+      "matched_requirement_id": "req-composite-autoai",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2604.08457v1",
+      "source": "arxiv",
+      "title": "CrashSight: A Phase-Aware, Infrastructure-Centric Video Benchmark for Traffic Crash Scene Understanding and Reasoning",
+      "abstract": "Cooperative autonomous driving requires traffic scene understanding from both vehicle and infrastructure perspectives. While vision-language models (VLMs) show strong general reasoning capabilities, their performance in safety-critical traffic scenarios remains insufficiently evaluated due to the ego-vehicle focus of existing benchmarks. To bridge this gap, we present \\textbf{CrashSight}, a large-scale vision-language benchmark for roadway crash understanding using real-world roadside camera data. The dataset comprises 250 crash videos, annotated with 13K multiple-choice question-answer pairs organized under a two-tier taxonomy. Tier 1 evaluates the visual grounding of scene context and involved parties, while Tier 2 probes higher-level reasoning, including crash mechanics, causal attribution, temporal progression, and post-crash outcomes. We benchmark 8 state-of-the-art VLMs and show that, despite strong scene description capabilities, current models struggle with temporal and causal reasoning in safety-critical scenarios. We provide a detailed analysis of failure scenarios and discuss directions for improving VLM crash understanding. The benchmark provides a standardized evaluation framework for infrastructure-assisted perception in cooperative autonomous driving. The CrashSight benchmark, including the full dataset and code, is accessible at https://mcgrche.github.io/crashsight.",
+      "authors": [
+        "Rui Gan",
+        "Junyi Ma",
+        "Pei Li",
+        "Xingyou Yang",
+        "Kai Chen",
+        "Sikai Chen",
+        "Bin Ran"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.RO"
+      ],
+      "published": "2026-04-09T16:52:04+00:00",
+      "link": "https://arxiv.org/pdf/2604.08457v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Vision-language benchmark for traffic crash scene understanding in cooperative driving",
+      "llm_evidence_cn": "用于协同驾驶中交通碰撞场景理解的视觉语言基准测试",
+      "llm_evidence": "用于协同驾驶中交通碰撞场景理解的视觉语言基准测试",
+      "canonical_evidence": "用于协同驾驶中交通碰撞场景理解的视觉语言基准测试",
+      "llm_tldr_en": "Presents CrashSight, a large-scale VLM benchmark for infrastructure-centric traffic crash reasoning.",
+      "llm_tldr_cn": "提出CrashSight，一个针对路侧视角交通碰撞理解的大规模视觉语言模型基准。",
+      "llm_tldr": "提出CrashSight，一个针对路侧视角交通碰撞理解的大规模视觉语言模型基准。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "大规模预训练模型在智能驾驶系统中的应用与挑战",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2604.04797v1",
+      "source": "arxiv",
+      "title": "Multi-Modal Sensor Fusion using Hybrid Attention for Autonomous Driving",
+      "abstract": "Accurate 3D object detection for autonomous driving requires complementary sensors. Cameras provide dense semantics but unreliable depth, while millimeter-wave radar offers precise range and velocity measurements with sparse geometry. We propose MMF-BEV, a radar-camera BEV fusion framework that leverages deformable attention for cross-modal feature alignment on the View-of-Delft (VoD) 4D radar dataset [1]. MMF-BEV builds a BEVDepth [2] camera branch and a RadarBEVNet [3] radar branch, each enhanced with Deformable Self-Attention, and fuses them via a Deformable Cross-Attention module. We evaluate three configurations: camera-only, radar-only, and hybrid fusion. A sensor contribution analysis quantifies per-distance modality weighting, providing interpretable evidence of sensor complementarity. A two-stage training strategy - pre-training the camera branch with depth supervision, then jointly training radar and fusion modules stabilizes learning. Experiments on VoD show that MMF-BEV consistently outperforms unimodal baselines and achieves competitive results against prior fusion methods across all object classes in both the full annotated area and near-range Region of Interest.",
+      "authors": [
+        "Mayank Mayank",
+        "Bharanidhar Duraisamy",
+        "Florian Geiß",
+        "Abhinav Valada"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-04-06T16:03:21+00:00",
+      "link": "https://arxiv.org/pdf/2604.04797v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "multi-modal sensor fusion using hybrid attention for autonomous driving perception",
+      "llm_evidence_cn": "自动驾驶感知中采用混合注意力的多模态传感器融合",
+      "llm_evidence": "自动驾驶感知中采用混合注意力的多模态传感器融合",
+      "canonical_evidence": "自动驾驶感知中采用混合注意力的多模态传感器融合",
+      "llm_tldr_en": "Proposes MMF-BEV, a radar-camera fusion framework using deformable attention for 3D object detection.",
+      "llm_tldr_cn": "提出了MMF-BEV，一种利用可变形注意力进行3D目标检测的雷达-相机融合框架。",
+      "llm_tldr": "提出了MMF-BEV，一种利用可变形注意力进行3D目标检测的雷达-相机融合框架。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "自动驾驶感知、决策和控制中采用大模型的系统架构研究",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.06036v3",
+      "source": "arxiv",
+      "title": "CodecSight: Leveraging Video Codec Signals for Efficient Streaming VLM Inference",
+      "abstract": "Video streaming analytics is a crucial workload for vision-language model serving, but the high cost of multimodal inference limits scalability. Prior systems reduce inference cost by exploiting temporal and spatial redundancy in video streams, but they target either the vision transformer (ViT) or the LLM with a limited view, leaving end-to-end opportunities untapped. Moreover, existing methods incur significant overhead to identify redundancy, either through offline profiling and training or costly online computation, making them ill-suited for dynamic real-time streams.   We present CodecSight, a codec-guided streaming video analytics system, built on a key observation that video codecs already extract the temporal and spatial structure of each stream as a byproduct of compression. CodecSight treats this codec metadata as a low-cost runtime signal to unify optimization across video decoding, visual processing, and LLM prefilling, with transmission reduction as an inherent benefit of operating directly on compressed bitstreams. This drives codec-guided patch pruning before ViT encoding and selective key-value cache refresh during LLM prefilling, both of which are fully online and do not require offline training. Experiments show that CodecSight achieves an improvement in throughput of up to 3$\\times$, and a reduction of up to 87% in GPU compute over state-of-the-art baselines, maintaining competitive accuracy with only 0$\\sim$8% F1 drop.",
+      "authors": [
+        "Yulin Zou",
+        "Yan Chen",
+        "Wenyan Chen",
+        "JooYoung Park",
+        "Shivaraman Nitin",
+        "Luo Tao",
+        "Francisco Romero",
+        "Dmitrii Ustiugov"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC",
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-04-07T16:31:45+00:00",
+      "link": "https://arxiv.org/pdf/2604.06036v3",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Efficient streaming VLM inference for video analytics",
+      "llm_evidence_cn": "针对视频分析的高效流式视觉语言模型推理",
+      "llm_evidence": "针对视频分析的高效流式视觉语言模型推理",
+      "canonical_evidence": "针对视频分析的高效流式视觉语言模型推理",
+      "llm_tldr_en": "CodecSight uses video codec signals to reduce redundancy and cost in streaming vision-language model inference.",
+      "llm_tldr_cn": "CodecSight利用视频编解码信号减少冗余，降低流式视觉语言模型推理的成本。",
+      "llm_tldr": "CodecSight利用视频编解码信号减少冗余，降低流式视觉语言模型推理的成本。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "large model techniques applied to autonomous driving research",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2604.05070v1",
+      "source": "arxiv",
+      "title": "Part-Level 3D Gaussian Vehicle Generation with Joint and Hinge Axis Estimation",
+      "abstract": "Simulation is essential for autonomous driving, yet current frameworks often model vehicles as rigid assets and fail to capture part-level articulation. With perception algorithms increasingly leveraging dynamics such as wheel steering or door opening, realistic simulation requires animatable vehicle representations. Existing CAD-based pipelines are limited by library coverage and fixed templates, preventing faithful reconstruction of in-the-wild instances.   We propose a generative framework that, from a single image or sparse multi-view input, synthesizes an animatable 3D Gaussian vehicle. Our method addresses two challenges: (i) large 3D asset generators are optimized for static quality but not articulation, leading to distortions at part boundaries when animated; and (ii) segmentation alone cannot provide the kinematic parameters required for motion. To overcome this, we introduce a part-edge refinement module that enforces exclusive Gaussian ownership and a kinematic reasoning head that predicts joint positions and hinge axes of movable parts. Together, these components enable faithful part-aware simulation, bridging the gap between static generation and animatable vehicle models.",
+      "authors": [
+        "Shiyao Qian",
+        "Yuan Ren",
+        "Dongfeng Bai",
+        "Bingbing Liu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-04-06T18:16:12+00:00",
+      "link": "https://arxiv.org/pdf/2604.05070v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "generative framework for 3D vehicle simulation in autonomous driving",
+      "llm_evidence_cn": "用于自动驾驶3D车辆仿真的生成式框架",
+      "llm_evidence": "用于自动驾驶3D车辆仿真的生成式框架",
+      "canonical_evidence": "用于自动驾驶3D车辆仿真的生成式框架",
+      "llm_tldr_en": "Synthesizes animatable 3D Gaussian vehicles from images to enhance autonomous driving simulation.",
+      "llm_tldr_cn": "从图像合成可动画化的3D高斯车辆，以增强自动驾驶仿真。",
+      "llm_tldr": "从图像合成可动画化的3D高斯车辆，以增强自动驾驶仿真。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "应用大型生成模型于智能驾驶场景的研究",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.07036v1",
+      "source": "arxiv",
+      "title": "ReDAct: Uncertainty-Aware Deferral for LLM Agents",
+      "abstract": "Recently, LLM-based agents have become increasingly popular across many applications, including complex sequential decision-making problems. However, they inherit the tendency of LLMs to hallucinate, leading to incorrect decisions. In sequential settings, even a single mistake can irreversibly degrade the trajectory, making hallucinations an even bigger problem. Although larger LLMs hallucinate less, they incur a significantly higher per-token cost. In this paper, we address this tradeoff by proposing ReDAct (Reason-Defer-Act). In ReDAct, an agent is equipped with two LLMs: a small, cheap model used by default, and a large, more reliable but expensive model. When the predictive uncertainty of the small model exceeds a calibrated threshold, the decision is deferred to the large model. We evaluate our approach in text-based embodied environments such as ALFWorld and MiniGrid and show that deferring only about 15% of decisions to the large model can match the quality of using it exclusively, while significantly reducing inference costs.",
+      "authors": [
+        "Dzianis Piatrashyn",
+        "Nikita Kotelevskii",
+        "Kirill Grishchenkov",
+        "Nikita Glazkov",
+        "Ivan Nasonov",
+        "Ilya Makarov",
+        "Timothy Baldwin",
+        "Preslav Nakov",
+        "Roman Vashurin",
+        "Maxim Panov"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG",
+        "cs.MA"
+      ],
+      "published": "2026-04-08T12:51:01+00:00",
+      "link": "https://arxiv.org/pdf/2604.07036v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "uncertainty-aware deferral for LLM agents in sequential decision-making",
+      "llm_evidence_cn": "序列决策中LLM智能体的不确定性感知延迟机制",
+      "llm_evidence": "序列决策中LLM智能体的不确定性感知延迟机制",
+      "canonical_evidence": "序列决策中LLM智能体的不确定性感知延迟机制",
+      "llm_tldr_en": "Proposes ReDAct to balance cost and reliability in LLM agents for complex sequential decision-making.",
+      "llm_tldr_cn": "提出了ReDAct框架，在复杂序列决策中平衡LLM智能体的成本与可靠性。",
+      "llm_tldr": "提出了ReDAct框架，在复杂序列决策中平衡LLM智能体的成本与可靠性。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "自动驾驶感知、决策和控制中采用大模型的系统架构研究",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2604.06036v1",
+      "source": "arxiv",
+      "title": "CoStream: Codec-Guided Resource-Efficient System for Video Streaming Analytics",
+      "abstract": "Video streaming analytics is a crucial workload for vision-language model serving, but the high cost of multimodal inference limits scalability. Prior systems reduce inference cost by exploiting temporal and spatial redundancy in video streams, but they target either the vision transformer (ViT) or the LLM with a limited view, leaving end-to-end opportunities untapped. Moreover, existing methods incur significant overhead to identify redundancy, either through offline profiling and training or costly online computation, making them ill-suited for dynamic real-time streams.   We present CoStream, a codec-guided streaming video analytics system built on a key observation that video codecs already extract the temporal and spatial structure of each stream as a byproduct of compression. CoStream treats this codec metadata as a low-cost runtime signal to unify optimization across video decoding, visual processing, and LLM prefilling, with transmission reduction as an inherent benefit of operating directly on compressed bitstreams. This drives codec-guided patch pruning before ViT encoding and selective key-value cache refresh during LLM prefilling, both of which are fully online and do not require offline training. Experiments show that CoStream achieves up to 3x throughput improvement and up to 87% GPU compute reduction over state-of-the-art baselines, while maintaining competitive accuracy with only 0-8% F1 drop.",
+      "authors": [
+        "Yulin Zou",
+        "Yan Chen",
+        "Wenyan Chen",
+        "JooYoung Park",
+        "Shivaraman Nitin",
+        "Luo Tao",
+        "Francisco Romero",
+        "Dmitrii Ustiugov"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC",
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-04-07T16:31:45+00:00",
+      "link": "https://arxiv.org/pdf/2604.06036v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Resource-efficient system for video streaming analytics using vision-language models",
+      "llm_evidence_cn": "使用视觉语言模型进行视频流分析的资源高效系统",
+      "llm_evidence": "使用视觉语言模型进行视频流分析的资源高效系统",
+      "canonical_evidence": "使用视觉语言模型进行视频流分析的资源高效系统",
+      "llm_tldr_en": "CoStream optimizes video streaming analytics for VLMs by leveraging codec-guided redundancy reduction.",
+      "llm_tldr_cn": "CoStream通过利用编解码器引导的冗余减少，优化了视觉语言模型的视频流分析。",
+      "llm_tldr": "CoStream通过利用编解码器引导的冗余减少，优化了视觉语言模型的视频流分析。",
+      "llm_tags": [
+        "query:autoai:composite"
+      ],
+      "matched_query_tag": "query:autoai:composite",
+      "matched_query_text": "Papers central to 自动驾驶相关大模型论文检索, especially work that connects or combines: E; A; large model techniques applied to autonomous driving research; 应用大型生成模型于智能驾驶场景的研究; end-to-end frameworks powered by large AI models for vehicle control; 最新关于自动驾驶的大模型研究论文和综述; 大规模预训练模型在智能驾驶系统中的应用与挑战; 自动驾驶感知、决策和控制中采用大模型的系统架构研究.",
+      "matched_requirement_id": "req-composite-autoai",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.06665v1",
+      "source": "arxiv",
+      "title": "VDPP: Video Depth Post-Processing for Speed and Scalability",
+      "abstract": "Video depth estimation is essential for providing 3D scene structure in applications ranging from autonomous driving to mixed reality. Current end-to-end video depth models have established state-of-the-art performance. Although current end-to-end (E2E) models have achieved state-of-the-art performance, they function as tightly coupled systems that suffer from a significant adaptation lag whenever superior single-image depth estimators are released. To mitigate this issue, post-processing methods such as NVDS offer a modular plug-and-play alternative to incorporate any evolving image depth model without retraining. However, existing post-processing methods still struggle to match the efficiency and practicality of E2E systems due to limited speed, accuracy, and RGB reliance. In this work, we revitalize the role of post-processing by proposing VDPP (Video Depth Post-Processing), a framework that improves the speed and accuracy of post-processing methods for video depth estimation. By shifting the paradigm from computationally expensive scene reconstruction to targeted geometric refinement, VDPP operates purely on geometric refinements in low-resolution space. This design achieves exceptional speed (>43.5 FPS on NVIDIA Jetson Orin Nano) while matching the temporal coherence of E2E systems, with dense residual learning driving geometric representations rather than full reconstructions. Furthermore, our VDPP's RGB-free architecture ensures true scalability, enabling immediate integration with any evolving image depth model. Our results demonstrate that VDPP provides a superior balance of speed, accuracy, and memory efficiency, making it the most practical solution for real-time edge deployment. Our project page is at https://github.com/injun-baek/VDPP",
+      "authors": [
+        "Daewon Yoon",
+        "Injun Baek",
+        "Sangyu Han",
+        "Yearim Kim",
+        "Nojun Kwak"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-04-08T04:33:29+00:00",
+      "link": "https://arxiv.org/pdf/2604.06665v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Video depth estimation for autonomous driving applications",
+      "llm_evidence_cn": "用于自动驾驶应用的视频深度估计",
+      "llm_evidence": "用于自动驾驶应用的视频深度估计",
+      "canonical_evidence": "用于自动驾驶应用的视频深度估计",
+      "llm_tldr_en": "VDPP provides a modular post-processing method for video depth estimation to improve speed and scalability.",
+      "llm_tldr_cn": "VDPP为视频深度估计提供了一种模块化的后处理方法，以提高速度和可扩展性。",
+      "llm_tldr": "VDPP为视频深度估计提供了一种模块化的后处理方法，以提高速度和可扩展性。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "large model techniques applied to autonomous driving research",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2604.07126v1",
+      "source": "arxiv",
+      "title": "Self-Discovered Intention-aware Transformer for Multi-modal Vehicle Trajectory Prediction",
+      "abstract": "Predicting vehicle trajectories plays an important role in autonomous driving and ITS applications. Although multiple deep learning algorithms are devised to predict vehicle trajectories, their reliant on specific graph structure (e.g., Graph Neural Network) or explicit intention labeling limit their flexibilities. In this study, we propose a pure Transformer-based network with multiple modals considering their neighboring vehicles. Two separate tracks are employed. One track focuses on predicting the trajectories while the other focuses on predicting the likelihood of each intention considering neighboring vehicles. Study finds that the two track design can increase the performance by separating spatial module from the trajectory generating module. Also, we find the the model can learn an ordered group of trajectories by predicting residual offsets among K trajectories.",
+      "authors": [
+        "Diyi Liu",
+        "Zihan Niu",
+        "Tu Xu",
+        "Lishan Sun"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-04-08T14:20:09+00:00",
+      "link": "https://arxiv.org/pdf/2604.07126v1",
+      "tags": [
+        "keyword:AutoAI"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Transformer-based network for vehicle trajectory prediction in autonomous driving",
+      "llm_evidence_cn": "用于自动驾驶车辆轨迹预测的Transformer网络",
+      "llm_evidence": "用于自动驾驶车辆轨迹预测的Transformer网络",
+      "canonical_evidence": "用于自动驾驶车辆轨迹预测的Transformer网络",
+      "llm_tldr_en": "Proposes a multi-modal Transformer-based network for intention-aware vehicle trajectory prediction.",
+      "llm_tldr_cn": "提出一种基于Transformer的多模态网络，用于意图感知的车辆轨迹预测。",
+      "llm_tldr": "提出一种基于Transformer的多模态网络，用于意图感知的车辆轨迹预测。",
+      "llm_tags": [
+        "query:autoai"
+      ],
+      "matched_query_tag": "query:autoai",
+      "matched_query_text": "自动驾驶感知、决策和控制中采用大模型的系统架构研究",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
 }

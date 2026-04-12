@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.04797v1/fig-001.webp",
+      "caption": "Fig. 5. Qualitative comparison of intermediate BEV feature representations for a VoD validation scene Id - 00000.",
+      "page": 6,
+      "index": 1,
+      "width": 1076,
+      "height": 278
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04797v1/fig-002.webp",
+      "caption": "Fig. 6. Qualitative comparison of intermediate BEV feature representations for VoD validation scene Id - 00033.",
+      "page": 6,
+      "index": 2,
+      "width": 1076,
+      "height": 277
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04797v1/fig-003.webp",
+      "caption": "Fig. 7. Qualitative comparison of intermediate BEV feature representations for VoD validation scene Id - 00102.",
+      "page": 6,
+      "index": 3,
+      "width": 1076,
+      "height": 277
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04797v1/fig-004.webp",
+      "caption": "Fig. 1. BEVDepth Framework [2]",
+      "page": 2,
+      "index": 4,
+      "width": 520,
+      "height": 289
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04797v1/fig-005.webp",
+      "caption": "Fig. 2. Architecture of the RCBEVDET’s dual-stream radar backbone (Pointbased Block and Transformer-based Block) [3].",
+      "page": 2,
+      "index": 5,
+      "width": 458,
+      "height": 307
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04797v1/fig-006.webp",
+      "caption": "Fig. 8. Sensor contribution maps on VoD validation set.",
+      "page": 7,
+      "index": 6,
+      "width": 839,
+      "height": 374
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04797v1/fig-007.webp",
+      "caption": "Fig. 3. Overall pipeline of MMF-BEV. Front-view camera images are transformed into BEV features using a BEVDepth-based camera branch, while 4D radar point clouds are encoded via RadarBEVNet to produce radar BEV representations. Both modalities are refined with Deformable Self-Attention and fused through Multi Layer hybrid fusion module in BEV space. The fused multi-modal BEV features are used for 3D object detection and sensor specific confidence for detections.",
+      "page": 3,
+      "index": 7,
+      "width": 1076,
+      "height": 472
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04797v1/fig-008.webp",
+      "caption": "Fig. 4. MultiLayer Hybrid fusion module. After per-modality DSA refinement, camera features and radar features exchange information through deformable cross-attention (top and bottom), with outputs concatenated through CBR fusion layers.",
+      "page": 4,
+      "index": 8,
+      "width": 468,
+      "height": 436
+    }
+  ]
+}

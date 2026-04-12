@@ -1,0 +1,1157 @@
+Title: Scaling-Aware Data Selection for End-to-End Autonomous Driving Systems
+
+URL Source: https://arxiv.org/pdf/2604.08366v1
+
+Published Time: Fri, 10 Apr 2026 01:16:19 GMT
+
+Number of Pages: 21
+
+Markdown Content:
+# Scaling-Aware Data Selection for End-to-End Autonomous Driving Systems 
+
+Tolga Dimlioglu 1† , Nadine Chang 2, Maying Shen 2, Rafid Mahmood 2,3 , Jose M. Alvarez 21New York University, 2NVIDIA, 3University of Ottawa 
+
+td2249@nyu.edu, {nadinec, mshen, rmahmood, josea }@nvidia.com 
+
+Abstract 
+
+Large-scale deep learning models for physical AI appli-cations depend on diverse training data collection efforts. These models and correspondingly, the training data, must address different evaluation criteria necessary for the mod-els to be deployable in real-world environments. Data se-lection policies can guide the development of the training set, but current frameworks do not account for the ambigu-ity in how data points affect different metrics. In this work, we propose Mixture Optimization via Scaling-Aware Itera-tive Collection (MOSAIC), a general data selection frame-work that operates by: (i) partitioning the dataset into do-mains; (ii) fitting neural scaling laws from each data do-main to the evaluation metrics; and (iii) optimizing a data mixture by iteratively adding data from domains that max-imize the change in metrics. We apply MOSAIC to au-tonomous driving (AD), where an End-to-End (E2E) plan-ner model is evaluated on the Extended Predictive Driver Model Score (EPDMS), an aggregate of driving rule com-pliance metrics. Here, MOSAIC outperforms a diverse set of baselines on EPDMS with up to 80% less data. 
+
+1. Introduction 
+
+Large-scale deep learning models are fueled by diverse data collection efforts [35, 41]. This practice is particularly prominent in physical artificial intelligence (AI) applica-tions such as autonomous driving (AD), where video clips are collected over different locations, weather, and traffic conditions [12, 18]. It is computationally inefficient to train models on all collected data, which in physical AI can scale to hundreds of millions of hours of clips. This necessitates data mixture selection policies to construct and grow train-ing sets of diverse and influential samples that maximize desired performance metrics. Dataset selection and optimization has been broadly studied from various perspectives. For instance, influence (or duplicate) estimation techniques use feature informa-tion to select useful data samples [1, 5, 49], while active 
+
+> †
+
+work done during internship at NVIDIA. Locali-zation      
+
+> Path Planning
+> Obstacle Avoidance
+> Evaluation Tasks (a) (b)
+> Note: Darker lines indicate the cluster scales faster for the task.
+> (c) (d)
+> Cluster 1
+> Cluster 2
+> Cluster 3
+> Cluster 1
+> Cluster 2
+> Cluster 3
+> Pittsburgh: less crowded, curvy roads
+> Las Vegas: dense city traffic
+
+Figure 1. (a-b) The data pool is partitioned into a set of discrete domains which may each contribute to performance improvement of different evaluation tasks at varying rates. (c-d) Example appli-cation in autonomous driving: two clusters representing different driving contexts—Pittsburgh (curvy suburban roads) and Las Ve-gas (dense urban traffic). Data from separate contexts influence different rule-compliance metrics at distinct rates. 
+
+learning strategies optimize over this feature space [38, 46]. Large language models (LLMs) and their multi-modal ex-tensions have successfully leveraged scaling laws to fore-cast how model performance improves with dataset size [21, 26, 58]; this premise has expanded to other applica-tions including AD [3]. Further, as data collection becomes increasingly complex, scaling laws are used to determine optimal mixtures of data from explicit domains (e.g., dif-ferent languages, math, coding) [23, 36, 56]. Although these methods present a general opportunity for physical AI systems, they are not immediately usable for applications that require both understanding and interacting with diverse real-world scenarios for three main reasons. First, physical AI systems are evaluated over a set of potentially compet-1
+
+> arXiv:2604.08366v1 [cs.LG] 9 Apr 2026
+
+ing metrics [14, 57]. Second, different data samples can influence different combinations of these metrics at various rates. Finally, the data pool is not necessarily immediately separable into subsets that have consistent, predictable in-fluence on the metrics. Existing data mixture methods as-sume well-defined and homogeneous domains. However, they overlook the heterogeneous and metric-dependent im-provement rates that arise when data sources influence dif-ferent aspects of performance at varying rates [20, 54]. For example, a physical AI system such as an autonomous ve-hicle must progress along a route, follow driving rules, and avoid collisions [14]. High-traffic and pedestrian-heavy driving clips, when used for training, may impact certain metrics more than others. Moreover, finding such a sub-set of potential training data that has shared effects on the metrics requires careful selection and mining. In this work, we develop a data selection and mixture optimization policy that addresses the present physical AI challenges of multiple competing metrics and imprecise data partitions. To address the challenge of imprecise data domains, we first partition a data pool into a set of separable clusters, within which we can rank samples on their influ-ence to the metrics. We estimate the impact of each cluster on each metric, and correspondingly, an overall utility func-tion that aggregates all the metrics. This impact is measured in terms of scaling laws that estimate the improvement to the metrics if more data from a specific cluster were used for training. Finally, we iteratively add new data to the training set by identifying the cluster which will maximize the ex-pected gain to the aggregate utility with each additional data point. In this way, we optimize the mixture of data from our generated partitions. Figure 1 summarizes the challenges. We apply our framework, Mixture Optimization via Scaling-Aware Iterative Collection ( MOSAIC ), for End-to-End (E2E) autonomous driving, where the challenges of data heterogeneity and metric competition are particularly pronounced. The goal is to optimize the Extended Predic-tive Driving Model Score (EPDMS), which aggregates a di-verse set of rule-compliance metrics. MOSAIC is more data efficient than existing methods and achieves better EPDMS performance than na¨ ıve baselines with up to 82% less addi-tional data. Our contributions are: • We propose MOSAIC , a generic data mixture optimiza-tion pipeline that (i) clusters and ranks data, (ii) models domain-specific data scaling, and (iii) mines samples to maximize the expected gain over aggregate metrics. • We apply MOSAIC to End-to-End Autonomous Driv-ing (E2E AD) on the NAVSIM and OpenScene bench-marks using the challenge winning Hydra-MDP model [33], where it achieves substantially higher driving per-formance than existing data selection and mixture base-lines, and improve data efficiency by up to 82%. More-over, MOSAIC achieves the full training performance while requiring 42% less data samples. • We empirically demonstrate the necessity and robustness of our joint clustering and scaling procedure. First, MO-SAIC outperforms baselines regardless of the clustering approach (e.g., semantic captions, geolocation). Second, embedding scaling laws on top of clustering significantly outperforms clustering-only strategies. This underscores the importance of our principled data selection strategy, which leverages the estimated improvement rates of dif-ferent data clusters to maximize model performance un-der limited data budgets. 
+
+2. Related Works 
+
+Data Mixtures. Recent work has highlighted the im-portance of how data from different domains are com-bined for large-scale model training [17, 23, 36, 39, 53– 56]. DoReMi [53] employs two proxy models to esti-mate domain weights based on excess loss, which are later used to reweigh domains when training a larger model. DOGE [17], tracks domain-specific gradients while train-ing the proxy model to better capture inter-domain dynam-ics. Chameleon [54] instead leverages kernel similarity scores computed in the model’s latent space to assign adap-tive weights to data from different sources. Another line of work treats data mixture optimization as a regression prob-lem: many small proxy models are trained with varying mixtures, and a regressor is then fit to predict the optimal mixture at larger scale [36, 56]. A particularly relevant ap-proach to ours is ADO [23], which begins with a random data mixture and fits scaling estimators on the fly during training. The gradients of these estimators are used for mix-ture reweighting. However, ADO does not model how per-formance scales with different data sources in isolation, and it requires a temporal averaging mechanism with multiple hyperparameters to maintain the precision of scaling fits. Although the aforementioned data mixture methods assign weights to samples from different domains, these weights can also be interpreted as sampling probabilities for con-structing mixtures with varying domain ratios. In our ex-periments, we adopt Chameleon [54] as a baseline, since it has been shown to outperform other mixture algorithms. 
+
+Data Pruning & Selection. Data pruning aims to identify a compact subset of training data by removing redundant samples while preserving model performance [47]. In vi-sion tasks, Abbas et al. [1] proposed removing visually sim-ilar samples using cosine similarity in the CLIP [43] feature space. Follow-up works extended this idea to specialized domains such as object detection [25] and fairness-aware multimodal learning [48]. It has also been shown analyti-cally that optimal pruning strategies can improve power-law scaling behavior [49]. A closely related line of work, Ac-tive learning (AL), aims to maximize model performance improvement under a limited annotation budget [44, 59]. 2In this setting, the model has access to a large unlabeled data pool and, based on some selection signal the most informative samples are identified to be used for training. Early works focused on using the model’s prediction uncer-tainty, quantified through posterior probabilities [32], clas-sifier margins [45], or entropy [24]. A notable method, CoreSet [46], seeks representation diversity by mining sam-ples that maximize coverage in the latent space. Other data selection strategies quantify the sample importance using expensive signals such as influence on model updates [37], gradient-based criteria [8] or forgetting score [50]. 
+
+End-to-End Autonomous Driving. This task aims to train planner models that map raw sensory inputs directly to con-trol commands. Early approaches [4, 10, 42] learned con-trol actions from RGB inputs via imitation learning, while later works incorporated richer input modalities such as Li-DAR and navigational commands [9, 52]. Recently, con-ventional open-loop metrics have been shown to correlate poorly with closed-loop driving quality [13, 34]. This moti-vated the development of simulation benchmarks that better reflect real-world driving performance [14] and, AD models to employ probabilistic and rule-compliant trajectory plan-ners [7, 22, 33]. 
+
+3. MOSAIC 
+
+3.1. Main Problem 
+
+We want to train a Deep Neural Network (DNN) f (·; D) on a dataset D to perform a given task. We evaluate model performance using a set of R metrics Gr (f (·; D), Dval )
+
+for r ∈ {1, · · · , R }, where Dval is a held-out valida-tion dataset. For brevity, we denote Gr(f (·; D), Dval ) by 
+
+Gr (D). To balance the trade-offs between the metrics, we use a utility function U ({G r (D)}Rr=1 ) that aggregates each metric into a final score. We do not assume about the struc-ture of the utility function; for example, the simplest ap-proach would be a summation U (·) = PRr=1 Gr (D).We initialize with a current training dataset Dtrain and a data pool Dpool . Given a budget B, our goal is to select a subset Dsel ⊂ D pool with |D sel | = B that maximizes the improvement in model performance when f is retrained on the combined dataset Dtrain ∪ D sel . Formally, we write 
+
+max 
+
+> Dsel ⊂D pool
+> |D sel |=B
+
+U
+
+
+
+{G r (Dtrain ∪ D sel )}Rr=1 
+
+
+
+(1) To solve problem (1), we must determine how each data sample added in Dsel influences each of the metrics, while optimizing the trade-offs between these metrics to maxi-mize U (·). For instance, in our AD application, f (·; D)
+
+is a planner model that maps sensory inputs to a predicted driving trajectory. Here, our goal is to identify driving clips that optimize the Extended Predictive Driving Model Score 
+
+Algorithm 1 Mixture Optimization via Scaling-Aware Iter-ative Selection (MOSAIC) 
+
+Require: Pool dataset Dpool , number of clusters M , sam-ple selection budget B.
+
+Ensure: Selected dataset Dsel  
+
+> 1:
+
+{D i,ranked pool }Mi=1 = ClusterAndRank (Dpool , M ) 
+
+> 2:
+
+{∆ ˆUi(n)}Mi=1 = GetScalings ({D i,ranked pool }Mi=1 ) 
+
+> 3:
+
+Dsel ← {}  
+
+> 4:
+
+bi ← 0 for all i ∈ { 1, . . . , M } 
+
+> 5:
+
+while |D sel | < B do  
+
+> 6:
+
+for i = 1 to M do  
+
+> 7:
+
+δi(bi) ← d∆Ui(bi + 1) − d∆Ui(bi) 
+
+> 8:
+
+end for  
+
+> 9:
+
+j ← arg max i δi(bi) 
+
+> 10:
+
+sample ← ReturnSample (Dj, ranked  
+
+> pool
+
+, b j ) 
+
+> 11:
+
+Dsel ← D sel ∪ { sample } 
+
+> 12:
+
+bj ← bj + 1  
+
+> 13:
+
+end while  
+
+> 14:
+
+return Dsel 
+
+(EPDMS) [6, 27], which is an aggregate of R = 9 closed-loop rule compliance scores: NC, DAC, DDC, TLC, EP, TTC, LK, HC, EC. Each driving clip can showcase only certain aspects of driving rule compliance, e.g. driving on a curvy road might improve lane keeping while degrading the comfort, however our goal is to elevate the model perfor-mance across all metrics. Consequently, solving this prob-lem requires disentangling the relationships between the data samples and the metrics before optimizing the trade-offs between them. 
+
+3.2. Scaling-Aware Iterative Collection 
+
+We propose Mixture Optimization via Scaling-Aware It-erative Collection (MOSAIC ); a three-stage data selection framework: (i) first, cluster the pool Dpool into partitions that capture distinct driving scene contexts and rank the data samples based on an importance score within each cluster; (ii) estimate the scaling law of adding data from each clus-ter with respect to the utility U ; and (iii) iteratively mine samples from the clusters to optimize 1. Figure 2 visualizes our framework. Algorithm 1 summarizes the steps. 
+
+3.2.1. Clustering & Ranking the Data 
+
+Before solving problem (1), we first disentangle the rela-tionships between the metrics and data samples by cluster-ing the data pool into a set of structured domains [15, 47]. Our goal is to find subsets of the data pool that have simi-lar influence, i.e., samples that all influence the same set of metrics. Given a feature representation, we cluster the data pool into M domains, i.e., Dpool = SMi=1 Dipool . For exam-ple in AD, we may partition clips into clusters of highway driving, busy intersections, and calm local streets, that pri-3…
+
+…                           
+
+> C1:
+> C2:
+> (a.1) Clustering
+> (a.2) Ranking
+> Performance Gain
+> # samples added from cluster
+> C1 scaling fit C2 scaling fit C1 pilot run C2 pilot run
+> (b) Estimating Cluster Scalings (c) Scaling-Aware Iterative Data Collection
+> C1:
+> C2:
+> Performance Gain
+> # samples added from C1
+> Performance Gain
+> Smaller gain Larger gain
+> Performance Gain Performance Gain
+> Smaller gain
+> Larger gain
+> sample selection iteration
+> 12345678910 11 12 13 14 15 16 17
+> # samples added from C2 # samples added from C1 # samples added from C2
+> 1118
+> C1 C2
+
+Figure 2. Overview of the proposed MOSAIC framework. (a) The pool Dpool is clustered and ranked by sample importance. (b) Cluster-wise scaling laws are fitted on pilot runs to estimate how performance scales with added data. (c) Samples are then iteratively mined from the cluster with the highest estimated marginal gain under the fitted scaling laws. 
+
+marily address ego progress, collision avoidance, and traffic light compliance, respectively. Although, clustering separates the data into domains of similar influence, each domain will include samples that have stronger influence than others [28, 30]. When adding data, we should first exhaust the higher-influence samples [49]. As a result, we rank the samples x within each clus-ter via an importance score I(x). In our application, we define importance by evaluating the model on that sample 
+
+I(x) := U ({G r (f (·; Dtrain ), x )}Rr=1 ). Later when adding data from each cluster, we first select samples with higher 
+
+I(x) (Line 1 of Algorithm 1). 
+
+3.2.2. Selecting Data by Optimizing a Mixture 
+
+Given a set of discrete domains, problem (1) can be re-formulated into a data mixture optimization problem. Let 
+
+Disel ⊂ D ipool be the data added from the i-th domain and let Dsel = ∪Mi=1 Disel . Furthermore, because each sample in Dipool is ranked via importance scores, it remains only to determine how many samples to draw from each domain. Mathematically, we reformulate problem (1) to a proxy optimization problem below 
+
+max    
+
+> n1,··· ,n M,PMi=1 ni=B
+
+∆Umix (n1, · · · , n M ) (2) where ni := |D isel | is the number of samples drawn from the i-th domain and ∆Umix (n1, · · · , n M ) is 
+
+U {G r (Dtrain ∪ { 
+
+> M
+
+[
+
+> i=1
+
+Disel })}Rr=1 
+
+!
+
+−U ({G r (Dtrain )}Rr=1 )
+
+the change in utility after adding ni points from each do-main. Note that the objective above is equivalent to opti-mizing U ({G r (Dtrain ∪ {∪ Mi=1 Disel }} Rr=1 )) , but we use the above formulation since it explicitly expresses the problem in terms of performance gains from additional data. Solving problem (2) requires quantifying how adding data samples from each domain will improve U (·). We estimate this by approximating ∆Umix into separate effect from each cluster and then estimating the effect of data from each domain via a scaling law. First, we apply the following linear separable approximation 
+
+∆Umix (n1, . . . , n M ) ≈
+
+> M
+
+X
+
+> i=1
+
+∆Ui(ni). (3) where each ∆Ui(n) is the improvement in utility when adding only the data from the i-th domain 
+
+U
+
+Gr (Dtrain ∪ D isel ) Rr=1 
+
+
+
+− U
+
+Gr (Dtrain ) Rr=1 
+
+
+
+Intuitively, the approximation in (3) assumes that each domain has an independent effect on the overall ∆Umix .Moreover, this assumption allows us to estimate how model performance scales if we add data from each domain inde-pendently. We use a saturating exponential scaling law 
+
+∆Ui(n) ≈ d∆Ui(n) := ai(1 − e−n/τ i ) (4) where ai and τi are learnable parameters of the scaling law estimated from small-scale pilot-runs (we provide details in Section 9 of the Appendix.), and n denotes the number of added samples [55]. Here, ai represents the asymptotic improvement on the total utility U when sampling from domain i, while τi governs the saturation rate, i.e., how quickly the marginal benefit of adding data from the domain decreases. Obtaining the scaling esimators is symbolically captured in line 2 of Algorithm 1. Then, substituting (4) into problem (2) yields a concave maximization problem that we can compute and solve. 
+
+3.2.3. Scaling-Aware Iterative Data Collection by First-Difference Steps 
+
+We propose an efficient algorithm to solve problem (2) by allocating data samples one-by-one from the domain that stands to give the highest marginal improvement to Umix 
+
+at any given time. Intuitively, this iterative adding of data mimics a gradient-based approach of taking small steps to optimize the data mixture. 4Suppose that we have so far added bi data points from each cluster in order to generate Dsel . Then, let 
+
+δi(bi) := d∆Ui(bi + 1) − d∆Ui(bi), (5) be the marginal improvement in d∆Ui(bi) if we draw one additional data point from the i-th domain. Mathematically, 
+
+δi(bi) is an approximate first-difference analogue of the par-tial derivative of Umix . Furthermore, because d∆Ui(n) is a concave function of n, this difference decreases as bi
+
+increases. This means that at a certain point, each do-main yields diminishing value to the training dataset and we should draw from other domain. In our algorithm, we iteratively add data from the domain with the highest marginal improvement. In each iteration, if we have so far drawn bi samples from the i-th domain, we first identify j = arg max i δi(bi). We then sample a data point from Dipool according to the importance scores I(x).We then update our counts bi, and repeat the process until we have reached the budget (lines 5-14 in Algorithm 1). 
+
+4. Experiments 
+
+We empirically evaluate MOSAIC on two different datasets (Openscene and Navtrain ) using a challenge-winning model Hydra-MDP, and report consistent gains in the model performance at all budgets while being up to 80% data effi-ciency than the baselines. 
+
+4.1. Protocols 
+
+We provide more details in Section 7 of Appendix. 
+
+Datasets. We use two train–pool configurations: the cu-rated Navtrain [14] split and the full trainval split of Openscene [11]. For clarity, we refer to the latter as the Openscene experiment. In both settings, evaluation is conducted on the curated validation split navtest [14]. Both datasets contain driving session clips lasting from 30 seconds to 50 minutes, which has significant temporal vari-ation over a limited number of sessions. Consequently, we segment each session into fixed-length 10-second virtual clips (20 frames at 2 Hz) and by doing so, we align our data handling practice with the industry standards [16]. In the experiments, each virtual clip is treated as a single sample. For Navtrain , we use the dataset as both Dtrain and 
+
+Dpool , comprising 4,601 virtual clips. We randomly select 460 clips for Dtrain , with the remaining 4,141 clips form-ing Dpool . We evaluate all methods under budgets B ∈{100 , 200 , 400 , 800 , 1600 , 2400 }. For OpenScene , we randomly select 1,000 clips as the Dtrain and reserving the remaining 31,539 as Dpool . The sample selection budgets of this setting are B ∈ { 250 , 500 , 1000 , 2000 , 4000 , 8000 }.
+
+Model. We use the Hydra-MDP model [33], the winner of the NAVSIM Challenge in 2024 [14], with a pretrained VoVNetV2-99 backbone [31, 40]. The trajectory vocabu-lary size is set to 16,384. For Openscene experiments, rule-based distillation is disabled due to the substantial pre-processing time required to compute compliance scores. 
+
+Baselines. We compare MOSAIC against several baseline data selection strategies: • Random : selects clips uniformly from the pool dataset under the given selection budget. • Uncertainty [24]: measured via the entropy of the trajec-tory logits. Samples with higher entropy are prioritized. • Coreset [46]: selects samples from the pool that maxi-mize diversity over the feature space. • Chameleon [54]: a data mixture framework that uses ker-nel ridge scores using domain embeddings in the model’s feature space to assign mixture weights to each domain. Pseudo-codes are in Section 7 of Appendix. For Chameleon and MOSAIC , we cluster Dpool into domains defined by the map metadata (i.e., Boston, Pittsburgh, Singapore, Vegas). Each experiment is repeated with three random seeds. For 
+
+Openscene experiments with more than 1,000 clips, we use two seeds to reduce computational cost. Reported re-sults are averaged over runs, and the standard deviation is shown as a subscript in the tables. 
+
+Metrics. We evaluate models using the EPDMS, an ag-gregate of nine rule-compliance metrics that has been shown to correlate strongly with closed-loop driving per-formance [6, 14]. Consequently, EPDMS has become the standard evaluation metric for AD planners, replacing con-ventional open-loop measures such as ADE and FDE. For-mally, EPDMS is computed as: EPDMS := Y
+
+> m∈M pen
+
+m . 
+
+P 
+
+> m∈M avg
+
+wmm
+
+P 
+
+> m∈M avg
+
+wm
+
+where Mpen := {NC , DAC , DDC , TLC } denotes the set of penalty terms, and Mavg := {EP , TTC , LK , HC , EC } de-notes the metrics combined via a weighted average, with weights {5, 5, 2, 2, 2} respectively [6]. The glossary of the rule compliance metrics are in Section 7 of Appendix. Similar to the relevant works [51], we also measure how each data selection policy improves EPDMS relative to the 
+
+Random baseline to assess sample efficiency. Specifically, we report the Budget Ratio to Match Random (BRMR); the ratio of the data budget B required by each method to achieve the same EPDMS performance attained by random selection at the same budget. Formally, let Bk denote the number of samples required by selection strategy k to match the EPDMS obtained by random sampling with budget B.Then BRMR := Bk/B . Lower BRMR indicates greater sample efficiency, as it reflects fewer samples needed to achieve the same performance level as random selection. 5Table 1. Validation EPDMS (higher is better) and BRMR (lower is better) reported in OpenScene (Section A) and Navtrain (Section B) settings. We report the results for all budgets in Section 8 of Appendix.                                                                   
+
+> A. Openscene B. Navtrain Budget Method EPDMS ( ↑)BRMR ( ↓)EPDMS ( ↑)BRMR ( ↓)Random 72.84 ±1.14 1.00 84.66 ±0.60 1.00 Uncertainty 70.78 ±0.59 14.58 84.50 ±0.48 1.47 Coreset 76.26 ±0.48 0.20 85.29 ±0.47 0.53 Chameleon 72.97 ±1.72 0.86 84.57 ±0.18 1.07 A. 250 B. 100
+> MOSAIC 77.38 ±1.58 0.15 86.29 ±0.43 0.30
+> Random 75.84 ±0.90 1.00 86.69 ±0.20 1.00 Uncertainty 71.12 ±0.38 8.00 86.07 ±0.75 2.00 Coreset 80.46 ±0.02 0.22 87.09 ±0.29 0.79 Chameleon 79.08 ±0.74 0.49 87.04 ±0.60 0.82 A. 1000 B. 400
+> MOSAIC 81.68 ±0.52 0.18 88.21 ±0.03 0.38
+> Random 80.38 ±0.55 1.00 88.62 ±0.22 1.00 Uncertainty 73.46 ±0.19 2.00 87.75 ±0.37 1.36 Coreset 83.63 ±0.36 0.25 89.30 ±0.19 0.58 Chameleon 82.92 ±0.13 0.39 89.50 ±0.20 0.62 A. 4000 B. 1600
+> MOSAIC 84.25 ±0.14 0.18 90.18 ±0.25 0.37
+
+4.2. Main Results: Openscene 
+
+Table 1 (Section A) reports the EPDMS and BRMR scores for different data selection methods. Across all clip budgets 
+
+B ∈ { 250 , 1000 , 4000 }, MOSAIC consistently achieves the highest EPDMS, approximately one point higher than the next best method. This demonstrates the superior utility gains of MOSAIC under limited data. Moreover, MOSAIC 
+
+requires over 80% fewer samples to match the performance achieved by random selection (i.e., BRMR < 0.2). We break down EPDMS into the individual nine met-rics in Table 2. Section A corresponds to the Openscene 
+
+experiments. The base model before data collection is par-ticularly limited in DAC and EC, which impact EPDMS. 
+
+MOSAIC achieves the largest gain in DAC, nearly 10 points higher than the base, and improves EC and EP , while main-taining balanced performance gains across other metrics. In contrast, the other methods yield less gains over the base DAC, and instead improves TTC and EC, that have less effect on the final EPDMS. On the other hand, MOSAIC 
+
+achieves consistently Top-2 performance across all rule-compliance metrics, while strategically prioritizing DAC, the metric with the greatest room for improvement. This underscores the importance of incorporating scaling-aware collection into the data selection strategy to optimize U
+
+more effectively and achieve better trade-offs across com-peting metrics. 
+
+4.3. Main Results: Navtrain 
+
+Compared to Openscene , Navtrain is a curated dataset emphasizing non-trivial driving scenarios such as dense traffic and complex maneuvers. Table 1 (Section B) sum-marizes the EPDMS and BRMR results. Here, MOSAIC 
+
+consistently delivers the strongest performance, achieving up to 1.1 points higher EPDMS than the next best method across all budgets. It also attains the lowest BRMR values (< 0.4), corresponding to a 60–70% reduction in the num-ber of samples needed to match the performance of Ran-dom . We conclude that MOSAIC remains highly effective even on the more challenging, curated Navtrain split, where each clip already carries substantial learning value. The section B of Table 2 reports the breakdown of EPDMS. MOSAIC achieves consistent improvements across all metrics, with the largest gains observed in DAC, NC, and LK. Importantly, MOSAIC understands the trade-off between the metrics, and shifts the collection effort from saturated, less impactful metrics toward those that require more improvement. Overall, MOSAIC provides a more bal-anced and sustained improvement profile, suggesting that the scaling-aware allocation identifies data with broader generalization benefits. Ultimately, this allows MOSAIC to achieve a higher EPDMS than the baselines under the same clip budget. 
+
+4.4. Ablating the effectiveness of MOSAIC 
+
+Dynamics of scaling-aware data selection. In the 
+
+Openscene experiments, Dpool is partitioned based on geolocation into four domains corresponding to Las Vegas, Boston, Singapore, and Pittsburgh. Figure 3 illustrates the fitted scaling curves for each city, where ⋆ markers denote the pilot-run results used to estimate the parameters of the scaling curves in Equation 4. We note that different do-mains scale at different rates depending on the how many clips are added. Specifically, data collected from Boston and Singapore yield the largest initial performance gains in the low-data regime ( < 500 clips), while Pittsburgh main-tains steadier improvements and eventually supercedes all other domains at high data budgets. In contrast, the Las Ve-gas cluster provides the smallest gains and saturates early. These heterogeneous scaling behaviors are later exploited by the scaling-aware selection policy of MOSAIC to maxi-mize the performance gain, under varying data budgets. Figure 4 shows how these fitted scaling laws influence the order in which samples are added to the training set. The y-axis lists data clusters, i.e. the city names, and the x-axis denotes the iteration index. Each bar indicates from which cluster the next sample is collected from at any it-eration. During the early stages, only Boston and Singa-pore are actively mined, while Las Vegas and Pittsburgh are largely ignored. Figure 3 (top right) confirms this behavior: when the budget is 250, most selected clips originate from Boston and Singapore. As the returns from Boston and Sin-gapore diminish, Pittsburgh’s steadier scaling curve makes it increasingly favorable between indices 500 to 3700. Fig-ure 3 (bottom right) shows that at 4000 clips, the selected set is dominated by Pittsburgh samples. After around 3700 collection rounds, the Pittsburgh data domain is exhausted. Beyond approximately 2500 sample selections, the scaling 6Table 2. Breakdown of the nine EPDMS rule-compliance metrics for the base model and the models trained with data selected by various strategies at a single budget, shown for both the OpenScene and Navtrain experiments. 
+
+Setting NC ( ↑) DAC ( ↑) DDC ( ↑) TLC ( ↑) EP ( ↑) TTC ( ↑) LK ( ↑) HC ( ↑) EC ( ↑) EPDMS ( ↑)A. Openscene Base 94.05 83.9 96.28 99.6 85.96 92.95 93.26 98.25 81.88 72.0 Budget 4000 Clips Random 96.32 ±0.59 90.53 ±0.06 99.06 ±0.07 99.79 ±0.05 86.36 ±0.48 95.66 ±0.52 95.68 ±0.09 98.30 ±0.01 84.46 ±0.14 80.38 ±0.55 
+
+Uncertainty 94.67 ±0.28 85.11 ±0.51 97.15 ±0.54 99.71 ±0.04 84.26 ±0.69 93.72 ±0.40 93.26 ±0.09 98.28 ±0.02 81.34 ±1.06 73.46 ±0.19 
+
+Coreset 97.11 ±0.18 92.93 ±0.60 99.44 ±0.06 99.82 ±0.02 86.65 ±0.55 96.42 ±0.19 96.66 ±0.30 98.16 ±0.12 85.10 ±0.06 83.63 ±0.36 
+
+Chameleon 96.76 ±0.24 92.32 ±0.02 99.51 ±0.01 99.77 ±0.01 86.98 ±0.17 95.91 ±0.31 96.49 ±0.12 98.32 ±0.01 85.51 ±0.11 82.92 ±0.13 
+
+MOSAIC 96.97 ±0.32 93.59 ±0.11 99.59 ±0.04 99.80 ±0.01 87.14 ±0.98 96.18 ±0.45 96.62 ±0.08 98.28 ±0.01 85.06 ±0.34 84.25 ±0.14 
+
+B. Navtrain Base 95.3 95.94 99.09 99.6 88.09 94.55 94.49 98.25 82.39 83.97 Budget 1600 Clips Random 97.17 ±0.07 98.19 ±0.43 99.42 ±0.05 99.69 ±0.02 89.36 ±0.12 96.50 ±0.14 96.45 ±0.25 98.31 ±0.03 83.17 ±0.76 88.62 ±0.22 
+
+Uncertainty 96.92 ±0.38 97.66 ±0.08 99.22 ±0.10 99.77 ±0.02 89.02 ±0.28 96.24 ±0.40 96.10 ±0.07 98.30 ±0.01 82.92 ±0.38 87.75 ±0.37 
+
+Coreset 97.50 ±0.10 98.31 ±0.34 99.59 ±0.03 99.72 ±0.05 89.27 ±0.21 96.86 ±0.07 96.75 ±0.22 98.30 ±0.03 83.88 ±0.50 89.30 ±0.19 
+
+Chameleon 97.43 ±0.22 98.46 ±0.17 99.60 ±0.05 99.75 ±0.03 89.60 ±0.19 96.83 ±0.30 96.89 ±0.07 98.30 ±0.03 83.87 ±0.34 89.50 ±0.20 
+
+MOSAIC 98.04 ±0.24 98.61 ±0.32 99.63 ±0.06 99.73 ±0.02 89.28 ±0.19 97.50 ±0.32 97.07 ±0.06 98.28 ±0.04 83.70 ±0.41 90.18 ±0.25 0 200 400 600 800 1000 
+
+> # Added clips
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> EPDMS
+
+Scaling Curves 
+
+> boston
+> pittsburgh
+> singapore
+> vegas
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> ratio
+> 250 Clips
+> boston
+> pittsburgh
+> singapore
+> vegas
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> ratio
+> 4000 Clips
+
+Figure 3. (Left) Performance scalings of different clusters, ob-tained by fitting the estimator in Equation 4 on 2 pilot runs, de-noted by ⋆. (Right) Geolocation distributions at different budgets as a result of scaling-aware iterative selection. 
+
+curves of Boston, Singapore, and Pittsburgh approach sat-uration, causing their marginal gains to diminish. As a re-sult, the expected improvement from the initial Las Vegas samples becomes comparable to those of the other regions, leading MOSAIC to mine from Vegas. 
+
+MOSAIC is optimal under different clustering mecha-nisms. Instead of partitioning the data pool into domains separated by geolocation, we cluster the Navtrain data pool using captions generated for each clip. We use the Qwen-2.5-VL-32B-Instruct model [2] to generate captions for all clips in Dpool . We form six clusters that capture dis-tinct driving and scene contexts using the TF-IDF feature vectors of the generated captions. The top uni-grams and bi-grams characterizing each cluster are provided in Table 3. Figure 5 reports the validation EPDMS as a function of the data selection budget for all strategies. We also in-dicate the base performance and the full-training perfor-mance, corresponding to the model trained by including all 
+
+Table 3. Top uni-grams and bi-grams of different clusters. 
+
+Uni-grams & Bi-grams Cluster 1 calm, day, street, trees, signs, yellow Cluster 2 signals, crossing, crosswalks, pedestrians Cluster 3 highway, vehicles, busy urban, palm trees Cluster 4 building, area, large, paved, parking Cluster 5 city street, major city, moderate Cluster 6 precipitation, potential rain, overcast, cloudy 
+
+4,141 clips in Dpool for training. (We provide full table with subscores in Section 8 of Appendix) MOSAIC consistently outperforms all baselines, including Chameleon (i.e., the other data mixture optimization method); requires 61% and 52% fewer samples than random selection to match its per-formance at the highest budgets of 1,600 and 2,400 clips, respectively. Moreover, MOSAIC reaches the full perfor-mance of training with all data samples using only 2,400 clips, i.e., 42% fewer samples. Interestingly, Chameleon 
+
+degrades under caption-based clustering, despite being the strongest baseline in the previous setting. This indicates that its kernel ridge weighting is highly sensitive to the structure of the clustered domains. Also, since the clustering choice only affects Chameleon and MOSAIC , the other strategies have the same performance as before. 
+
+Combining clustering and ranking yields the best data selection policy. We ablate the effects of both clustering and ranking components by individually disabling them. First, we use a “ w/o Clustering ” variant where we sim-ply rank Dpool by the EPDMS importance scores I(x) and greedily add samples with the lowest scores until reaching the collection budget. Second, we use a “ w/o Ranking ” vari-ant where we disable the ranking step, while retaining clus-tering and the scaling-aware estimation of how many sam-ples to collect. Here, we simply sample data points from each domain randomly to satisfy the budget. Moreover, the scaling laws are also estimated on unranked domains. Figure 6 visualizes these baselines to show that perfor-70 1000 2000 3000   
+
+> sample selection iteration
+> boston
+> pittsburgh
+> singapore
+> vegas
+> Full selection
+> 3700 3725 3750
+> Zoomed
+
+Figure 4. Visualization of the scaling-aware iterative data selection process. The x-axis denotes the sample selection iterations, and the y-axis lists the cluster names. Each vertical bar indicates from which cluster the next sample is mined at a given iteration, based on the estimated cluster-wise scaling fits. The left panel shows the complete selection process up to 4,000 clips, and the right panel zooms into iterations 3,700–3,750 for clarity. 52% 
+
+## 61% 
+
+Figure 5. Validation EPDMS for various budgets obtained by dif-ferent strategies when Navtrain data pool is clustered using clip captions. MOSAIC requires 61% and 52% fewer clips than Ran-dom selection to match its performance at the 1,600- and 2,400-clip budgets, respectively. 
+
+mance improvements in the low-data regime (up to a collec-tion budget of 800 clips) can largely be attributed to ranking. The MOSAIC and w/o Clustering variants achieve compet-itive EPDMS in this region. However, in the higher data regime, merely adding clips with low EPDMS scores be-comes less effective, as the performance of w/o Clustering 
+
+begins to lag behind MOSAIC . Finally, we note that both of these disabled variants still outperform random collection by a large margin. 
+
+5. Limitations 
+
+We note two key limitations of MOSAIC . First, the relax-ation from Equation 2 to Equation 3 assumes that each cluster’s contribution is well captured by its own scaling curve ∆Ui(n), with limited cross-cluster interactions. Con-sequently, if the clustering fails to produce well-separated groups, this assumption may be violated, leading MOSAIC 
+
+to suboptimal allocation. Second, MOSAIC relies on pilot runs to estimate cluster-specific scaling curves, which introduces additional com-putational cost. However, as shown in Section 9 of the Ap-pendix, accurate scaling fits can be obtained efficiently us-0 500 1000 1500 2000 2500 
+
+> Number of Clips Added
+> 0.84
+> 0.85
+> 0.86
+> 0.87
+> 0.88
+> 0.89
+> 0.90
+> Val. EPDMS
+> EPDMS vs. Number of Clips
+> MOSAIC
+> - w/o Clustering
+> - w/o Ranking
+> Random
+> Base
+> Full training
+
+Figure 6. Analyzing the contribution of different components of the MOSAIC framework. 
+
+ing small pilot subsets or through continual training. Thus, despite the initial overhead for the pilot runs to obtain clus-ter scalings, MOSAIC ultimately requires less total compute to achieve superior performance in the large-data regime. 
+
+6. Conclusion 
+
+We introduce MOSAIC , a scaling-aware data selection framework that jointly leverages clustering, ranking, and scaling-law modeling to maximize the performance of a model defined by multiple competing metrics, under a lim-ited data budget. We apply MOSAIC to E2E AD, where a planner model uses a diverse data pool to optimize a utility function that aggregates competing rule compliance metrics. Empirically, MOSAIC consistently outperforms existing data selection and mixture baselines on both the 
+
+Openscene and Navtrain datasets by achieving sub-stantial gains in EPDMS and sample efficiency. Ablation studies further highlight the framework’s mechanisms, an-alyze the necessity of the individual components compo-nents, and demonstrate robustness to clustering choices as long as semantic consistency is maintained. Overall, MO-SAIC offers a general and principled blueprint for identi-fying influential data in large-scale, heterogeneous learning systems. 8References 
+
+[1] Amro Abbas, Kushal Tirumala, D´ aniel Simig, Surya Gan-guli, and Ari S Morcos. Semdedup: Data-efficient learning at web-scale through semantic deduplication. arXiv preprint arXiv:2303.09540 , 2023. 1, 2 [2] Shuai Bai, Keqin Chen, Xuejing Liu, Jialin Wang, Wenbin Ge, Sibo Song, Kai Dang, Peng Wang, Shijie Wang, Jun Tang, Humen Zhong, Yuanzhi Zhu, Mingkun Yang, Zhao-hai Li, Jianqiang Wan, Pengfei Wang, Wei Ding, Zheren Fu, Yiheng Xu, Jiabo Ye, Xi Zhang, Tianbao Xie, Zesen Cheng, Hang Zhang, Zhibo Yang, Haiyang Xu, and Jun-yang Lin. Qwen2.5-vl technical report. arXiv preprint arXiv:2502.13923 , 2025. 7 [3] Mustafa Baniodeh, Kratarth Goel, Scott Ettinger, Carlos Fuertes, Ari Seff, Tim Shen, Cole Gulino, Chenjie Yang, Ghassen Jerfel, Dokook Choe, et al. Scaling laws of motion forecasting and planning–a technical report. arXiv preprint arXiv:2506.08228 , 2025. 1 [4] M. Bojarski, D. Del Testa, D. Dworakowski, B. Firner, B. Flepp, P. Goyal, L. D. Jackel, M. Monfort, U. Muller, J. Zhang, X. Zhang, J. Zhao, and K. Zeiba. End to end learning for self-driving cars, 2016. Available at https: //arxiv.org/abs/1604.07316 . 3 [5] Andrei Z Broder. On the resemblance and containment of documents. In Proceedings. Compression and Complexity of SEQUENCES 1997 (Cat. No. 97TB100171) , pages 21–29. IEEE, 1997. 1 [6] Wei Cao, Marcel Hallgarten, Tianyu Li, Daniel Dauner, Xunjiang Gu, Caojun Wang, Yakov Miron, Marco Aiello, Hongyang Li, Igor Gilitschenski, Boris Ivanovic, Marco Pavone, Andreas Geiger, and Kashyap Chitta. Pseudo-simulation for autonomous driving. In Conference on Robot Learning (CoRL) , 2025. 3, 5 [7] Shaoyu Chen, Bo Jiang, Hao Gao, Bencheng Liao, Qing Xu, Qian Zhang, Chang Huang, Wenyu Liu, and Xinggang Wang. Vadv2: End-to-end vectorized autonomous driving via probabilistic planning. arXiv preprint arXiv:2402.13243 ,2024. 3 [8] Anshuman Chhabra, Peizhao Li, Prasant Mohapatra, and Hongfu Liu. ” what data benefits my classifier?” enhancing model performance and interpretability through influence-based data selection. In The Twelfth International Confer-ence on Learning Representations , 2024. 3 [9] Kashyap Chitta, Aditya Prakash, Bernhard Jaeger, Zehao Yu, Katrin Renz, and Andreas Geiger. Transfuser: Imitation with transformer-based sensor fusion for autonomous driv-ing. IEEE Transactions on Pattern Analysis and Machine Intelligence , 45(11):12878–12895, 2022. 3 [10] Felipe Codevilla, Matthias M¨ uller, Antonio L´ opez, Vladlen Koltun, and Alexey Dosovitskiy. End-to-end driving via conditional imitation learning. In 2018 IEEE international conference on robotics and automation (ICRA) , pages 4693– 4700. IEEE, 2018. 3 [11] OpenScene Contributors. Openscene: The largest up-to-date 3d occupancy prediction benchmark in autonomous driv-ing. In Proceedings of the Conference on Computer Vision and Pattern Recognition, Vancouver, Canada , pages 18–22, 2023. 5, 1 [12] Michael J. Coren. Tesla has 780 million miles of driving data, and adds another million every 10 hours, 2025. Ac-cessed: YYYY-MM-DD. 1 [13] Daniel Dauner, Marcel Hallgarten, Andreas Geiger, and Kashyap Chitta. Parting with misconceptions about learning-based vehicle motion planning. In Conf. on Robot Learning ,2023. 3 [14] Daniel Dauner, Marcel Hallgarten, Tianyu Li, Xinshuo Weng, Zhiyu Huang, Zetong Yang, Hongyang Li, Igor Gilitschenski, Boris Ivanovic, Marco Pavone, et al. Navsim: Data-driven non-reactive autonomous vehicle simulation and benchmarking. Advances in Neural Information Processing Systems , 37:28706–28719, 2024. 2, 3, 5, 1 [15] Shizhe Diao, Yu Yang, Yonggan Fu, Xin Dong, Dan Su, Markus Kliegl, Zijia Chen, Peter Belcak, Yoshi Suhara, Hongxu Yin, et al. Climb: Clustering-based iterative data mixture bootstrapping for language model pre-training. 
+
+arXiv preprint arXiv:2504.13161 , 2025. 3 [16] Scott Ettinger, Shuyang Cheng, Benjamin Caine, Chenxi Liu, Hang Zhao, Sabeek Pradhan, Yuning Chai, Ben Sapp, Charles Qi, Yin Zhou, Zoey Yang, Aur´ elien Chouard, Pei Sun, Jiquan Ngiam, Vijay Vasudevan, Alexander McCauley, Jonathon Shlens, and Dragomir Anguelov. Large scale in-teractive motion forecasting for autonomous driving: The waymo open motion dataset. In IEEE Int. Conf. on Com-puter Vision , 2021. 5, 1 [17] Simin Fan, Matteo Pagliardini, and Martin Jaggi. Doge: Domain reweighting with generalization estimation. arXiv preprint arXiv:2310.15393 , 2023. 2 [18] Adam Grzywaczewski. Training ai for self-driving vehicles: the challenge of scale, 2017. Accessed: YYYY-MM-DD. 1 [19] K. Tan et al. H. Caesar, J. Kabzan. Nuplan: A closed-loop ml-based planning benchmark for autonomous vehicles. In 
+
+CVPR ADP3 workshop , 2021. 1 [20] Alexander H¨ agele, Elie Bakouch, Atli Kosson, Loubna Ben Allal, Leandro Von Werra, and Martin Jaggi. Scaling laws and compute-optimal training beyond fixed training dura-tions. arXiv preprint arXiv:2405.18392 , 2024. 2 [21] Tom Henighan, Jared Kaplan, Mor Katz, Mark Chen, Christopher Hesse, Jacob Jackson, Heewoo Jun, Tom B Brown, Prafulla Dhariwal, Scott Gray, et al. Scaling laws for autoregressive generative modeling. arXiv preprint arXiv:2010.14701 , 2020. 1 [22] Bo Jiang, Shaoyu Chen, Qing Xu, Bencheng Liao, Jiajie Chen, Helong Zhou, Qian Zhang, Wenyu Liu, Chang Huang, and Xinggang Wang. Vad: Vectorized scene representa-tion for efficient autonomous driving. In Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV) , pages 8340–8350, 2023. 3 [23] Yiding Jiang, Allan Zhou, Zhili Feng, Sadhika Malladi, and J Zico Kolter. Adaptive data optimization: Dynamic sample selection with scaling laws. In The Thirteenth International Conference on Learning Representations , 2025. 1, 2 [24] Ajay J Joshi, Fatih Porikli, and Nikolaos Papanikolopoulos. Multi-class active learning for image classification. In 2009 
+
+9ieee conference on computer vision and pattern recognition ,pages 2372–2379. IEEE, 2009. 3, 5, 1 [25] Feiyang Kang, Nadine Chang, Maying Shen, Marc T Law, Rafid Mahmood, Ruoxi Jia, and Jose M Alvarez. Adadedup: Adaptive hybrid data pruning for efficient large-scale object detection training. arXiv preprint arXiv:2507.00049 , 2025. 2[26] Jared Kaplan, Sam McCandlish, Tom Henighan, Tom B Brown, Benjamin Chess, Rewon Child, Scott Gray, Alec Radford, Jeffrey Wu, and Dario Amodei. Scaling laws for neural language models. arXiv preprint arXiv:2001.08361 ,2020. 1 [27] Napat Karnchanachari, Dimitris Geromichalos, Kok Seang Tan, Nanxiang Li, Christopher Eriksen, Shakiba Yaghoubi, Noushin Mehdipour, Gianmarco Bernasconi, Whye Kit Fong, Yiluan Guo, et al. Towards learning-based planning: The nuplan benchmark for real-world autonomous driving. In 2024 IEEE International Conference on Robotics and Au-tomation (ICRA) , pages 629–636. IEEE, 2024. 3 [28] Angelos Katharopoulos and Franc ¸ois Fleuret. Not all sam-ples are created equal: Deep learning with importance sam-pling. In International conference on machine learning ,pages 2525–2534. PMLR, 2018. 4 [29] D. P. Kingma and J. L. Ba. Adam: A method for stochas-tic optimization. In Int. Conf. on Learning Representations ,2015. 1 [30] Agata Lapedriza, Hamed Pirsiavash, Zoya Bylinskii, and Antonio Torralba. Are all training examples equally valu-able? arXiv preprint arXiv:1311.6510 , 2013. 4 [31] Youngwan Lee and Jongyoul Park. Centermask: Real-time anchor-free instance segmentation. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 13906–13915, 2020. 5, 1 [32] David D Lewis and Jason Catlett. Heterogeneous uncertainty sampling for supervised learning. In Machine learning pro-ceedings 1994 , pages 148–156. Elsevier, 1994. 3 [33] Zhenxin Li, Kailin Li, Shihao Wang, Shiyi Lan, Zhiding Yu, Yishen Ji, Zhiqi Li, Ziyue Zhu, Jan Kautz, Zuxuan Wu, et al. Hydra-mdp: End-to-end multimodal planning with multi-target hydra-distillation. arXiv preprint arXiv:2406.06978 ,2024. 2, 3, 5, 1 [34] Zhiqi Li, Zhiding Yu, Shiyi Lan, Jiahan Li, Jan Kautz, Tong Lu, and Jose M Alvarez. Is ego status all you need for open-loop end-to-end autonomous driving? In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 14864–14873, 2024. 3 [35] Mingyu Liu, Ekim Yurtsever, Jonathan Fossaert, Xingcheng Zhou, Walter Zimmer, Yuning Cui, Bare Luka Zagar, and Alois C Knoll. A survey on autonomous driving datasets: Statistics, annotation quality, and a future outlook. IEEE Transactions on Intelligent Vehicles , 2024. 1 [36] Qian Liu, Xiaosen Zheng, Niklas Muennighoff, Guangtao Zeng, Longxu Dou, Tianyu Pang, Jing Jiang, and Min Lin. Regmix: Data mixture as regression for language model pre-training. In The Thirteenth International Conference on Learning Representations , 2025. 1, 2 [37] Zhuoming Liu, Hao Ding, Huaping Zhong, Weijia Li, Jifeng Dai, and Conghui He. Influence selection for active learning. In Proceedings of the IEEE/CVF international conference on computer vision , pages 9274–9283, 2021. 3 [38] Rafid Mahmood, Sanja Fidler, and Marc T Law. Low-budget active learning via wasserstein distance: An integer program-ming approach. In International Conference on Learning Representations , 2022. 1 [39] Rafid Mahmood, James Lucas, Jose M Alvarez, Sanja Fidler, and Marc T Law. Optimizing data collection for machine learning. Journal of Machine Learning Research , 26(38): 1–52, 2025. 2 [40] Dennis Park, Rares Ambrus, Vitor Guizilini, Jie Li, and Adrien Gaidon. Is pseudo-lidar needed for monocular 3d object detection? In Proceedings of the IEEE/CVF inter-national conference on computer vision , pages 3142–3152, 2021. 5, 1 [41] Priyaranjan Pattnayak, Hitesh Laxmichand Patel, Bhargava Kumar, Amit Agarwal, Ishan Banerjee, Srikant Panda, and Tejaswini Kumar. Survey of large multimodal model datasets, application categories and taxonomy. arXiv preprint arXiv:2412.17759 , 2024. 1 [42] Dean Pomerleau. ALVINN: an autonomous land vehicle in a neural network. In Advances in Neural Information Process-ing Systems 1, [NIPS Conference, Denver, Colorado, USA, 1988] , pages 305–313. Morgan Kaufmann, 1988. 3 [43] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervi-sion. In International conference on machine learning , pages 8748–8763. PmLR, 2021. 2 [44] Pengzhen Ren, Yun Xiao, Xiaojun Chang, Po-Yao Huang, Zhihui Li, Brij B Gupta, Xiaojiang Chen, and Xin Wang. A survey of deep active learning. ACM computing surveys (CSUR) , 54(9):1–40, 2021. 2 [45] Dan Roth and Kevin Small. Margin-based active learning for structured output spaces. In European conference on ma-chine learning , pages 413–424. Springer, 2006. 3 [46] Ozan Sener and Silvio Savarese. Active learning for convolu-tional neural networks: A core-set approach. arXiv preprint arXiv:1708.00489 , 2017. 1, 3, 5, 2 [47] Maying Shen, Nadine Chang, Sifei Liu, and Jose M Al-varez. Sse: Multimodal semantic data selection and enrich-ment for industrial-scale data assimilation. In Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V. 1 , pages 2525–2535, 2025. 2, 3 [48] Eric Slyman, Stefan Lee, Scott Cohen, and Kushal Kafle. Fairdedup: Detecting and mitigating vision-language fair-ness disparities in semantic dataset deduplication. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pages 13905–13916, 2024. 2 [49] Ben Sorscher, Robert Geirhos, Shashank Shekhar, Surya Ganguli, and Ari Morcos. Beyond neural scaling laws: beat-ing power law scaling via data pruning. Advances in Neural Information Processing Systems , 35:19523–19536, 2022. 1, 2, 4 [50] Mariya Toneva, Alessandro Sordoni, Remi Tachet des Combes, Adam Trischler, Yoshua Bengio, and Geoffrey J. 
+
+10 Gordon. An empirical study of example forgetting during deep neural network learning. In International Conference on Learning Representations , 2019. 3 [51] Ziting Wen, Oscar Pizarro, and Stefan B. Williams. Feature alignment: Rethinking efficient active learning via proxy in the context of pre-trained models. Transactions on Machine Learning Research , 2024. 5 [52] Penghao Wu, Xiaosong Jia, Li Chen, Junchi Yan, Hongyang Li, and Yu Qiao. Trajectory-guided control prediction for end-to-end autonomous driving: A simple yet strong base-line. Advances in Neural Information Processing Systems ,35:6119–6132, 2022. 3 [53] Sang Michael Xie, Hieu Pham, Xuanyi Dong, Nan Du, Hanxiao Liu, Yifeng Lu, Percy S Liang, Quoc V Le, Tengyu Ma, and Adams Wei Yu. Doremi: Optimizing data mixtures speeds up language model pretraining. Advances in Neural Information Processing Systems , 36:69798–69818, 2023. 2 [54] Wanyun Xie, Francesco Tonin, and Volkan Cevher. Chameleon: A flexible data-mixing framework for language model pretraining and finetuning. In Forty-second Interna-tional Conference on Machine Learning , 2025. 2, 5 [55] Chengyin Xu, Kaiyuan Chen, Xiao Li, Ke Shen, and Chenggang Li. Unveiling downstream performance scal-ing of llms: A clustering-based perspective. arXiv preprint arXiv:2502.17262 , 2025. 4 [56] Jiasheng Ye, Peiju Liu, Tianxiang Sun, Jun Zhan, Yunhua Zhou, and Xipeng Qiu. Data mixing laws: Optimizing data mixtures by predicting language modeling performance. In 
+
+The Thirteenth International Conference on Learning Rep-resentations , 2025. 1, 2 [57] Tianhe Yu, Deirdre Quillen, Zhanpeng He, Ryan Julian, Karol Hausman, Chelsea Finn, and Sergey Levine. Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning. In Conference on robot learning ,pages 1094–1100. PMLR, 2020. 2 [58] Xiaohua Zhai, Alexander Kolesnikov, Neil Houlsby, and Lu-cas Beyer. Scaling vision transformers. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 12104–12113, 2022. 1 [59] Xueying Zhan, Qingzhong Wang, Kuan-hao Huang, Haoyi Xiong, Dejing Dou, and Antoni B Chan. A compar-ative survey of deep active learning. arXiv preprint arXiv:2203.13450 , 2022. 2 
+
+11 Scaling-Aware Data Selection for End-to-End Autonomous Driving Systems 
+
+# Supplementary Material 
+
+7. Experiment Protocols 
+
+7.1. Dataset and Virtual Clip Creation 
+
+We conduct experiments using the Navtrain [14] and 
+
+trainval splits of OpenScene [11] as the combined training and pool datasets. OpenScene is a redistribution of the NuPlan dataset [19], subsampled to 2 Hz, and con-tains approximately 120 hours of driving data with dense annotations. The Navtrain split is curated within the NAVSIM framework [14] by filtering out trivial driving sce-narios from the trainval split of OpenScene . In both experiments, evaluation is performed on navtest [14], a validation set curated analogously from the test split of 
+
+OpenScene .The Navtrain and trainval splits consist of 1,192 and 1,250 individual driving sessions, respectively, with du-rations ranging from 30 seconds to 50 minutes. In addition to this large temporal variation, the total number of avail-able driving sessions remains limited, and treating individ-ual frames as independent samples to would be both unreal-istic and inconsistent with the temporal structure of driving data. Hence, to have more samples to work with and to align our data handling with common industry practice [16] we segment each driving log into fixed-length virtual clips 
+
+of 10 seconds (corresponding to 20 frames at 2 Hz). Below, we describe how we create virtual clips are created. 
+
+> Table 4. Train-pool clip counts for OpenScene and Navtrain
+
+Train Pool Openscene 1000 31539 Navtrain 460 4141 We segment each driving log into fixed-length virtual clips of 10 seconds. Given the dataset’s sampling rate of 2 Hz, each virtual clip contains 20 frames. For each log, non-overlapping clips are extracted sequentially from the start of the log, and any remaining portion shorter than 10 seconds is discarded. For example, a 23-second log yields two clips covering [0–10) s and [10–20) s, while the final 3 seconds are omitted. Following this procedure, the Navtrain split yields a total of 4,601 virtual clips after discarding 11,268 out of 103,288 frames (10.9%). For OpenScene , we ob-tain 32,539 virtual clips, with 12,086 out of 662,866 frames (1.8%) omitted due to incomplete segments. The train-pool clip counts are summarized in Table 4 
+
+7.2. Training details 
+
+As already mentioned in the main body of the paper, we use the Hydra-MDP model [33] that won the NAVSIM bench-mark in 2024 [14] by a significant margin. In addition to the imitation trajectory loss, the model distills the rule-compliance scores of each trajectory, obtained with prior simulations. We initialize the model’s encoder as pretrained VoVNetV2-99 backbone [31, 40]. In accordance with the training recipe of provided in the paper [33], we use Adam optimizer [29] without any weight decay and keep the learn-ing rate fixed throughout the training. We set the per-GPU batch size to 20. In the Navtrain experiments, all runs are conducted using 8 ×A100 GPUs with a learning rate of 1e−4. Each experiment is repeated with three random seeds (0, 2025, 424242), and the reported results are averaged over these runs, with the standard deviation shown as a subscript. The base experiment and budgets up to 800 clips are trained for 60 epochs, while the 1,600- and 2,400-clip settings are trained for 50 and 45 epochs, respectively, to reduce com-pute cost. For the OpenScene experiments, the rule-compliance distillation losses are disabled due to their high computa-tional overhead needed to run intensive simulations to cal-culate those scores. All runs use 16 ×A100 GPUs with a learning rate of 2e−4 and a fixed training length of 40 epochs. Experiments with 2,000, 4,000, and 8,000 clips are repeated with two seeds (0, 2025), while smaller-budget runs use three seeds (0, 2025, 424242) to ensure stability. 
+
+7.3. Details of the Baselines 
+
+Random. For each budget B, Random selection is con-structed from a single randomized ordering of the pool. Specifically, we shuffle all clips once using a fixed seed (seed = 42) and define the selected set for budget B as the first B clips in this ordering. This ensures that selections for larger budgets are strict supersets of those for smaller budgets. 
+
+Uncertainty [24]. We score each pool clip by the entropy of its model-predicted trajectory logits. Let zi denote the (pre-softmax) logits for sample xi, and let pi = softmax (zi)
+
+be the corresponding probability distribution over candidate trajectories. The uncertainty score is taken as the Shannon entropy Hi = − P 
+
+> k
+
+pi,k log pi,k . The uncertainty score is calculated for each frame in the clip, and we simply take average of the frame uncertainty scores to aggregate it at the clip level. Clips with higher entropy correspond to more 1ambiguous or uncertain model predictions and are therefore preferred. To construct a budget-B selection, we compute 
+
+Hi for every pool item once, rank all items by entropy in de-scending order, and pick the top B. We share the procedure in Algorithm 2. 
+
+Algorithm 2 Entropy-Based Uncertainty Selection 
+
+Require: Pool samples {xi}, model f (·), budget B
+
+Ensure: Selected set S of size B 
+
+> 1:
+
+Initialize S = ∅ 
+
+> 2:
+
+for each sample xi in the pool do  
+
+> 3:
+
+zi = f (xi) ▷ trajectory logits  
+
+> 4:
+
+pi = softmax( zi) 
+
+> 5:
+
+Hi = − P 
+
+> k
+
+pi,k log pi,k ▷ entropy score  
+
+> 6:
+
+end for  
+
+> 7:
+
+Rank all pool samples by Hi in descending order  
+
+> 8:
+
+S ← top-B samples under this ranking  
+
+> 9:
+
+return S
+
+Coreset [46]. We adopt the standard geometric Coreset selection procedure shown in Algorithm 3. Starting from an initial set of training indices s0, the algorithm iteratively adds the pool element that is farthest under the chosen dis-tance measure ∆( ·, ·) from the current selected set. Specifi-cally, we use Euclidean Distance. At each iteration, Coreset identifies the sample u ∈ spool that maximizes the mini-mum distance to the existing set s, and then augments s
+
+with u. This expansion continues until the total size reaches 
+
+B + |s0|, yielding the Coreset of size B from the pool. 
+
+Algorithm 3 Coreset 
+
+Require: train sample indices s0, budget B, pool indices 
+
+spool  
+
+> 1:
+
+Initialize s = s0 
+
+> 2:
+
+repeat  
+
+> 3:
+
+u = arg max i∈spool min j∈s ∆( xi, x j ) 
+
+> 4:
+
+s = s ∪ { u} 
+
+> 5:
+
+until |s| = B + |s0| 
+
+> 6:
+
+return s
+
+Chameleon [54]. Chameleon is a domain-mixture frame-work that relies on embeddings computed from the training domains. First, each cluster is embedded using representa-tions from the base model’s feature space. For each cluster, sample embeddings are averaged which produces one em-bedding per cluster. A cluster–cluster affinity matrix is then constructed using a kernel function applied to pairs of do-main embeddings. Given this affinity matrix, Chameleon applies kernel ridge regression (KRLS) to compute a score 
+
+Si for each domain, reflecting how informative or influen-tial that domain is relative to all others. Finally, the mixture weight for domain i is obtained by normalizing these scores with a softmax, αi = softmax( Si), and data are sampled from domains according to these mixture weights. We use the pretraining mode in our experiments, as we re-train the model from scratch for each budget and we set the ridge parameter as λ = 1 . The pseudo-code is provided in Algo-rithm 4. 
+
+Algorithm 4 Chameleon Domain Weighting (Pretraining Mode) 
+
+Require: Training clusters D = {D1, . . . , D k}, ridge pa-rameter λ, embedding layer L, budget B
+
+Ensure: Selected set S of size B 
+
+> 1:
+
+Extract domain embeddings:  
+
+> 2:
+
+xi = 1
+
+> |Di|
+
+P 
+
+> a∈Di
+
+h(L) 
+
+> θ
+
+(a) for each domain Di 
+
+> 3:
+
+Construct feature matrix X = [ x⊤ 
+
+> 1
+
+, . . . , x ⊤ 
+
+> k
+
+] 
+
+> 4:
+
+Compute affinity matrix ΩD = XX ⊤ 
+
+> 5:
+
+Compute KRLS scores Sλ(Di) for each domain Di us-ing ΩD 
+
+> 6:
+
+Compute domain weights:  
+
+> 7:
+
+αP T i = exp( S−1     
+
+> λ(Di))
+> Pkj=1 exp( S−1
+> λ(Dj))
+> 8:
+
+Sample B points from domains according to mixture weights {αP T i } 
+
+> 9:
+
+return S
+
+8. More Results on the Experiments and Abla-tions 
+
+Due to the space constraints in the main body of the paper, we present more results here. 
+
+Experiments on Openscene . The full validation EPDMS and BRMR results for the Openscene experiments can be found in Table 6. The breakdown of the validation EPDMS subscores are shared in Table 9. The scaling curves obtained from different cities are shared in Figure 7. 
+
+Experiments on Navtrain . The full validation EPDMS and BRMR results for the Navtrain experiments can be found in Table 7. The breakdown of the validation EPDMS subscores are shared in Table 10. We also provide the city distributions induced by different method at various budgets in Figure 9. The scaling curves obtained from different cities are shared in Figure 8. The scaling curves obtained from different cities are shared in Figure 8. 
+
+Ablation with Caption-based Clustering. To generate the clip captions, we used the Qwen-2.5VL-32B-Instruct model with the following caption: “This is a 10 second 
+
+20 200 400 600 800 1000     
+
+> # Added clips
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> EPDMS
+> boston (a=8.80, =669.1)
+> pittsburgh (a=61.59, =7151.8)
+> singapore (a=6.12, =450.4)
+> vegas (a=3.16, =471.9)
+
+Figure 7. Performance scalings of different cities for the Open-Scene experiment. 0 50 100 150 200 250 300 350 400     
+
+> # Added clips
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> EPDMS
+> boston (a = 2.50, =81.8)
+> pittsburgh (a = 2.30, =87.4)
+> singapore (a = 0.72, =65.3)
+> vegas (a = 1.91, =100.0)
+
+Figure 8. Performance scalings of different cities for the main Navtrain experiment. 
+
+long video of your student driving. The clip might include discontinuities, sudden changes in the driving environment. Describe the driving environment that your student is driv-ing through and your student’s driving actions. Please de-scribe the driving condition including the location, weather, road users, and their motions. During your description, there are several things to keep in mind. 1. Please pay attention only to the objects on the driving roads and ig-nore the background. 2. Ignore the brands of the vehicles. 3. Describe it if objects are partially occluded by others, or are in areas with different brightness such as under shades. Please provide a concise description in one paragraph with less than 150 words. Do not mention anything that you are certain does not exist! No statements about uncertain ob-jects or events (no ’maybe’ or ’might’ or ’possibly’). All responses must be in English only! ”On the generated clip captions, we extract TF–IDF fea-tures using the top 1,024 unigrams and bigrams after remov-ing common English stop words. We then perform cluster-ing in this TF–IDF space, forming six clusters. The domi-nant scene characteristics of each cluster are determined by their highest-weight unigrams and bigrams, as summarized in Table 3. We additionally conduct a qualitative assess-ment of the resulting groups and confirm that the clusters are coherent and semantically meaningful. In fact, we have first attempted using ”sentence-transformers/all-mpnet-base-v2” model downloaded from Huggingface to obtain caption embeddings using a pre-trained transformer. However, when we clustered the data in this embedding space, qualitative inspection revealed that the resulting groups lacked coherent driving characteristics. Hence, we experimented with clustering on the TF-IDF fea-tures which produced much more coherent clusters with di-rectly interpretable feature space. vegas boston pittsburgh singapore  
+
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> 70
+> Number of Clips
+> City Distribution 100 clips
+
+(a) 100 clips vegas boston pittsburgh singapore   
+
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> 120
+> 140
+> Number of Clips
+> City Distribution 200 clips
+
+(b) 200 clips vegas boston pittsburgh singapore  
+
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> Number of Clips
+> City Distribution 400 clips
+
+(c) 400 clips vegas boston pittsburgh singapore   
+
+> 0
+> 100
+> 200
+> 300
+> 400
+> 500
+> 600
+> Number of Clips
+> City Distribution 800 clips
+
+(d) 800 clips vegas boston pittsburgh singapore  
+
+> 0
+> 200
+> 400
+> 600
+> 800
+> 1000
+> 1200
+> Number of Clips
+> City Distribution 1600 clips
+
+(e) 1600 clips vegas boston pittsburgh singapore   
+
+> 0
+> 250
+> 500
+> 750
+> 1000
+> 1250
+> 1500
+> 1750
+> Number of Clips
+> City Distribution 2400 clips
+> Random
+> Uncertainty
+> Coreset
+> Chameleon
+> MOSAIC
+
+(f) 2400 clips 
+
+Figure 9. Overall caption describing all six subfigures. 
+
+30 1 2 3 4 5 
+
+> Cluster ID
+> 0
+> 10
+> 20
+> 30
+> 40
+> 50
+> 60
+> Number of Clips
+> Caption Cluster Distribution 100 clips
+
+(a) 100 clips 0 1 2 3 4 5  
+
+> Cluster ID
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Number of Clips
+> Caption Cluster Distribution 200 clips
+
+(b) 200 clips 0 1 2 3 4 5 
+
+> Cluster ID
+> 0
+> 25
+> 50
+> 75
+> 100
+> 125
+> 150
+> 175
+> 200
+> Number of Clips
+> Caption Cluster Distribution 400 clips
+
+(c) 400 clips 0 1 2 3 4 5  
+
+> Cluster ID
+> 0
+> 50
+> 100
+> 150
+> 200
+> 250
+> 300
+> 350
+> Number of Clips
+> Caption Cluster Distribution 800 clips
+
+(d) 800 clips 0 1 2 3 4 5 
+
+> Cluster ID
+> 0
+> 200
+> 400
+> 600
+> 800
+> Number of Clips
+> Caption Cluster Distribution 1600 clips
+
+(e) 1600 clips 0 1 2 3 4 5  
+
+> Cluster ID
+> 0
+> 200
+> 400
+> 600
+> 800
+> 1000
+> Number of Clips
+> Caption Cluster Distribution 2400 clips
+> random
+> entropy
+> coreset
+> chameleon pretrain
+> MOSAIC
+
+(f) 2400 clips 
+
+Figure 10. Overall caption describing all six subfigures. 
+
+9. Details on the Scaling Fits and Compute Budget. 
+
+MOSAIC requires an upfront compute investment to esti-mate cluster-specific scaling curves via pilot runs. To keep this cost tractable, we avoid full training from-scratch dur-ing the pilot experiments. Instead, we adopt a continual-training approach: we resume training from the base model’s final epoch checkpoint and fine-tune on the com-bined dataset for a small number of epochs. For the Open-Scene experiments, we train for 5 epochs after mining 200 and 400 clips from each cluster. For the Navtrain exper-iments, we train for 10 epochs after mining 100 and 200 clips in the two pilot runs. This procedure provides accurate scaling estimates while maintaining a manageable compu-tational overhead. For the OpenScene experiments, we share the results 0 500 1000 1500 2000 2500 3000 3500 
+
+> A100 GPU hours
+> 70
+> 72
+> 74
+> 76
+> 78
+> 80
+> 82
+> 84
+> Val. EPDMS
+
+EPDMS vs. Number of Clips 
+
+> Random
+> Uncertainty
+> Coreset
+> Chameleon
+> MOSAIC
+> Base
+
+Figure 11. Validation EPDMS vs. Compute Spent (GPU hours) for OpenScene experiments. 
+
+with respect to the compute spent for each method. In particular, we provide the validation EPDMS vs. A100 GPU hours. The results are shared in Figure 11. As can be seen while MOSAIC is not the strongest method at small compute budgets, its initial scaling overhead amor-tizes over time, and at large budgets, the investment in scaling pays off, making MOSAIC the top-performing ap-proach. More concretely, at the highest compute budget: MOSAIC reaches the top-baseline(Coreset in this setting) performance with 16% less compute, corresponding to 490 GPU hours saved; Compared to Random selection, MO-SAIC requires 57% less compute, saving 1700 GPU hours to attain the same EPDMS. These results demonstrate that although MOSAIC pays an upfront cost for pilot scaling runs, the compute investment is recovered once we move into the large-budget regime. 
+
+10. Ranking with Alternative Cheap Signals 
+
+Since ranking is one of the key components of our framework, we also investigate cheaper alternatives to the EPDMS-based ranking signal to reduce the reliance on dense annotations such as bounding boxes. Specifically, we experiment with ranking clips according to (i) the trajectory imitation loss, (ii) the norm of the gradient vector induced by this loss, and (iii) the sensitivity of the model’s output to gradient perturbations. Instead of retraining the model with clips selected using the alternative signals and reporting the validation EPDMS, we measure the Kendall–Tau correlation coefficient be-tween the rankings produced by each alternative signal and those produced by the EPDMS-based ranking. The results, shown in Figure 12, indicate that none of the inexpensive alternatives yield a ranking that correlates strongly with EPDMS. 4imi. loss grad. norm sensitivity epdms             
+
+> imi. loss
+> grad. norm
+> sensitivity
+> epdms
+> 1.00 0.61 -0.05 -0.17
+> 0.61 1.00 -0.03 -0.30
+> -0.05 -0.03 1.00 0.13
+> -0.17 -0.30 0.13 1.00
+> Kendall-Tau Rank Correlation
+> 0.2
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+
+Figure 12. Kendall-Tau correlation coefficients between EPDMS and cheap signals based rankings. 
+
+11. Approximation for Linear Separability and Error Analysis: 
+
+Here, we formally express the performance improvement obtained from a data mixture ∆U (n1, · · · , n M ) as follows: 
+
+> M
+
+X
+
+> i=1
+
+∆Ui(ni) + X
+
+> i̸=j
+
+∆Uij (ni, n j ) + H.O.T. Here, the pairwise cross-cluster interaction term 
+
+∆Uij (ni, n j ) is defined as ∆Uij = Uij − Ui − Uj + U0,
+
+where we use a lightweight notation for clarity: Uij =
+
+U (Dtrain ∪ D isel ∪ D jsel ), Ui = U (Dtrain ∪ D isel ), and 
+
+U0 = U (Dtrain ), with U (·) ≡ U ({G r (·)}Rr=1 ). In Equa-tion 3, we retain only the first-order terms {∆Ui}Mi=1 and omit interaction and higher-order terms. Importantly, we do not assume strict linear separability. Rather, we assume that first-order cluster-wise scaling captures the dominant variation in performance, while interaction terms contribute residual approximation error. To quantify the magnitude of the approximation error, we compare the estimated EPDMS calculated by summing cluster-wise scaling fits against the actual EPDMS obtained with the MOSAIC data mixtures. As shown in Table 5, the approximation overestimates performance by a modest mar-gin (up to 1 EPMS), indicating that interaction terms are present but negligible in this setting. 
+
+Table 5. Actual vs. estimated EPDMS (Navtrain, geolocation) 
+
+# Clips 100 200 400 800 1600 2400 
+
+Actual 86.3 87.1 88.2 89.1 90.2 90.3 
+
+Estimated 86.2 87.6 89.3 90.6 91.1 91.3 We also note that the discrepancy between the Actual 
+
+and Estimated are accumulation of two factors: i) the cross-cluster interactions, ii) extrapolation errors of the scaling fits. Hence, Table 5 should be interpreted as an upper bound on interaction effects rather than a pure estimate thereof. Also, as a contrasting example, if clusters were formed randomly and lacked semantic coherence, cross-cluster in-teractions would likely be large, and the approximation would break down. In such pathological settings, explicitly modeling interaction terms would be necessary for optimal data selection. 5Table 6. Openscene validation EPDM and BRMR results. 
+
+Budget Method EPDMS SRR 250 Random 72.84 ±1.14 1.00 Uncertainty 70.78 ±0.59 14.58 Coreset 76.26 ±0.48 0.20 Chameleon 72.97 ±1.72 0.86 MOSAIC 77.38 ±1.58 0.15 500 Random 74.19 ±1.05 1.00 Uncertainty 69.77 ±0.48 10.68 Coreset 78.12 ±0.87 0.26 Chameleon 75.98 ±0.06 0.70 MOSAIC 79.38 ±1.05 0.20 1000 Random 75.84 ±0.9 1.00 Uncertainty 71.12 ±0.38 NA Coreset 80.46 ±0.02 0.28 Chameleon 79.08 ±0.74 0.44 MOSAIC 81.68 ±0.52 0.19 2000 Random 78.39 ±0.12 1.00 Uncertainty 69.94 ±1.4 NA Coreset 81.37 ±0.13 0.28 Chameleon 81.35 ±0.39 0.44 MOSAIC 82.78 ±0.41 0.19 4000 Random 80.38 ±0.55 1.00 Uncertainty 73.46 ±0.19 NA Coreset 83.63 ±0.36 0.25 Chameleon 82.92 ±0.13 0.39 MOSAIC 84.25 ±0.14 0.18 8000 Random 82.32 ±0.54 1.00 Uncertainty 75.63 ±0.19 NA Coreset 84.49 ±0.02 0.35 Chameleon 84.43 ±0.01 0.40 MOSAIC 85.02 ±0.18 0.20 
+
+Table 7. Navtrain validation EPDMS and BRMR results. 
+
+Budget Method EPDMS SRR 100 Random 84.66 ±0.6 1.00 Uncertainty 84.5 ±0.48 1.47 Coreset 85.29 ±0.47 0.53 Chameleon 84.57 ±0.18 1.07 MOSAIC 86.29 ±0.43 0.30 200 Random 85.45 ±0.09 1.00 Uncertainty 84.84 ±0.54 1.50 Coreset 86.12 ±0.31 0.60 Chameleon 86.04 ±0.3 0.80 MOSAIC 87.04 ±0.37 0.32 400 Random 86.69 ±0.2 1.00 Uncertainty 86.07 ±0.75 2.00 Coreset 87.09 ±0.29 0.79 Chameleon 87.04 ±0.6 0.82 MOSAIC 88.21 ±0.03 0.38 800 Random 87.41 ±0.37 1.00 Uncertainty 86.69 ±0.34 1.69 Coreset 88.48 ±0.12 0.62 Chameleon 88.33 ±0.23 0.64 MOSAIC 89.1 ±0.12 0.33 1600 Random 88.62 ±0.22 1.00 Uncertainty 87.75 ±0.37 1.36 Coreset 89.3 ±0.19 0.58 Chameleon 89.5 ±0.2 0.62 MOSAIC 90.18 ±0.25 0.37 2400 Random 89.42 ±0.03 1.00 Uncertainty 88.95 ±0.15 1.00 Coreset 89.75 ±0.02 0.76 Chameleon 90.05 ±0.08 0.64 MOSAIC 90.31 ±0.03 0.43 
+
+6Table 8. Navtrain validation EPDMS and BRMR results under caption-based clustering. 
+
+Budget Method EPDMS SRR 100 Random 84.66 ±0.6 1.00 Uncertainty 84.5 ±0.48 1.47 Coreset 85.29 ±0.47 0.53 Chameleon 84.35 ±0.47 1.30 MOSAIC 85.85 ±0.41 0.37 200 Random 85.45 ±0.09 1.00 Uncertainty 84.84 ±0.54 1.50 Coreset 86.12 ±0.31 0.60 Chameleon 85.39 ±0.02 2.88 MOSAIC 86.75 ±0.17 0.40 400 Random 86.69 ±0.2 1.00 Uncertainty 86.07 ±0.75 2.00 Coreset 87.09 ±0.29 0.79 Chameleon 84.95 ±0.45 3.32 MOSAIC 88.11 ±0.05 0.48 800 Random 87.41 ±0.37 1.00 Uncertainty 86.69 ±0.34 1.69 Coreset 88.48 ±0.12 0.62 Chameleon 86.1 ±0.55 2.68 MOSAIC 88.99 ±0.09 0.37 1600 Random 88.62 ±0.22 1.00 Uncertainty 87.75 ±0.37 1.36 Coreset 89.3 ±0.19 0.58 Chameleon 86.99 ±0.57 1.50 MOSAIC 89.98 ±0.13 0.39 2400 Random 89.42 ±0.03 1.00 Uncertainty 88.95 ±0.15 1.00 Coreset 89.75 ±0.02 0.76 Chameleon 87.62 ±0.28 1.00 MOSAIC 90.37 ±0.2 0.48 
+
+7Table 9. Breakdown of the nine EPDMS rule-compliance metrics for the base model and the models trained with data selected by various strategies at all budgets, shown for the OpenScene experiment. 
+
+Setting NC DAC DDC TLC EP TTC LK HC EC EPDMS Base 94.05 83.9 96.28 99.6 85.96 92.95 93.26 98.25 81.88 72.0 250 Random 94.27 ±0.60 84.63 ±1.46 97.38 ±0.23 99.66 ±0.04 85.18 ±1.02 93.23 ±0.64 93.33 ±0.56 98.26 ±0.01 82.66 ±0.76 72.84 ±1.14 
+
+Uncertainty 93.97 ±0.44 82.49 ±0.30 96.78 ±0.44 99.66 ±0.02 85.18 ±0.81 92.98 ±0.42 93.18 ±0.66 98.23 ±0.08 82.15 ±0.27 70.78 ±0.59 
+
+Coreset 95.11 ±0.47 87.66 ±0.61 98.38 ±0.21 99.67 ±0.04 86.09 ±1.13 94.08 ±0.84 94.47 ±0.20 98.31 ±0.05 83.38 ±0.74 76.26 ±0.48 
+
+Chameleon 94.02 ±1.25 84.30 ±1.18 97.48 ±0.71 99.58 ±0.06 87.48 ±1.41 92.69 ±1.23 93.43 ±0.04 98.26 ±0.01 83.15 ±1.80 72.97 ±1.72 
+
+MOSAIC 94.89 ±0.74 88.76 ±1.17 98.54 ±0.43 99.61 ±0.04 86.50 ±1.03 93.93 ±0.88 94.88 ±0.14 98.26 ±0.03 83.77 ±0.67 77.38 ±1.58 
+
+500 Random 94.65 ±0.21 85.72 ±0.88 97.87 ±0.44 99.64 ±0.06 85.53 ±0.22 93.51 ±0.32 93.73 ±0.24 98.27 ±0.05 83.26 ±0.14 74.19 ±1.05 
+
+Uncertainty 93.32 ±0.47 82.26 ±0.40 96.09 ±0.52 99.60 ±0.08 84.51 ±0.43 92.23 ±0.73 92.38 ±0.56 98.30 ±0.01 82.85 ±1.07 69.77 ±0.48 
+
+Coreset 95.56 ±0.78 88.96 ±0.57 98.95 ±0.09 99.71 ±0.07 86.21 ±0.99 94.69 ±0.79 95.14 ±0.13 98.31 ±0.03 84.24 ±0.34 78.12 ±0.87 
+
+Chameleon 95.00 ±0.58 87.11 ±0.09 98.16 ±0.02 99.67 ±0.16 86.67 ±2.25 94.22 ±0.45 94.20 ±0.44 98.30 ±0.01 83.69 ±0.24 75.98 ±0.06 
+
+MOSAIC 95.57 ±1.05 90.54 ±0.45 98.83 ±0.29 99.67 ±0.09 86.08 ±1.79 94.85 ±1.23 95.68 ±0.27 98.25 ±0.04 83.80 ±0.16 79.38 ±1.05 
+
+1000 Random 95.21 ±0.58 87.15 ±1.44 98.26 ±0.39 99.72 ±0.07 85.56 ±0.96 94.35 ±0.60 94.50 ±0.66 98.31 ±0.03 82.50 ±0.52 75.84 ±0.90 
+
+Uncertainty 94.04 ±0.70 83.77 ±0.02 96.96 ±0.08 99.70 ±0.08 83.11 ±0.66 93.21 ±1.00 92.87 ±0.14 98.32 ±0.02 81.91 ±0.75 71.12 ±0.38 
+
+Coreset 95.93 ±0.24 91.05 ±0.26 99.28 ±0.11 99.71 ±0.04 86.39 ±0.48 95.01 ±0.21 95.75 ±0.08 98.28 ±0.03 84.58 ±0.42 80.46 ±0.02 
+
+Chameleon 95.89 ±0.19 89.57 ±0.68 98.94 ±0.16 99.71 ±0.07 86.39 ±0.51 95.06 ±0.26 95.44 ±0.27 98.29 ±0.01 84.23 ±0.74 79.08 ±0.74 
+
+MOSAIC 96.00 ±0.22 92.20 ±0.48 99.33 ±0.07 99.67 ±0.05 86.63 ±0.41 95.24 ±0.24 96.17 ±0.22 98.28 ±0.03 84.33 ±0.30 81.68 ±0.52 
+
+2000 Random 95.58 ±0.54 89.26 ±0.64 98.67 ±0.18 99.70 ±0.12 86.44 ±0.42 94.88 ±0.61 95.26 ±0.18 98.30 ±0.00 83.96 ±0.96 78.39 ±0.12 
+
+Uncertainty 93.14 ±0.79 82.66 ±1.12 96.64 ±0.64 99.53 ±0.09 84.52 ±1.23 92.19 ±1.22 93.22 ±0.29 98.28 ±0.03 80.98 ±1.30 69.94 ±1.40 
+
+Coreset 95.89 ±0.22 91.77 ±0.14 99.44 ±0.06 99.66 ±0.04 87.39 ±0.05 94.98 ±0.18 95.99 ±0.47 98.29 ±0.00 85.55 ±0.19 81.37 ±0.13 
+
+Chameleon 96.38 ±0.25 91.31 ±0.26 99.15 ±0.03 99.71 ±0.05 86.55 ±0.40 95.60 ±0.29 95.99 ±0.15 98.34 ±0.01 85.04 ±0.15 81.35 ±0.39 
+
+MOSAIC 96.90 ±0.38 92.29 ±0.36 99.48 ±0.05 99.73 ±0.01 86.61 ±0.73 96.16 ±0.26 96.34 ±0.06 98.28 ±0.05 84.69 ±0.01 82.78 ±0.41 
+
+4000 Random 96.32 ±0.59 90.53 ±0.06 99.06 ±0.07 99.79 ±0.05 86.36 ±0.48 95.66 ±0.52 95.68 ±0.09 98.30 ±0.01 84.46 ±0.14 80.38 ±0.55 
+
+Uncertainty 94.67 ±0.28 85.11 ±0.51 97.15 ±0.54 99.71 ±0.04 84.26 ±0.69 93.72 ±0.40 93.26 ±0.09 98.28 ±0.02 81.34 ±1.06 73.46 ±0.19 
+
+Coreset 97.11 ±0.18 92.93 ±0.60 99.44 ±0.06 99.82 ±0.02 86.65 ±0.55 96.42 ±0.19 96.66 ±0.30 98.16 ±0.12 85.10 ±0.06 83.63 ±0.36 
+
+Chameleon 96.76 ±0.24 92.32 ±0.02 99.51 ±0.01 99.77 ±0.01 86.98 ±0.17 95.91 ±0.31 96.49 ±0.12 98.32 ±0.01 85.51 ±0.11 82.92 ±0.13 
+
+MOSAIC 96.97 ±0.32 93.59 ±0.11 99.59 ±0.04 99.80 ±0.01 87.14 ±0.98 96.18 ±0.45 96.62 ±0.08 98.28 ±0.01 85.06 ±0.34 84.25 ±0.14 
+
+8000 Random 96.79 ±0.21 91.88 ±0.34 99.23 ±0.11 99.79 ±0.03 87.19 ±0.05 95.93 ±0.15 96.19 ±0.10 98.28 ±0.03 84.97 ±0.19 82.32 ±0.54 
+
+Uncertainty 95.62 ±0.38 86.48 ±0.06 97.62 ±0.01 99.71 ±0.02 84.92 ±0.25 94.80 ±0.28 94.34 ±0.27 98.32 ±0.02 81.62 ±0.09 75.63 ±0.19 
+
+Coreset 97.39 ±0.15 93.51 ±0.18 99.55 ±0.07 99.81 ±0.03 87.07 ±0.39 96.64 ±0.12 96.78 ±0.06 98.28 ±0.03 85.51 ±0.15 84.49 ±0.02 
+
+Chameleon 97.33 ±0.39 93.36 ±0.14 99.61 ±0.01 99.82 ±0.01 87.34 ±0.61 96.42 ±0.50 96.90 ±0.17 98.29 ±0.02 85.51 ±0.12 84.43 ±0.00 
+
+MOSAIC 97.55 ±0.13 93.84 ±0.00 99.53 ±0.18 99.84 ±0.03 87.19 ±0.24 96.79 ±0.07 97.10 ±0.07 98.29 ±0.02 85.25 ±0.22 85.02 ±0.18 
+
+8Table 10. Breakdown of the nine EPDMS rule-compliance metrics for the base model and the models trained with data selected by various strategies at all budgets, shown for the Navtrain experiment. 
+
+Setting NC DAC DDC TLC EP TTC LK HC EC EPDMS Base 95.3 95.94 99.09 99.6 88.09 94.55 94.49 98.25 82.39 83.97 100 Random 95.43 ±0.84 96.41 ±0.20 98.98 ±0.07 99.54 ±0.15 88.68 ±0.63 94.69 ±0.89 94.82 ±0.34 98.27 ±0.04 82.81 ±0.64 84.66 ±0.60 
+
+Uncertainty 95.68 ±0.33 96.23 ±0.38 98.91 ±0.12 99.51 ±0.06 88.21 ±0.22 94.77 ±0.36 94.88 ±0.13 98.27 ±0.04 83.50 ±0.32 84.50 ±0.48 
+
+Coreset 95.63 ±0.41 96.88 ±0.33 99.13 ±0.09 99.56 ±0.03 88.39 ±0.65 94.75 ±0.51 94.97 ±0.34 98.25 ±0.03 82.94 ±0.20 85.29 ±0.47 
+
+Chameleon 95.14 ±0.20 96.50 ±0.19 99.17 ±0.02 99.53 ±0.02 88.80 ±0.18 94.35 ±0.11 95.10 ±0.12 98.25 ±0.04 82.93 ±0.75 84.57 ±0.18 
+
+MOSAIC 96.75 ±0.28 97.06 ±0.09 99.03 ±0.03 99.60 ±0.03 87.74 ±0.28 96.09 ±0.35 94.92 ±0.32 98.27 ±0.02 82.80 ±0.62 86.29 ±0.43 
+
+200 Random 95.90 ±0.35 96.58 ±0.23 99.11 ±0.08 99.65 ±0.02 88.75 ±0.19 95.08 ±0.33 95.14 ±0.29 98.27 ±0.04 83.14 ±0.11 85.45 ±0.09 
+
+Uncertainty 95.61 ±0.66 96.53 ±0.38 98.96 ±0.18 99.57 ±0.09 88.51 ±0.11 94.74 ±0.59 94.88 ±0.28 98.28 ±0.03 83.34 ±0.34 84.84 ±0.54 
+
+Coreset 96.19 ±0.49 97.05 ±0.11 99.13 ±0.06 99.60 ±0.04 88.68 ±0.13 95.39 ±0.44 95.17 ±0.11 98.29 ±0.01 83.45 ±0.55 86.12 ±0.31 
+
+Chameleon 96.12 ±0.52 96.76 ±0.34 99.33 ±0.18 99.60 ±0.10 88.74 ±0.54 95.38 ±0.71 95.41 ±0.19 98.30 ±0.02 83.73 ±0.13 86.04 ±0.30 
+
+MOSAIC 96.83 ±0.31 97.51 ±0.18 99.24 ±0.06 99.61 ±0.01 88.20 ±0.13 96.16 ±0.29 95.36 ±0.18 98.26 ±0.02 82.63 ±0.35 87.04 ±0.37 
+
+400 Random 96.71 ±0.25 96.91 ±0.20 99.18 ±0.09 99.71 ±0.01 88.75 ±0.15 96.02 ±0.23 95.76 ±0.16 98.30 ±0.01 82.96 ±0.10 86.69 ±0.20 
+
+Uncertainty 96.39 ±0.60 96.97 ±0.38 99.00 ±0.08 99.65 ±0.01 88.22 ±0.42 95.55 ±0.66 94.98 ±0.22 98.25 ±0.02 83.64 ±0.16 86.07 ±0.75 
+
+Coreset 96.73 ±0.24 97.27 ±0.17 99.36 ±0.02 99.64 ±0.02 88.80 ±0.11 95.95 ±0.26 95.81 ±0.23 98.29 ±0.03 83.48 ±0.46 87.09 ±0.29 
+
+Chameleon 96.33 ±0.36 97.55 ±0.20 99.37 ±0.07 99.63 ±0.03 88.97 ±0.42 95.59 ±0.38 95.87 ±0.20 98.30 ±0.01 83.10 ±0.35 87.04 ±0.60 
+
+MOSAIC 97.75 ±0.08 97.79 ±0.11 99.42 ±0.06 99.72 ±0.04 87.62 ±0.11 97.17 ±0.09 95.54 ±0.08 98.24 ±0.01 82.81 ±0.27 88.21 ±0.03 
+
+800 Random 96.94 ±0.35 97.15 ±0.36 99.35 ±0.12 99.69 ±0.05 89.16 ±0.06 96.22 ±0.41 96.28 ±0.45 98.29 ±0.03 83.63 ±0.02 87.41 ±0.37 
+
+Uncertainty 96.98 ±0.40 96.88 ±0.16 99.13 ±0.11 99.69 ±0.07 88.31 ±0.45 96.22 ±0.32 95.42 ±0.15 98.28 ±0.03 82.95 ±0.31 86.69 ±0.34 
+
+Coreset 97.21 ±0.12 98.06 ±0.23 99.49 ±0.06 99.67 ±0.05 88.84 ±0.08 96.62 ±0.13 96.22 ±0.19 98.30 ±0.03 83.67 ±0.27 88.48 ±0.12 
+
+Chameleon 97.07 ±0.17 97.97 ±0.18 99.48 ±0.08 99.68 ±0.03 88.99 ±0.50 96.57 ±0.19 96.38 ±0.18 98.29 ±0.03 83.28 ±0.22 88.33 ±0.23 
+
+MOSAIC 97.65 ±0.14 98.33 ±0.06 99.54 ±0.05 99.73 ±0.05 88.68 ±0.44 97.03 ±0.16 96.19 ±0.14 98.26 ±0.02 82.93 ±0.48 89.10 ±0.12 
+
+1600 Random 97.17 ±0.07 98.19 ±0.43 99.42 ±0.05 99.69 ±0.02 89.36 ±0.12 96.50 ±0.14 96.45 ±0.25 98.31 ±0.03 83.17 ±0.76 88.62 ±0.22 
+
+Uncertainty 96.92 ±0.38 97.66 ±0.08 99.22 ±0.10 99.77 ±0.02 89.02 ±0.28 96.24 ±0.40 96.10 ±0.07 98.30 ±0.01 82.92 ±0.38 87.75 ±0.37 
+
+Coreset 97.50 ±0.10 98.31 ±0.34 99.59 ±0.03 99.72 ±0.05 89.27 ±0.21 96.86 ±0.07 96.75 ±0.22 98.30 ±0.03 83.88 ±0.50 89.30 ±0.19 
+
+Chameleon 97.43 ±0.22 98.46 ±0.17 99.60 ±0.05 99.75 ±0.03 89.60 ±0.19 96.83 ±0.30 96.89 ±0.07 98.30 ±0.03 83.87 ±0.34 89.50 ±0.20 
+
+MOSAIC 98.04 ±0.24 98.61 ±0.32 99.63 ±0.06 99.73 ±0.02 89.28 ±0.19 97.50 ±0.32 97.07 ±0.06 98.28 ±0.04 83.70 ±0.41 90.18 ±0.25 
+
+2400 Random 97.56 ±0.11 98.23 ±0.12 99.56 ±0.04 99.74 ±0.00 89.57 ±0.08 96.97 ±0.09 96.95 ±0.07 98.30 ±0.01 83.95 ±0.31 89.42 ±0.03 
+
+Uncertainty 97.62 ±0.21 98.10 ±0.17 99.36 ±0.10 99.78 ±0.02 89.19 ±0.15 97.07 ±0.22 96.65 ±0.27 98.29 ±0.05 82.53 ±0.48 88.95 ±0.15 
+
+Coreset 97.59 ±0.02 98.53 ±0.06 99.57 ±0.04 99.67 ±0.04 89.79 ±0.24 97.17 ±0.13 97.17 ±0.10 98.31 ±0.02 83.77 ±0.54 89.75 ±0.02 
+
+Chameleon 97.60 ±0.16 98.71 ±0.06 99.63 ±0.04 99.77 ±0.01 89.85 ±0.06 97.18 ±0.14 97.20 ±0.09 98.28 ±0.01 83.61 ±0.51 90.05 ±0.08 
+
+MOSAIC 98.02 ±0.12 98.69 ±0.05 99.66 ±0.07 99.80 ±0.06 89.19 ±0.38 97.58 ±0.10 97.22 ±0.09 98.31 ±0.00 83.56 ±0.07 90.31 ±0.03 
+
+9Table 11. Breakdown of the nine EPDMS rule-compliance metrics for the base model and the models trained with data selected by various strategies at all budgets, shown for the Navtrain experiment when the clustering is performed on the clip captions. 
+
+Setting NC DAC DDC TLC EP TTC LK HC EC EPDMS Base 95.3 95.94 99.09 99.6 88.09 94.55 94.49 98.25 82.39 83.97 100 Random 95.43 ±0.84 96.41 ±0.20 98.98 ±0.07 99.54 ±0.15 88.68 ±0.63 94.69 ±0.89 94.82 ±0.34 98.27 ±0.04 82.81 ±0.64 84.66 ±0.60 
+
+Uncertainty 95.68 ±0.33 96.23 ±0.38 98.91 ±0.12 99.51 ±0.06 88.21 ±0.22 94.77 ±0.36 94.88 ±0.13 98.27 ±0.04 83.50 ±0.32 84.50 ±0.48 
+
+Coreset 95.63 ±0.41 96.88 ±0.33 99.13 ±0.09 99.56 ±0.03 88.39 ±0.65 94.75 ±0.51 94.97 ±0.34 98.25 ±0.03 82.94 ±0.20 85.29 ±0.47 
+
+Chameleon 95.43 ±0.61 96.14 ±0.02 98.94 ±0.12 99.56 ±0.06 88.45 ±0.26 94.52 ±0.59 94.82 ±0.07 98.28 ±0.02 83.27 ±0.49 84.35 ±0.47 
+
+MOSAIC 96.53 ±0.31 96.91 ±0.30 99.03 ±0.12 99.54 ±0.06 87.62 ±0.21 95.80 ±0.32 94.85 ±0.34 98.24 ±0.02 82.66 ±0.66 85.85 ±0.41 
+
+200 Random 95.90 ±0.35 96.58 ±0.23 99.11 ±0.08 99.65 ±0.02 88.75 ±0.19 95.08 ±0.33 95.14 ±0.29 98.27 ±0.04 83.14 ±0.11 85.45 ±0.09 
+
+Uncertainty 95.61 ±0.66 96.53 ±0.38 98.96 ±0.18 99.57 ±0.09 88.51 ±0.11 94.74 ±0.59 94.88 ±0.28 98.28 ±0.03 83.34 ±0.34 84.84 ±0.54 
+
+Coreset 96.19 ±0.49 97.05 ±0.11 99.13 ±0.06 99.60 ±0.04 88.68 ±0.13 95.39 ±0.44 95.17 ±0.11 98.29 ±0.01 83.45 ±0.55 86.12 ±0.31 
+
+Chameleon 96.20 ±0.11 96.58 ±0.25 98.97 ±0.21 99.63 ±0.01 88.02 ±0.19 95.42 ±0.24 94.88 ±0.23 98.30 ±0.00 82.88 ±1.50 85.39 ±0.02 
+
+MOSAIC 97.07 ±0.30 97.19 ±0.25 99.08 ±0.06 99.64 ±0.03 87.79 ±0.46 96.28 ±0.36 94.99 ±0.29 98.25 ±0.01 82.92 ±0.55 86.75 ±0.17 
+
+400 Random 96.71 ±0.25 96.91 ±0.20 99.18 ±0.09 99.71 ±0.01 88.75 ±0.15 96.02 ±0.23 95.76 ±0.16 98.30 ±0.01 82.96 ±0.10 86.69 ±0.20 
+
+Uncertainty 96.39 ±0.60 96.97 ±0.38 99.00 ±0.08 99.65 ±0.01 88.22 ±0.42 95.55 ±0.66 94.98 ±0.22 98.25 ±0.02 83.64 ±0.16 86.07 ±0.75 
+
+Coreset 96.73 ±0.24 97.27 ±0.17 99.36 ±0.02 99.64 ±0.02 88.80 ±0.11 95.95 ±0.26 95.81 ±0.23 98.29 ±0.03 83.48 ±0.46 87.09 ±0.29 
+
+Chameleon 95.61 ±0.32 96.50 ±0.25 99.04 ±0.11 99.59 ±0.06 88.64 ±0.56 94.84 ±0.42 94.90 ±0.13 98.29 ±0.00 82.73 ±0.34 84.95 ±0.45 
+
+MOSAIC 97.36 ±0.10 97.91 ±0.05 99.33 ±0.10 99.66 ±0.02 88.37 ±0.41 96.68 ±0.11 95.43 ±0.34 98.27 ±0.03 83.00 ±1.38 88.11 ±0.05 
+
+800 Random 96.94 ±0.35 97.15 ±0.36 99.35 ±0.12 99.69 ±0.05 89.16 ±0.06 96.22 ±0.41 96.28 ±0.45 98.29 ±0.03 83.63 ±0.02 87.41 ±0.37 
+
+Uncertainty 96.98 ±0.40 96.88 ±0.16 99.13 ±0.11 99.69 ±0.07 88.31 ±0.45 96.22 ±0.32 95.42 ±0.15 98.28 ±0.03 82.95 ±0.31 86.69 ±0.34 
+
+Coreset 97.21 ±0.12 98.06 ±0.23 99.49 ±0.06 99.67 ±0.05 88.84 ±0.08 96.62 ±0.13 96.22 ±0.19 98.30 ±0.03 83.67 ±0.27 88.48 ±0.12 
+
+Chameleon 96.26 ±0.49 96.83 ±0.47 99.10 ±0.05 99.71 ±0.03 88.89 ±0.48 95.53 ±0.46 95.64 ±0.21 98.28 ±0.01 82.97 ±0.19 86.10 ±0.55 
+
+MOSAIC 97.92 ±0.09 98.08 ±0.17 99.50 ±0.05 99.73 ±0.01 88.20 ±0.25 97.35 ±0.14 96.12 ±0.22 98.25 ±0.04 83.00 ±0.50 88.99 ±0.09 
+
+1600 Random 97.17 ±0.07 98.19 ±0.43 99.42 ±0.05 99.69 ±0.02 89.36 ±0.12 96.50 ±0.14 96.45 ±0.25 98.31 ±0.03 83.17 ±0.76 88.62 ±0.22 
+
+Uncertainty 96.92 ±0.38 97.66 ±0.08 99.22 ±0.10 99.77 ±0.02 89.02 ±0.28 96.24 ±0.40 96.10 ±0.07 98.30 ±0.01 82.92 ±0.38 87.75 ±0.37 
+
+Coreset 97.50 ±0.10 98.31 ±0.34 99.59 ±0.03 99.72 ±0.05 89.27 ±0.21 96.86 ±0.07 96.75 ±0.22 98.30 ±0.03 83.88 ±0.50 89.30 ±0.19 
+
+Chameleon 96.61 ±0.30 97.22 ±0.26 99.25 ±0.11 99.72 ±0.06 89.05 ±0.24 96.02 ±0.39 95.90 ±0.18 98.32 ±0.01 82.35 ±0.27 86.99 ±0.57 
+
+MOSAIC 97.98 ±0.05 98.59 ±0.12 99.60 ±0.03 99.76 ±0.01 89.03 ±0.24 97.49 ±0.11 97.02 ±0.25 98.27 ±0.03 83.61 ±0.31 89.98 ±0.13 
+
+2400 Random 97.56 ±0.11 98.23 ±0.12 99.56 ±0.04 99.74 ±0.00 89.57 ±0.08 96.97 ±0.09 96.95 ±0.07 98.30 ±0.01 83.95 ±0.31 89.42 ±0.03 
+
+Uncertainty 97.62 ±0.21 98.10 ±0.17 99.36 ±0.10 99.78 ±0.02 89.19 ±0.15 97.07 ±0.22 96.65 ±0.27 98.29 ±0.05 82.53 ±0.48 88.95 ±0.15 
+
+Coreset 97.59 ±0.02 98.53 ±0.06 99.57 ±0.04 99.67 ±0.04 89.79 ±0.24 97.17 ±0.13 97.17 ±0.10 98.31 ±0.02 83.77 ±0.54 89.75 ±0.02 
+
+Chameleon 96.93 ±0.30 97.50 ±0.25 99.37 ±0.05 99.75 ±0.03 88.97 ±0.44 96.37 ±0.24 96.22 ±0.18 98.31 ±0.00 82.39 ±0.45 87.62 ±0.28 
+
+MOSAIC 98.03 ±0.28 98.78 ±0.15 99.62 ±0.02 99.79 ±0.07 89.26 ±0.45 97.59 ±0.27 96.97 ±0.12 98.33 ±0.03 84.02 ±0.10 90.37 ±0.20 
+
+10
