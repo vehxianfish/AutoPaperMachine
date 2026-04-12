@@ -25,3 +25,57 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: AutoAI
+      description: 自动驾驶相关大模型论文检索
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: E2E
+          keyword_cn: 端到端
+          query: E
+        - keyword: Autonomous car
+          keyword_cn: 自动驾驶
+          query: A
+        - keyword: autonomous driving
+          keyword_cn: 自动驾驶
+          query: large model techniques applied to autonomous driving research
+        - keyword: large model
+          keyword_cn: 大模型
+          query: 应用大型生成模型于智能驾驶场景的研究
+        - keyword: end-to-end driving
+          keyword_cn: 端到端驾驶
+          query: end-to-end frameworks powered by large AI models for vehicle control
+      intent_queries:
+        - query: 最新关于自动驾驶的大模型研究论文和综述
+          query_cn: 检索最新自动驾驶领域的相关大模型研究论文
+          enabled: true
+          source: manual
+          note: ''
+        - query: 大规模预训练模型在智能驾驶系统中的应用与挑战
+          query_cn: 探讨预训练大模型在自动驾驶应用中的前沿研究与难点
+          enabled: true
+          source: manual
+          note: ''
+        - query: 自动驾驶感知、决策和控制中采用大模型的系统架构研究
+          query_cn: 寻找关注自动驾驶全栈中大模型应用的研究论文
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-04-12T07:22:41.163Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
