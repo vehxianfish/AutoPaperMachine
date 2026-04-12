@@ -163,8 +163,8 @@ def main() -> None:
   parser.add_argument(
     "--top-n",
     type=int,
-    default=100,
-    help="RRF 融合后保留的 Top N（默认 100）。",
+    default=50,
+    help="RRF 融合后保留的 Top N（默认 50）。",
   )
   parser.add_argument(
     "--rrf-k",
