@@ -888,7 +888,7 @@ def main() -> None:
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=10,
+        default=5,
         help="batch size for 4o-mini.",
     )
     parser.add_argument(
@@ -912,7 +912,7 @@ def main() -> None:
     parser.add_argument(
         "--filter-concurrency",
         type=int,
-        default=DEFAULT_FILTER_CONCURRENCY,
+        default=2,
         help="concurrent LLM filter requests.",
     )
 
