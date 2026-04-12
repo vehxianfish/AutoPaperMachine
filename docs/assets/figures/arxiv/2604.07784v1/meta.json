@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.07784v1/fig-001.webp",
+      "caption": "Figure 4: Agentic workflow for reinforcement learning hyperparameter tuning. The agent combines expert knowledge and accumulated run history to interpret training outcomes and recommend targeted tuning actions.",
+      "page": 6,
+      "index": 1,
+      "width": 500,
+      "height": 308
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07784v1/fig-002.webp",
+      "caption": "Figure 1: The Agentic Engineering Intelligence (AEI) framework consists of two coupled phases. Top: an offline engineering data processing and memory-building phase, in which design artifacts, simulation logs, workflow traces, and human feedback are structured into reusable engineering memory, including retrieval stores, knowledge graphs, and relational workflow records. Bottom: an online closed-loop planning and control phase, in which the agent estimates workflow state, retrieves relevant prior experience, reasons over constraints and trade-offs, selects actions, and evaluates them through a stability-inspired criterion. The use cases demonstrate different parts of this common architecture. The formulation section clarifies the shared state, memory, constraint, and action abstractions; multimodal engineering data focuses on offline memory construction; suspension design and RL tuning emphasize online observation, reasoning, and control adjustment; aerodynamic design couples offline surrogate knowledge with online design exploration; and MBSE illustrates toolchain level reasoning over structured engineering workflows.",
+      "page": 2,
+      "index": 2,
+      "width": 1031,
+      "height": 778
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07784v1/fig-003.webp",
+      "caption": "Figure 6: Sense - Reason - Act view of Agentic AI integration with the Simcenter engineering toolchain. The agent estimates workflow state from models, requirements, and analyses, reasons over candidate interventions, and supports engineer-supervised workflow execution.",
+      "page": 7,
+      "index": 3,
+      "width": 500,
+      "height": 271
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07784v1/fig-004.webp",
+      "caption": "Figure 2: Multimodal engineering knowledge processing pipeline for building the offline memory store 𝐷. Heterogeneous sources, including slide decks, technical reports, and presentation recordings, are processed through three complementary paths. The dashed arrows highlight the key mechanism: surrounding text and spoken narration are supplied as interpretive context to the vision language model (VLM), enabling physically grounded descriptions of engineering figures. Parsed artifacts are indexed in a hybrid store that combines semantic and keyword-based retrieval, which the AEI agent queries during online decision making.",
+      "page": 4,
+      "index": 4,
+      "width": 775,
+      "height": 433
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07784v1/fig-005.webp",
+      "caption": "Figure 3: Agentic suspension design workflow with human-in-the-loop supervision. The agent monitors optimization outcomes, active geometric constraints, and prior cases, and recommends targeted next-step action during hardpoint design.",
+      "page": 5,
+      "index": 5,
+      "width": 500,
+      "height": 265
+    }
+  ]
+}

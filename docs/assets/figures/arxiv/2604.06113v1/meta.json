@@ -1,0 +1,86 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-001.webp",
+      "caption": "Fig. 5: Qualitative results on PandaSet. We show three PandaSet scenes (a–c). For each scene, the top strip visualizes the semantic voxel rendering used for conditioning, and the bottom strip shows the corresponding generated scene from 5 camera views.",
+      "page": 11,
+      "index": 1,
+      "width": 725,
+      "height": 546
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-002.webp",
+      "caption": "Fig. 6: Qualitative comparison to InfiniCube [17]. For two waymo scenes (a) and (b), we show five camera of the semantic conditioning and below the rendered generated scenes for Our method (Ours) and Infinicube (InfC).",
+      "page": 11,
+      "index": 2,
+      "width": 714,
+      "height": 288
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-003.webp",
+      "caption": "Fig. 10: Comparison with baselines. We show four scenes (a–d), each rendered from the front camera comparing our method to Infinicube [17] and GEN3C [14]",
+      "page": 26,
+      "index": 3,
+      "width": 698,
+      "height": 631
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-004.webp",
+      "caption": "Fig. 4: Qualitative results on WOD. We show three WOD scenes (a–c). For each scene, the top strip visualizes the semantic voxel rendering used for conditioning, and the bottom strip shows the corresponding generated scene from 5 camera views.",
+      "page": 10,
+      "index": 4,
+      "width": 723,
+      "height": 281
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-005.webp",
+      "caption": "Fig. 8: Semantic editing: We remove existing cars by editing the semantic grid (red boxes), then regenerate the content conditioned on the updated semantics. The generated results remain coherent and consistent with the surrounding scene.",
+      "page": 14,
+      "index": 5,
+      "width": 652,
+      "height": 948
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-006.webp",
+      "caption": "Fig. 12: Large scene generation. The semantic voxel grid exhibit the conditioning used to create a large driving sequence. We also show a top view rendering of the generated Σ-Voxfield grid.",
+      "page": 28,
+      "index": 6,
+      "width": 581,
+      "height": 607
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-007.webp",
+      "caption": "Fig. 7: Qualitative results: generative capabilities., the top row visualizes the conditioning signal, and the two rows below show different generations sampled from the same conditioning, highlighting output diversity under fixed structure.",
+      "page": 12,
+      "index": 7,
+      "width": 652,
+      "height": 225
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-008.webp",
+      "caption": "Fig. 11: 3D Buffers. Rendering of our generated Σ-Voxelfield grids along with the generated scene geometry as normal map.",
+      "page": 27,
+      "index": 8,
+      "width": 711,
+      "height": 194
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-009.webp",
+      "caption": "Fig. 2: Overview of SEM-ROVER. Our framework performs generation directly in 3D to ensure consistent geometry and appearance. It represents the scene with a ΣVoxfield grid and applies transformer-based diffusion over 3D tokens. To scale to large environments efficiently, we use an iterative outpainting strategy. Finally, a deferred rendering engine converts the generated 3D scene into photorealistic views.",
+      "page": 5,
+      "index": 9,
+      "width": 708,
+      "height": 252
+    },
+    {
+      "url": "assets/figures/arxiv/2604.06113v1/fig-010.webp",
+      "caption": "Fig. 1: Textured meshes after data processing. Top line shows 2 scenes from Pandaset [31], bottom are 2 scenes from WOD [28]. Orange triangles in the colorized mesh denote faces not textured during the procedure.",
+      "page": 16,
+      "index": 10,
+      "width": 712,
+      "height": 233
+    }
+  ]
+}

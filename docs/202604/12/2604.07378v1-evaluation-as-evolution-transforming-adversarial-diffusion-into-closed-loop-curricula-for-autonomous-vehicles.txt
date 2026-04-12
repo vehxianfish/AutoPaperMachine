@@ -1,0 +1,860 @@
+Title: Evaluation as Evolution: Transforming Adversarial Diffusion into Closed-Loop Curricula for Autonomous Vehicles
+
+URL Source: https://arxiv.org/pdf/2604.07378v1
+
+Published Time: Fri, 10 Apr 2026 00:03:07 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+> 1
+
+# Evaluation as Evolution: Transforming Adversarial Diffusion into Closed-Loop Curricula for Autonomous Vehicles 
+
+Yicheng Guo, Jiaqi Liu, Chengkai Xu, Peng Hang, Senior Member, IEEE, Jian Sun 
+
+Abstract —Autonomous vehicles in interactive traffic en-vironments are often limited by the scarcity of safety-critical tail events in static datasets, which biases learned policies toward average-case behaviors and reduces robust-ness. Existing evaluation methods attempt to address this through adversarial stress testing, but are predominantly open-loop and post-hoc, making it difficult to incorporate discovered failures back into the training process. We in-troduce Evaluation as Evolution ( E2), a closed-loop frame-work that transforms adversarial generation from a static validation step into an adaptive evolutionary curriculum. Specifically, E2 formulates adversarial scenario synthesis as transport-regularized sparse control over a learned reverse-time SDE prior. To make this high-dimensional generation tractable, we utilize topology-driven support selection to identify critical interacting agents, and introduce Topo-logical Anchoring to stabilize the process. This approach enables the targeted discovery of failure cases while strictly constraining deviations from realistic data distributions. Empirically, E2 improves collision failure discovery by 9.01% on the nuScenes dataset and up to 21.43% on the nuPlan dataset over the strongest baselines, while main-taining low invalidity and high realism. It further yields substantial robustness gains when the resulting boundary cases are recycled for closed-loop policy fine-tuning. 
+
+Index Terms —Autonomous Vehicles; Adversarial Sce-nario Generation; Closed-Loop Curriculum; Reverse-Time SDE. 
+
+I. I NTRODUCTION 
+
+# AUTONOMOUS driving systems increasingly op-erate in open, interactive environments where de-cisions emerge from continuous feedback between the agent and its surroundings [1], [2], [3]. While supervised and imitation learning on large-scale logs have advanced rapidly, the resulting policies often remain biased toward average-case behaviors [4]. However, it is the tail that defines safety risk in practice: rare, high-stakes, multi-agent events where small perturbations are amplified through closed-loop feedback [5]. Static datasets are sparsest precisely where the de-cision boundary is most fragile, offering limited coun-
+
+Yicheng Guo, Chengkai Xu, Peng Hang, and Jian Sun are with the College of Transportation, Tongji University, Shanghai 201804, China. (e-mail: 2410796@tongji.edu.cn, xck1270157991@gmail.com, hangpeng@tongji.edu.cn, sunjian@tongji.edu.cn) Jiaqi Liu is with the Department of Computer Science, Uni-versity of North Carolina at Chapel Hill, United States. (e-mail: jqliu@cs.unc.edu) Corresponding author: Peng Hang Decoupled Training and Evaluation Learning Stage EGO Policy Training Evaluation as Evolution Evaluation Stage EGO Policy No Feedback Close -loop Simulation Update Synthesizer Adaptive Co -evolution Adversarial scenario generation 
+
+Fig. 1: From decoupled evaluation to closed-loop evolution. Top: Conventional pipelines separate training from evaluation, so discovered failures remain discon-nected from policy learning. Bottom: E2 couples an Adversarial Synthesizer with an Ego Policy to synthesize adversarial interactions for closed-loop simulation and recycle outcomes as learning signals to update the ego policy. terfactual coverage for recovering under strategic, co-adapting traffic. Consequently, the bottleneck is not merely data quantity, but the lack of boundary experi-ence that concentrates learning signals on failure-prone regions of the dynamics. This mismatch exposes a limitation in current devel-opment pipelines. Evaluation is frequently treated as a static, post-hoc phase focused on aggregate metrics and a handful of failure examples [6], [7]. Even when critical counterexamples are discovered, they are often logged as incident reports or manually designed test cases rather than being systematically converted into training signals [8]. As a result, the computationally expensive process of discovering boundary failures, which is often the most informative part of development, does not reliably trigger updates that reshape policy behavior [9]. In autonomous driving scenarios where failure modes evolve alongside the agent, an evaluation process that fails to close the loop is inefficient. We therefore propose a shift in perspective: Evalua-
+
+> arXiv:2604.07378v1 [cs.RO] 8 Apr 2026 2
+
+tion as Evolution , illustrated in Fig. 1. In this frame-work, adversarial generation is not merely a stress test but serves as a closed-loop evolutionary curriculum. An Adversarial Synthesizer actively constructs interac-tions to expose current weaknesses, and the Ego Policy evolves by optimizing on these experiences. Discovered failures are thus treated as high-value learning signals that localize the decision boundary within the space of multi-agent trajectories. To achieve this, we formulate adversarial scene syn-thesis as transport-regularized hybrid optimal control over reverse-time SDEs [10]. A learned SDE prior captures nominal, realistic multi-agent motion, while a control input steers samples toward safety-critical fail-ures, subject to a transport cost that enforces behav-ioral realism. Since controlling the full joint scene is intractable, we first perform dimensionality reduction via topological bifurcation analysis. This identifies a sparse subset of agents whose interventions can induce qualitatively distinct interactions. We then apply a se-mantic feasibility operator to filter physically implausible candidates, yielding a coarse trajectory proposal that preserves the intended interaction structure. We further introduce Topological Anchoring to sta-bilize the generation process. Instead of initializing reverse-time sampling purely from noise, we inject the coarse proposal at an intermediate timestep, imposing a boundary condition that preserves the interaction logic while retaining stochastic flexibility. Conditioned on this initialization, we optimize a time-dependent drift con-troller restricted to the sparse support set, a technique we term Structure-Aware Sparse Control, to steer trajectories toward the failure set under transport regularization. Overall, E2 implements this evolutionary curriculum as tractable control over an SDE trajectory prior, generating adversarial scenarios that expose failures without sacri-ficing fidelity to the realistic data distribution. The main contributions are summarized as follows:  
+
+> •
+
+We introduce Evaluation as Evolution , a closed-loop framework that transforms adversarial testing from a static validation step into an adaptive evo-lutionary curriculum. By coupling the adversarial synthesizer directly with policy learning, E2 con-tinuously converts discovered boundary failures into corrective supervision, thereby actively shaping the ego agent’s robustness.  
+
+> •
+
+We formulate adversarial synthesis as transport-regularized sparse control over a reverse-time SDE prior. To make this high-dimensional optimiza-tion tractable, we integrate Topological Bifurcation Analysis for efficient support selection and propose Topological Anchoring to stabilize initialization. This hybrid approach enables targeted failure dis-covery while strictly constraining generated behav-iors to the realistic data distribution.  
+
+> •
+
+We validate E2 through closed-loop simulations on nuScenes and nuPlan. It improves failure discovery by 9.01% on nuScenes and achieves a 21.43% zero-shot gain on nuPlan over state-of-the-art baselines, all while maintaining realism. More importantly, fine-tuning on these generated boundary cases sig-nificantly improves downstream policy robustness. II. R ELATED WORK 
+
+A. Adversarial Testing and Rare-Event Simulation 
+
+Existing approaches to safety evaluation primarily focus on optimization-based falsification and rare-event simulation [11], [12], [13]. Falsification methods typ-ically search across scenario parameters, initial condi-tions, or policy spaces to identify violations of safety specifications. However, these techniques often scale poorly to high-dimensional multi-agent trajectory spaces and frequently rely on hand-crafted, low-dimensional control variables [14], [15]. Rare-event simulation alter-natively targets tail events through importance sampling or adaptive cross-entropy methods, but it commonly assumes simplified stochastic models or coarse latent variables, which limits interaction-level objectives and can compromise the realism of the simulation [11], [12], [13]. Distinct from these approaches, our framework conducts adversarial search directly within the trajectory space, employing a KL divergence regularizer to strictly manage deviations from the nominal distribution. 
+
+B. Generative Traffic Simulation and Controllable Dif-fusion 
+
+Generative models serve as powerful data-driven pri-ors for modeling multi-agent futures and facilitating inference-time steering [16], [17], [18], [19]. In particu-lar, diffusion models have emerged as a promising tool for traffic generation and adversarial scenario synthesis, enabling controllable generation through guidance terms derived from constraint potentials or differentiable cost functions [20], [21], [22], [23]. A critical challenge, however, lies in maintaining realism during interven-tion: overly strong guidance often yields implausible behaviors, while heuristic selection of control targets lacks a principled metric for quantifying distribution shift [24], [25]. We mitigate these limitations by formu-lating guidance as a transport-regularized optimal control problem and by allocating control through structure-aware sparsity. 
+
+C. Closed-Loop Policy Learning for Autonomous Driv-ing 
+
+Techniques such as curriculum learning and self-play enhance agent robustness by adaptively structuring the 3Adversarial Synthesizer Ego Policy    
+
+> HD Map History Trajectories
+> Scene Context
+> Scenario Seed Lane Centerlines
+
+Structure -Aware Sparse Control  
+
+> Risk -Weighted
+> Interaction Graph
+> Topology -Semantics
+> Fusion
+> Sparse Support Set Selection
+> Ranking
+> ·····
+> ·
+> Sparse -Controlled
+> Reverse -Time SDE
+> Targeting
+> Realism
+> Target
+> Collision
+> Collision
+> Avoidance TTC Risk
+> Lane
+> Adherence
+> Route
+> Completion
+> Active
+> Support Set S
+> Background
+> Agents
+
+Closed -loop 
+
+Update and Evaluate 
+
+Ego Improvement                
+
+> Ego Update
+> 𝜋 !
+> (#$%)←𝐔𝐩𝐝𝐚𝐭𝐞 (𝜋 !
+> (#);𝒟 '()
+> (#))
+> Collision
+> Rate
+> Collision
+> Speed
+> TTC
+> Risk
+> Failure Signals 𝒟 '()
+> (#)
+> Topological Anchoring
+> Feasibility ＆Relevance
+> ⋯
+> Interaction Skeleton
+> Noise
+> (t=T)
+> Mid -step
+> (t=k)
+> Clean
+> Trajectories
+> (t=0)
+> ⋯
+> Inject
+> Ego Performance
+> Curriculum Adaptation
+> 𝒖 ∝−(𝛁 𝑽 𝒇𝒆𝒂𝒔 +𝜼 𝑴 𝒔 ⊙𝛁 𝑽 𝑨𝒅𝒗 )
+> 𝑽 𝑭𝒆𝒂𝒔𝒊𝒃𝒊𝒍𝒊𝒕 𝒚
+> Curriculum
+> Schedule
+> 𝑽 𝑨𝒅𝒗𝒆𝒓𝒔𝒂𝒓𝒚
+> T→0
+
+Adversarial Scenario Synthesis 
+
+Fig. 2: Overview of Evaluation as Evolution. Left (Adversarial Synthesizer): given scene context, the Synthesizer builds a risk-weighted interaction graph, selects an intervention-critical Top-K adversary set via topological bifurcation analysis, and synthesizes feasible, realistic adversarial trajectories by transport-regularized sparse control over a reverse-time SDE prior with Topological Anchoring. Right (Ego Policy): the Ego Policy executes closed-loop simulation to obtain safety signals for updating the ego policy; the updated performance feeds back to adapt the Synthesizer’s curriculum. training task distribution [26], [27], [28], while recent ad-vances in autonomous driving emphasize the importance of continual challenge creation through environment-agent co-evolution [29], [30], [3]. Building on these concepts, researchers in autonomous driving increas-ingly advocate for closing the loop between evalua-tion and training. In practice, however, stress testing is frequently treated as a static, post-hoc phase, and discovered failures are rarely recycled into systematic training curricula [31], [32], [33]. We instantiate this closed-loop principle by positioning adversarial genera-tion not merely as a testing mechanism, but as a realism-regularized synthesizer that continuously produces an evolving, corrective curriculum for the agent. III. P RELIMINARIES 
+
+We model the interactive environment as a stochastic generator Gψ that samples multi-agent trajectories. Let the joint state of N agents at time t be xt ∈ RN d ,defining a continuous-time trajectory over horizon T as 
+
+τ := {xt}t∈[0 ,T ]. A nominal traffic model induces a path measure p0(τ ), with marginal p0(x0), that concentrates on plausible interactions. Adversarial evaluation targets rare failures by biasing the sampling distribution away from p0, while explicitly regularizing this deviation via a transport-based (KL) penalty. In our framework, we implement this bias as drift control within a reverse-time generative SDE. 
+
+A. Reverse-Time SDE Prior for Traffic Dynamics 
+
+We use a score-based diffusion model as a nominal prior over multi-agent traffic trajectories. Let pt(·) be the marginal density and sϕ(x, t ) ≈ ∇ x log pt(x) the learned score. The corresponding reverse-time SDE is: 
+
+dxt =
+
+
+
+f (xt, t ) − g(t)2 sϕ(xt, t )
+
+
+
+dt + g(t) d ¯ wt (1) which we integrate from t = T to t = 0 with 
+
+xT ∼ N (0 , I ). Here f and g specify the drift and diffusion schedule, and ¯wt is a standard Wiener process. The score term encodes data-driven interaction structure (multi-agent couplings and constraints), guiding reverse-time samples toward the realistic data distribution and producing credible traffic rollouts. 
+
+B. Adversarial Generation via Drift Control 
+
+To synthesize adversarial trajectories, we augment the reverse-time dynamics with a drift control ut ∈ RN d :
+
+dxt =
+
+
+
+f (xt, t )−g(t)2 sϕ(xt, t )+ ut
+
+
+
+dt+g(t) d ¯ wt (2) which induces a controlled path measure pu(τ ) when integrated from t = T to t = 0 with xT ∼ N (0 , I ).4
+
+We optimize u by minimizing a realism-regularized adversarial objective: 
+
+J(u) = Eτ ∼pu
+
+
+
+Φ( x0) + 
+
+Z T
+
+> 0
+
+
+
+ℓ(xt, t ) + λ R(ut, t )
+
+
+
+dt
+
+
+
+(3) 
+
+where Φ( x0) encodes the terminal failure or risk cri-terion, ℓ is an optional running term, and R penalizes deviations from the nominal prior. A standard choice to preserve realism is the quadratic control energy: 
+
+R(ut, t ) = 12 g(t)−1ut 
+
+> 22
+
+(4) which yields the path-space identity: 
+
+KL( pu(τ ) ∥ p0(τ )) = Eτ ∼pu
+
+Z T 
+
+> 012
+
+g(t)−1ut 
+
+> 22
+
+dt
+
+
+
+(5) 
+
+Thus, the regularizer provides explicit control over distribution shift from p0, enabling ut to concentrate probability mass on rare failures while preserving be-havioral realism. IV. M ETHODOLOGY 
+
+In this section, we formulate adversarial evaluation as optimal control over the reverse-time SDE. The complete procedure of our proposed E2 framework is summa-rized in Algorithm 1. We first identify a sparse subset of critical agents to ensure computational tractability (Sec. IV-A). Then, we implement a hybrid control scheme to stabilize the generation process and preserve behavioral realism (Sec. IV-B). Finally, we integrate this synthesizer into a closed-loop curriculum to iteratively refine the ego policy (Sec. IV-C). 
+
+A. Structure-Aware Sparse Control 
+
+Applying adversarial control to all agents in dense traffic is computationally prohibitive and often disrupts background realism. We address this by restricting the control drift to a sparse subset of critical agents. Let 
+
+I = {1, . . . , N } denote the agent index set. We im-plement this sparsity by applying a deterministic mask to the unrestricted latent control vt ∈ RN d , thereby isolating the active support set S ⊂ I :
+
+ut = MS vt (6) where MS := diag( m1Id, . . . , m N Id) is a block-diagonal matrix with mi = 1[i ∈ S ]. Under a quadratic transport cost, the KL penalty depends only on the active components. This sparsity reduces the effective control dimension and limits the deviation from the nominal measure p0. To define the active support set S,we first isolate topologically significant candidates, and subsequently refine them against semantic constraints. 
+
+Algorithm 1 E2: Evaluation as Evolution 
+
+Input: Dataset D; simulator Sim ; reverse-time SDE prior (f, g, s ϕ); initial ego policy πθ(0) ; rounds 
+
+R; intensity schedule {η(r)}; anchoring parameters 
+
+(α, t a).
+
+Output: Updated ego policy πθ(R) . 
+
+> 1:
+
+for r = 0 , . . . , R − 1 do  
+
+> 2:
+
+Sample a batch of scenes B ⊂ D and initialize buffer D′(r) ← ∅  
+
+> 3:
+
+for each scene s ∈ B do  
+
+> 4:
+
+τ ref ← Sim( s, π θ(r) , prior ) 
+
+> 5:
+
+Stop ← TopologicalBifurcation (τ ref ) 
+
+> 6:
+
+F ← SemanticFeasibilityReasoning (Stop , s ) 
+
+> 7:
+
+S ← S top ∩ F  
+
+> 8:
+
+(˜ π, M S ) ← InteractionSkeleton (S, s ) 
+
+> 9:
+
+Initialize latent state xT ∼ N (0 , I ) 
+
+> 10:
+
+for k = K, . . . , 1 do  
+
+> 11:
+
+ˆx0 ← ˆx0(xtk , t k) 
+
+> 12:
+
+Compute guided drift control via masked gradients: 
+
+> 13:
+
+utk ← − g(tk)2h
+
+∇xtk Vfeas (ˆ x0)+ η(r)MS ∇xtk Vadv (ˆ x0; ˜ π)
+
+i 
+
+> 14:
+
+if tk = ta then  
+
+> 15:
+
+Apply Topological Anchoring:  
+
+> 16:
+
+xta ← (1 − α)xta + α˜xta (˜ π) 
+
+> 17:
+
+end if  
+
+> 18:
+
+xtk−1 ← EulerMaruyama( xtk ; f, g, s ϕ, u tk ) 
+
+> 19:
+
+end for  
+
+> 20:
+
+τ adv ← Sim( s, π θ(r) , env (x0))  
+
+> 21:
+
+D′(r) ← D ′(r) ∪ { (s, τ adv )} 
+
+> 22:
+
+end for  
+
+> 23:
+
+Policy fine-tuning:  
+
+> 24:
+
+θ(r+1) ← Update( θ(r); D′(r)) 
+
+> 25:
+
+end for  
+
+> 26:
+
+return πθ(R)
+
+1) Topological Bifurcation Analysis: Coupling the search for critical agents directly with the generative control loop is inefficient. We therefore decouple discov-ery from generation by inferring the interaction topology from a lightweight nominal rollout. 
+
+Risk-weighted interaction graph. Given a reference rollout xref 0: T := {xref  
+
+> t
+
+}t∈[0 ,T ], we evaluate the interaction risk between any pair of agents at each timestep. We construct a sequence of undirected interaction graphs 
+
+G(t) = ( I, E(t), W (t)) for each time t ∈ [0 , T ]. Here, I
+
+indexes the N agents, and W (t) assigns an instantaneous risk weight to each pair. For any agents i̸ = j, the weight 
+
+w(t) 
+
+> ij
+
+is derived from a time-to-collision (TTC) surrogate: 
+
+w(t) 
+
+> ij
+
+:= σ
+
+ τmax − TTC ij (xref  
+
+> t
+
+)
+
+β
+
+
+
+∈ [0 , 1] (7) 5Scene Interaction Graph Construction                                             
+
+> 1. TTC Interaction Matrix 2. Interaction Graph 3. Clique Discovery
+> 4. Top Clique (per time step) 5. Temporal Scoring 6. Proposal and Activation
+> 0
+> 1
+> 4
+> 56
+> 32
+> EGO
+> Traffic Scene
+> (Time 𝑡 )Normalized TTC Risk
+> 𝑴 (")∈ℝ$×$
+> 𝑮 (")
+> Higher -order Risk Group
+> Top Cliques
+> Clique1: {0,1,2}
+> Clique2: {3,4,5}
+> 𝑡 =1⋯𝑡 =2𝑡 =𝑻
+> Agent
+> Times
+> 0
+> 12
+> 3
+> 7
+> 65
+> 4
+> 0
+> 12
+> 3
+> 7
+> 65
+> 43
+> 5
+> 4
+> 0
+> 12
+> 𝑾 (𝑪 ,𝒕 )=,𝑤 &'
+> (")
+> &,'∈*
+> Clique3: {}
+> the top 3 cliques
+> Cliques 𝐶
+> (𝐶 ≥3)
+> Edge Weight: 𝒘 𝒊𝒋
+> (𝒕 )=𝑴 𝒊𝒋
+> (𝒕 )+𝑴 𝒋 𝒊
+> (𝒕 )
+> 03241567
+> 𝒇 𝒊 =,,𝕀 (𝑖 𝜖 𝐶 )
+> *∈*!"# (")"
+> 1
+> 7
+> 65
+> 4
+> 2
+> 3
+> LLM
+> Refine
+> Activated
+> Agents
+> Keep Agents {1,2,3,4}. And
+> Drop Agent 5 because it is a
+> rear attack.
+
+Fig. 3: Structure-aware sparse control via scene interaction graph construction. The Synthesizer builds a TTC-based risk interaction matrix, converts it into a weighted interaction graph, discovers higher-order risk groups (cliques), and selects top cliques across time to score and activate a small subset of adversarial agents for targeted control. where σ(z) := (1 + exp( −z)) −1, τmax > 0 caps the TTC horizon, and β > 0 controls the softness. We retain edges above a threshold ϵw ∈ (0 , 1) to filter out trivial pairs: 
+
+(i, j ) ∈ E (t) ⇐⇒ w(t) 
+
+> ij
+
+≥ ϵw (8) yielding a sparse graph G(t) that captures potentially coupled interactions at the exact moment t.
+
+Bifurcation points via temporal clique scoring. 
+
+To identify structurally critical interaction nexus, we evaluate the topological properties of G(t) indepen-dently at each timestep. We identify high-risk K-cliques by computing the intra-clique risk weight W (C, t ) = 
+
+P 
+
+> i,j ∈C
+
+w(t) 
+
+> ij
+
+. We select the top-ranked cliques at each step to form the instantaneous critical set C(t)top .To quantify an agent’s structural importance across the entire interaction horizon, we compute a temporal score 
+
+fi that accumulates its occurrences within these critical cliques over time: 
+
+fi =
+
+> T
+
+X
+
+> t=1
+
+X
+
+> C∈C (t)top
+
+I(i ∈ C) (9) where I(·) is the indicator function. A large fi indicates that an agent persistently occupies a structurally sensitive interaction nexus throughout the rollout. Finally, we select the agents with the highest temporal scores fi to form the initial topological candidate set Stop .
+
+2) Semantic Feasibility Reasoning: While topologi-cal analysis identifies structurally critical candidates, it ignores inherent physical constraints and environmental context. To refine Stop , we apply a semantic feasibility projection Πsem based on an ego conditioned scene description desc that encodes map topology, lane graphs, and local geometry. We establish a binary feasibility mask msem  
+
+> i
+
+=Πsem (i; desc ) ∈ {0, 1}, yielding the feasible subset 
+
+F = {i : msem  
+
+> i
+
+= 1 }. The final sparse control support is then determined by the intersection S = Stop ∩ F .To ensure deterministic and physically sound inter-ventions, the projection Πsem enforces the following semantic criteria:  
+
+> •
+
+Physical and map consistency: Candidates must be located within valid drivable regions and main-tain clear lane associations.  
+
+> •
+
+Interaction potential: Targeted agents must exhibit a plausible near term route conflict or centerline overlap with the ego vehicle within the planning horizon.  
+
+> •
+
+Dynamic relevance: Static or parked vehicles lack-ing a direct blocking effect are rejected, thereby focusing control strictly on agents capable of active and meaningful interaction. This logic is implemented via a lightweight language model that evaluates scene cues, such as proximity to intersections or merges, to confirm whether an agent is a 6
+
+semantically viable adversarial target. By grounding the support set in these traffic-specific priors, the synthesizer effectively isolates kinematically valid and dynamically relevant agents for targeted control. 
+
+3) Interaction Skeleton Construction: Given the final sparse control support S, we deterministically instantiate an interaction skeleton ˜π via Algorithm 2. This skeleton acts as a structural prior by extracting an active coalition 
+
+C⋆ ⊆ S and assigning a causal dependency structure. We partition S into proximal interactors Cnear and distal initiators Cfar , establishing C⋆ = Cnear ∪ Cfar .Proximal agents form the final link in the failure pathway and are selected by minimizing their aggregate Euclidean distance d(i, e ) to the ego e:
+
+Cnear = arg min 
+
+> C⊂S |C|=Knear
+
+X
+
+> i∈C
+
+d(i, e ) (10) Distal initiators influence the scene dynamics from a distance. We first isolate a candidate pool Sfar by ex-cluding proximal agents, enforcing a minimum distance threshold τdist , and requiring non-adjacency to the ego’s lane Ladj (e):          
+
+> Sfar ={i∈ S \ Cnear |d(i, e )> τ dist and i / ∈ L adj (e)}(11)
+
+From Sfar , we select the Kfar furthest agents to maxi-mize long-range interaction potential: 
+
+Cfar = arg max 
+
+> C⊂S far
+> |C|=Kfar
+
+X
+
+> i∈C
+
+d(i, e ) (12) To assign causal ordering, we find a kinematically viable, transitive influence pathway from an initiator f ∈
+
+Cfar to a target n ∈ Cnear , constrained by a longitudinal headway τlong . The primitive P then instantiates ˜π by reconfiguring the adversarial targets to enforce a cascad-ing dependency. Instead of all agents targeting the ego simultaneously, f engages an intermediate agent, which subsequently targets n, and only n directly engages the ego. This gradient chaining efficiently propagates adversarial coupling. Because |C⋆| ≪ N , computing this skeleton adds negligible overhead to the inference loop. If no valid intermediate agents exist, the coalition robustly defaults to Cnear for direct local interaction, and kinematically infeasible configurations are pruned. Ultimately, ˜π determines the anchoring configuration 
+
+˜xta . We first instantiate the causal graph ˜π into acontinuous, kinematically feasible joint configuration ˜x0
+
+via a coarse lane-graph planner. We then project this clean state into the intermediate diffusion timestep ta
+
+according to the forward diffusion process [34]: 
+
+˜xta = p¯γta ˜x0 + p1 − ¯γta ϵ, ϵ ∼ N (0 , I ) (13) where ¯γta = Qta 
+
+> j=0
+
+γj represents the cumulative product of the incremental noise reduction terms γj := 1 − βj
+
+up to ta, with βj dictated by the predefined noise sched-ule. This formulation guarantees that the anchored state remains consistent with the required noise distribution. 
+
+B. Hybrid Optimal Control via Topological Anchoring 
+
+Given the identified support S and skeleton ˜π, we formulate adversarial generation as optimal control over the reverse-time SDE. To ensure stability and maintain fidelity to the nominal prior, we propose a hybrid scheme coupling topological anchoring with sparse gradient guidance. 
+
+1) Topological Anchoring: Rare coordinated failures occupy low-probability regions under the nominal prior 
+
+p0(τ ). Consequently, reverse-time integration from noise 
+
+xT ∼ N (0 , I ) is often unstable, as the early denoising steps must reconstruct a plausible scene while selecting a rare interaction mode. We stabilize generation by anchoring at an intermediate time ta ∈ (0 , T ) using the interaction skeleton ˜π. Specifically, after integrating Eq. (1) from T to ta, we blend the state with a skeleton-consistent configuration ˜xta :
+
+xta ← (1 − α) xta + α ˜xta α ∈ (0 , 1] (14) This blending operation acts as a structural soft con-straint at the intermediate step, pulling the reverse time sampling distribution toward a valid interaction mode prior to the application of sparse gradient based control. 
+
+2) Sparse Gradient Control: We then implement KL-regularized drift control as score-based gradient guidance on the denoised prediction ˆx0(xt, t ). This reduces the path objective to a potential defined on ˆx0, decomposed into feasibility and targeted adversarial terms: 
+
+Φ( x0) + 
+
+Z T
+
+> 0
+
+ℓ(xt, t ) dt ≈ Vfeas (ˆ x0) + η V adv (ˆ x0; ˜ π, S)
+
+(15) where Vfeas enforces physical and traffic-rule constraints and Vadv promotes the failure pattern ˜π on the active set 
+
+S. The gain η ≥ 0 sets the risk sensitivity. To limit the deviation from the prior, we apply fea-sibility gradients to all agents but localize adversarial gradients to S:       
+
+> ut=−g(t)2(∇xtVfeas (ˆ x0) + η M S∇xtVadv (ˆ x0; ˜ π, S))
+> (16)
+
+so agents outside S follow the nominal score-induced reverse dynamics up to feasibility corrections, preserving background realism while focusing adversarial control on the selected agents. We discretize the controlled reverse-time SDE with the Euler-Maruyama method on {tk}Kk=0 (with ∆tk =
+
+tk−1 − tk < 0):                     
+
+> xtk−1=xtk+
+> 
+> f(xtk, t k)−g(tk)2sϕ(xtk, t k) + utk
+> 
+> ∆tk
+> +g(tk)p|∆tk|ξk,ξk∼ N (0 , I )
+> (17) 7
+
+and inject topological anchoring once at tka ≈ ta
+
+via Eq. (14). Together, anchoring and sparse masking concentrate samples near the critical set while keeping non-interacting agents consistent with the SDE prior. 
+
+Algorithm 2 Interaction Skeleton Construction 
+
+Input: Filtered support set S, Ego state e, structural thresholds (τdist , τ long ), capacities (Knear , K far ).
+
+Output: Interaction skeleton ˜π, binary mask MS . 
+
+> 1:
+
+Cnear ← arg min 
+
+> C⊂S ,|C|=Knear
+
+P 
+
+> i∈C
+
+d(i, e ) 
+
+> 2:
+
+Sfar ← { i ∈ S \ Cnear | d(i, e ) > τ dist ∧ i / ∈ L adj (e)} 
+
+> 3:
+
+Cfar ← arg max 
+
+> C⊂S far ,|C|=Kfar
+
+P 
+
+> i∈C
+
+d(i, e ) 
+
+> 4:
+
+C⋆ ← Cnear ∪ Cfar  
+
+> 5:
+
+if no kinematically viable chain exists between Cfar 
+
+and Cnear then  
+
+> 6:
+
+C⋆ ← Cnear  
+
+> 7:
+
+end if  
+
+> 8:
+
+Define binary mask MS = diag (1[i ∈ C⋆])  
+
+> 9:
+
+Instantiate ˜π by re-targeting Vadv within C⋆: f →· · · → n → e 
+
+> 10:
+
+return (˜ π, M S )
+
+C. Closed-Loop Evolutionary Curricula 
+
+We integrate the adversarial synthesizer into a closed-loop curriculum. Instead of relying on a static set of test scenarios, the data generation and policy training advance iteratively. At each round r, the synthesizer analyzes the current policy πθr to construct targeted boundary cases. By updating the support set Sr and interaction skeleton ˜πr based on the policy’s recent performance, the control mechanism efficiently samples the active failure frontier. The ego policy then updates to πθr+1 using these targeted rollouts, typically via reinforcement learning or constrained optimization. This iterative process creates a continuously shifting data distribution. As the policy improves, previously critical interactions are resolved. The generation framework adapts to this improvement by identifying new bifurcation points, ensuring that the generated scenarios remain informative and challenging. To regulate the difficulty of this process, we schedule the adversarial intensity ηr . Initial rounds use a low ηr to expose basic errors close to the nominal traffic prior. As the policy strengthens, increasing ηr enables the synthe-sizer to explore larger state deviations, revealing complex failures that require strict multi-agent coordination. This phased approach maintains a consistent learning gradient and facilitates continuous robustness improvements in the high-dimensional traffic environment. V. E XPERIMENTS AND RESULTS 
+
+In this section, we evaluate E2 in a closed-loop multi-agent simulation, aiming to answer the following questions: (1) How does the adversarial quality of E2
+
+compare against state-of-the-art dense guidance base-lines? (2) How effective is each key component of our framework? (3) Can the adversarial evaluation capabili-ties of E2 generalize to expose the distinct failure modes of diverse ego policies? (4) Is the proposed closed-loop curriculum effective at improving the ego policy’s robustness? 
+
+A. Experimental Setup 1) Simulation Environment and Dataset: All evalua-tions are conducted in a closed-loop multi-agent traffic simulator [35]. At each replanning step, the simulator generates other-agent trajectories conditioned on the scene context and the current ego state. We initialize scenes from the nuScenes [36] and nuPlan [37] vali-dation splits, focusing on vehicle-to-vehicle interactions. To demonstrate cross-dataset generalizability, our frame-work is directly deployed on the nuPlan dataset without any model retraining. Background traffic is generated by a pretrained diffusion trajectory model that is kept frozen, inducing our nominal reverse-time SDE prior. 
+
+E2 intervenes only through inference-time drift control during denoising. 
+
+2) Ego Policies: We evaluate three ego policies: a rule-based lane-graph (LG) policy [38], the Intelligent Driver Model (IDM) [39], and the hybrid BITS pol-icy [35]. During scenario generation, each ego is treated as a black-box controller. All policies share the same observation interface and replanning frequency. 
+
+3) Baselines: We compare against CTG [40], STRIVE [38], DiffScene [41], CCDiff [42], and Safe-Sim-opt, our multi-agent extension of Safe-Sim [43]. These baselines primarily apply dense or global guidance across agents or rely on rule-based interventions, without explicitly leveraging interaction topology for support selection. 
+
+4) Evaluation Metrics: We classify evaluation met-rics into two primary categories: safety criticality and realism. 
+
+Safety Criticality and Severity. These metrics mea-sure the intensity and consequences of the adversar-ial interaction. We report the Collision Failure Rate (CFR) [44] and the Minimum Distance-to-Collision (MinDTC) to quantify hazard frequency and proximity. To assess failure severity and mode, we report the Relative Impact Velocity (RelVel) and the Rear-Impact Rate (RIR) [42]. We also include the TTC cost (TTC-C) [43] and the ego mean acceleration (mAcc) as a proxy for the evasive effort required. Higher CFR and 8
+
+TABLE I: Closed-loop performance compared with baselines. The metrics quantify the realism and safety criticality of generated interactions. We report the mean over 7 random seeds. Best in each column (per dataset) is bold and second-best is underlined. Blue denotes 
+
+E2.                                    
+
+> Method REAL CFR (%) AOR (%) RelVel ( m/s)
+> nuScenes Dataset
+> CTG 0.8011 1.18 0.20 4.07
+> STRIVE 0.6115 51.28 3.31 7.01 Safe-Sim-opt 0.7394 37.14 0.26 17.57 DiffScene 0.7325 31.43 0.38 26.07 CCDiff 0.6965 39.90 4.11 33.05 Ours 0.7432 60.29 0.14 4.67
+> nuPlan Dataset
+> Safe-Sim-opt 0.8789 57.14 2.29 22.77 Ours 0.8984 78.57 1.69 21.81
+
+TABLE II: Ablation of structure-aware sparse control under a fixed control budget. We compare Random-K, Topo-only (bifurcation-based targeting without fea-sibility filtering), and Topo+Feas. (ours). Results report the mean over 7 random seeds. Best in each column is 
+
+bold and second-best is underlined. Blue denotes our method.                  
+
+> Method TTC-C CFR (%) RIR (%) AOR (%) RelVel (m/s)Random-K 0.0949 28.57 19.99 0.15 18.25 Topo-only 0.0925 31.43 45.47 0.32 15.37 Topo+Feas. 0.1800 53.57 26.66 0.20 2.58
+
+TTC-C indicate increased hazard frequency, while lower MinDTC reflects spatial proximity to collisions. RelVel quantifies impact severity conditional on a collision, characterizing the nature of the interaction. 
+
+Realism and Validity. These metrics assess whether the generated scenarios remain physically plausible and compliant with traffic rules. We report the All-Off-Road rate (AOR) [45], measuring the fraction of rollouts where any vehicle leaves the drivable area; a high AOR indi-cates invalid attacks. Additionally, we report a transport fidelity score (REAL) based on the Wasserstein distance between simulated and real kinematic statistics, normal-ized such that higher values indicate closer agreement with the real data distribution [40]. 
+
+B. Quality of Adversarial Interactions 
+
+Quantitative Performance Comparison. A core challenge in adversarial generation lies in balancing criticality and realism. Table I demonstrates that E2
+
+effectively navigates this trade-off, achieving the highest failure rate (CFR 60.29%) while strictly adhering to the valid drivable area (AOR 0.14%) and maintaining high transport fidelity (REAL 0.7432). By localizing drift control to topology-identified bifurcation agents, our method reaches the failure set via plausible interaction couplings rather than map-inconsistent motions. In contrast, baseline methods struggle to satisfy these objectives simultaneously. While optimization-based ap-proaches, such as STRIVE, achieve high failure rates (51.28%), they do so by sacrificing distributional fidelity (REAL 0.6115) and frequently violating map constraints (AOR 3.31%). Conversely, dense diffusion methods like CTG preserve realism (REAL 0.8011) but fail to dis-cover rare events (CFR 1.18%), suggesting that global guidance in high-dimensional spaces is inefficient for locating failure modes. Other baselines report moderate failure rates but incur excessive impact velocities (RelVel 
+
+> 17 m /s). This severity is associated with degraded realism and increased off-road rates, suggesting that these collisions arise from distribution shift and physical violations rather than valid adversarial interactions. Furthermore, E2 demonstrates exceptional cross-dataset generalizability. As shown in Table I, when deployed directly on the nuPlan dataset without any model retraining, our method achieves a CFR of 78.57%, outperforming the baseline by an absolute margin of 21.43%. Crucially, this significant increase in failure discovery does not compromise validity, as evidenced by the highest realism score and the lowest rate of off-road violations. This confirms that our framework effectively generalizes to unseen environmental configurations and traffic distributions. 
+
+Controllability of Adversarial Intensity. Beyond evaluating aggregate metrics, E2 provides precise con-trol over the adversarial intensity through the parameter 
+
+η. As illustrated in Fig. 4, smoothly scaling this value directly dictates both the severity and the timing of the generated failures. At lower intensities, the adversary favors subtle and localized perturbations that typically manifest as lateral collisions late in the scenario. Con-versely, increasing the adversarial intensity prompts the synthesizer to trigger highly aggressive behaviors among multiple agents, resulting in earlier collisions and severe frontal impacts. This predictable relationship between intensity and failure mode confirms that our framework serves as a reliable mechanism to structure progressive and hierarchical safety curricula. 
+
+C. Ablation Study and Analysis 
+
+We perform targeted ablations to disentangle the contributions of our key components: structure-aware support selection and the hybrid control mechanism. 9𝜂 = 0
+
+Time 
+
+𝜂 = 1
+
+𝜂 = 2
+
+𝜂 = 3
+
+Fig. 4: Qualitative controllability of failure timing and type under increasing adversarial intensity. Closed-loop rollouts for the lane-graph (LG) ego policy under a fixed random seed (seed=50), with η ∈ { 0, 1, 2, 3} from bottom to top. 
+
+Efficacy of Structure-Aware Selection. Table II val-idates the hypothesis that the selection of controlled agents is as critical as the control mechanism itself. Randomly selecting a support set (Random-K) yields substantially lower failure rates (28.57%) compared to our method, proving that sparsity alone is insufficient. While targeting bifurcation points based on topology alone (Topo-only) improves stress, it degrades validity as evidenced by higher AOR and RIR, implying that graph-theoretic analysis may select physically infeasi-ble interventions. Our full pipeline (Topo+Feas.), which filters candidates through semantic feasibility, achieves a favorable balance. It effectively doubles the failure rate of Random-K while maintaining the validity of the generated scenarios. 
+
+Drift Composition and Topological Anchoring. 
+
+Table III examines the control dynamics. Using only feasibility guidance ( Vfeas ) is conservative, while using only adversarial guidance ( Vadv ) is overly aggressive and degrades realism. Combining both creates a neces-sary regularized objective. Notably, enabling Topological Anchoring provides a performance boost, increasing CFR from 51.43% to 57.14%, while preserving realism (REAL increases to 0.7848). This result confirms that anchoring effectively aligns the reverse-time generation with the structure of the target interaction, preventing the optimizer from collapsing into trivial or unrealistic failure modes. Fig. 5 visually confirms this behavior, showing that anchoring sharpens the interaction skeleton and concentrates risk on the critical chain of agents. 10 
+
+TABLE III: Ablation of drift control components and Topological Anchoring. We evaluate combinations of the feasibility potential Vfeas and the adversarial potential 
+
+Vadv , with anchoring enabled or disabled. 
+
+Drift Control Metrics 
+
+Vfeas Vadv TTC-C CFR (%) RelVel (m/s) REAL AOR (%) ANCHORING DISABLED 
+
+✓ – 0.0722 3.57 3.67 0.7648 0.19 – ✓ 0.2103 87.86 17.01 0.7286 1.44 
+
+✓ ✓ 0.1532 51.43 2.11 0.7464 0.10 ANCHORING ENABLED 
+
+✓ ✓ 0.1501 57.14 6.56 0.7848 0.31 EGO -0 
+
+> ADV -10
+> ADV -8
+> ADV -4EGO -0
+> ADV -10
+> ADV -8
+> ADV -4
+
+Fig. 5: Qualitative interaction skeleton. TTC-based interaction matrices and the activated ego-adversary chain for the same scene. Left: Topological Anchoring disabled. Right: Topological Anchoring enabled. 
+
+D. Generalization Across Ego Policies 
+
+To assess generalization, we evaluate E2 against three distinct ego policies, specifically rule-based (LG), physics-based (IDM), and hybrid learned (BITS), treat-ing each as a black box. Results in Table IV suggest that E2 adapts to specific policy failure modes rather than overfitting to a single interaction pattern. 
+
+Divergent Failure Modes. While LG and IDM exhibit identical failure rates (CFR 51.43%), their collision signatures differ significantly. LG is predominantly vul-nerable to side-impact collisions (42.86%), implying that the adversary exploits the rigid lane-adherence logic of rule-based planners via aggressive cut-ins. Conversely, IDM failures are uniformly distributed across front, side, and rear impacts. Since IDM relies on longitudinal head-way, this broad distribution suggests that the adversary overwhelms the simple reactive logic through diverse maneuvers, such as sudden braking or merging. 
+
+Robustness-Severity Trade-off. The hybrid BITS policy exhibits greater robustness (CFR 25.71%) but introduces a critical trade-off regarding severity. In the event of a failure, BITS incurs substantially higher-energy impacts (RelVel 19 .70 m /s), exceeding the low-speed collisions observed in LG and IDM by an order TABLE IV: Closed-loop outcomes across ego policies at fixed intensity ( η = 2 .0). Values are averaged over 7 random seeds. Front-col, Side-col, and Rear-col denote the fractions of rollouts with front, side, and rear-impact collisions. All policies use the same observation interface and replanning frequency and are evaluated as black-box controllers. 
+
+Ego Policy TTC-C CFR (%) Front-col (%) Side-col (%) Rear-col (%) RelVel (m/s)LG 0.1532 51.43 11.43 42.86 28.57 2.11 IDM 0.2127 51.43 25.71 24.71 25.71 2.23 BITS 0.1564 25.71 17.14 20.00 17.14 19.70 Tuned   
+
+> η=1.0
+> Tuned
+> η=2.0
+> Test
+> η=1.0
+> Test
+> η=2.0
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Improvement (%)  100.00%
+> 42.84% 37.50% 30.00%
+
+(a) Failure Rate Tuned  
+
+> η=1.0
+> Tuned
+> η=2.0
+> Test
+> η=1.0
+> Test
+> η=2.0
+> 0
+> 50
+> 100
+> 150
+> Improvement (%)
+> 182.51%
+> 147.39%
+> -18.87%
+> 27.85%
+
+(b) Min-DTC Tuned 
+
+> η=1.0
+> Tuned
+> η=2.0
+> Test
+> η=1.0
+> Test
+> η=2.0
+> 0
+> 5
+> 10
+> 15
+> 20
+> Improvement (%)
+> 6.44%
+> 0.21%
+> 14.43%
+> 11.49%
+
+(c) TTC-cost Tuned  
+
+> η=1.0
+> Tuned
+> η=2.0
+> Test
+> η=1.0
+> Test
+> η=2.0
+> −100
+> −50
+> 0
+> Improvement (%)
+> 27.11%
+> 9.13%
+> -97.85%
+> -130.91%
+
+(d) Mean Acceleration 
+
+Fig. 6: Policy improvement from adversarial closed-loop fine-tuning. Bars show the percentage gain over the original lane-graph policy on a tuning subset and a disjoint test subset of the nuScenes validation split, eval-uated under matched and increased adversarial intensity (η = 1 .0, 2.0). of magnitude. This observation implies that while BITS effectively manages low-speed interactions, it remains brittle in high-speed scenarios when facing aggressive interventions that the learned policy fails to anticipate. Overall, these results indicate that E2 serves as a policy-conditioned diagnostic tool. It automatically lo-calizes agent-specific decision boundaries, such as lateral rigidity in planners and high-speed brittleness in learned policies, without requiring manual specification of the failure mode. 11 
+
+E. Impact on Policy Learning 
+
+Finally, we implement the closed-loop curriculum by employing generated adversarial rollouts as corrective supervision for the lane-graph policy, transforming eval-uation into an active learning process. Hyperparameters are fixed via grid search on the tuning split. Fig. 6 illustrates the performance gains. On the tuning split, the policy achieves substan-tial hazard mitigation, with failure rates dropping by 100.00% at η=1 .0 and 42.84% at η=2 .0. This improve-ment suggests that the adversarial scenarios effectively isolate distinct failure modes, providing informative sig-nals for rapid adaptation. Crucially, robustness extends to the disjoint test split, where failure rates decrease by 30.00% to 37.50% alongside significant TTC im-provements. This transferability indicates that the policy acquires a generalized risk representation rather than memorizing specific patterns, allowing it to navigate unseen interactions with greater competence. However, these gains reveal a trade-off between safety and comfort. Mean acceleration increases on the tuning split (27.11% at η=1 .0) but decreases on the test split (-97.85% and -130.91%). This implies the agent adopts a dual strategy, executing aggressive maneuvers to evade known threats while becoming more conservative in novel environments to maintain safety margins. VI. C ONCLUSION 
+
+In this work, we introduce Evaluation as Evolution ,a closed-loop framework that unifies adversarial scenario generation, safety evaluation, and policy refinement. Our approach aims to bridge the gap between static vali-dation and active learning by transforming discovered failures into an adaptive source of corrective supervision. The proposed method offers a computationally efficient solution for synthesizing realistic, high-stakes interac-tions through transport-regularized sparse control over a learned reverse-time SDE prior. A notable advantage of 
+
+E2 is its ability to isolate intervention-critical agents via topological bifurcation analysis while maintaining dis-tributional fidelity. Furthermore, Topological Anchoring stabilizes the generation process by injecting interaction-preserving skeletons to guide the model toward ego-critical outcomes without sacrificing realism. Experimental results on the nuScenes and nuPlan datasets demonstrate the framework’s strong zero-shot cross-dataset generalizability and highlight the poten-tial of recycling boundary cases for iterative fine-tuning, leading to substantial gains in policy robust-ness. These findings demonstrate that E2 serves as a policy-conditioned diagnostic tool, automatically local-izing decision boundaries and recovering crucial safety information that is often lost in conventional decoupled pipelines. Future work could explore methods for auto-matically determining the optimal adversarial intensity and causal templates based on the specific failure modes or the structural characteristics of the interactive envi-ronment. REFERENCES [1] Y. Liu, W. Chen, Y. Bai, X. Liang, G. Li, W. Gao, and L. Lin, “Aligning cyber space with physical world: A comprehensive sur-vey on embodied ai,” IEEE/ASME Transactions on Mechatronics ,2025. [2] X. Han, S. Chen, Z. Fu, Z. Feng, L. Fan, D. An, C. Wang, L. Guo, W. Meng, X. Zhang et al. , “Multimodal fusion and vision-language models: A survey for robot vision,” Information Fusion , p. 103652, 2025. [3] J. Liu, K. Xiong, P. Xia, Y. Zhou, H. Ji, L. Feng, S. Han, M. Ding, and H. Yao, “Agent0-vl: Exploring self-evolving agent for tool-integrated vision-language reasoning,” arXiv preprint arXiv:2511.19900 , 2025. [4] J. Wu, C. Huang, H. Huang, C. Lv, Y. Wang, and F.-Y. Wang, “Recent advances in reinforcement learning-based autonomous driving behavior planning: A survey,” Transportation Research Part C: Emerging Technologies , vol. 164, p. 104654, 2024. [5] Q. Liu, H. Huang, S. Zhao, L. Shi, S. Ahn, and X. Li, “Risknet: interaction-aware risk forecasting for autonomous driving in long-tail scenarios,” Transportation Research Part E: Logistics and Transportation Review , vol. 205, p. 104478, 2026. [6] X. Jia, Z. Yang, Q. Li, Z. Zhang, and J. Yan, “Bench2drive: Towards multi-ability benchmarking of closed-loop end-to-end autonomous driving,” Advances in Neural Information Processing Systems , vol. 37, pp. 819–844, 2024. [7] Y. Xiao, L. Li, S. Yan, X. Liu, S. Peng, Y. Wei, X. Zhou, and B. Kang, “Spatialtree: How spatial abilities branch out in mllms,” 
+
+arXiv preprint arXiv:2512.20617 , 2025. [8] R. Yang, H. Chen, J. Zhang, M. Zhao, C. Qian, K. Wang, Q. Wang, T. V. Koripella, M. Movahedi, M. Li et al. , “Embod-iedbench: Comprehensive benchmarking multi-modal large lan-guage models for vision-driven embodied agents,” arXiv preprint arXiv:2502.09560 , 2025. [9] M. Biagiola and P. Tonella, “Boundary state generation for testing and improvement of autonomous driving systems,” IEEE Transactions on Software Engineering , vol. 50, no. 8, pp. 2040– 2053, 2024. [10] Q. Cui, X. Zhang, Q. Bao, and Q. Liao, “Elucidating the solution space of extended reverse-time sde for diffusion models,” in 
+
+2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) . IEEE, 2025, pp. 243–252. [11] W. Ljungbergh, A. Tonderski, J. Johnander, H. Caesar, K. ˚Astr¨ om, M. Felsberg, and C. Petersson, “Neuroncap: Pho-torealistic closed-loop safety testing for autonomous driving,” in 
+
+European Conference on Computer Vision . Springer, 2024, pp. 161–177. [12] X. Long, Q. Zhao, K. Zhang, Z. Zhang, D. Wang, Y. Liu, Z. Shu, Y. Lu, S. Wang, X. Wei et al. , “A survey: Learning embodied intelligence from physical simulators and world models,” arXiv preprint arXiv:2507.00917 , 2025. [13] Y. Guo, C. Xu, J. Liu, H. Zhang, P. Hang, and J. Sun, “Inter-active adversarial testing of autonomous vehicles with adjustable confrontation intensity,” arXiv preprint arXiv:2507.21814 , 2025. [14] A. Kuznietsov, B. Gyevnar, C. Wang, S. Peters, and S. V. Albrecht, “Explainable ai for safe and trustworthy autonomous driving: A systematic review,” IEEE Transactions on Intelligent Transportation Systems , 2024. [15] X. Liu, H. Huang, J. Bian, R. Zhou, Z. Wei, and H. Zhou, “Gen-erating intersection pre-crash trajectories for autonomous driving safety testing using transformer time-series generative adversarial networks,” Engineering Applications of Artificial Intelligence ,vol. 160, p. 111995, 2025. 12 
+
+[16] J. Liu, P. Hang, X. Zhao, J. Wang, and J. Sun, “Ddm-lag: A diffusion-based decision-making model for autonomous vehicles with lagrangian safety enhancement,” IEEE Transactions on Artificial Intelligence , 2024. [17] B. Liao, S. Chen, H. Yin, B. Jiang, C. Wang, S. Yan, X. Zhang, X. Li, Y. Zhang, Q. Zhang et al. , “Diffusiondrive: Truncated diffusion model for end-to-end autonomous driving,” in Proceed-ings of the Computer Vision and Pattern Recognition Conference ,2025, pp. 12 037–12 047. [18] Y. Wang, S. Xing, C. Can, R. Li, H. Hua, K. Tian, Z. Mo, X. Gao, K. Wu, S. Zhou et al. , “Generative ai for autonomous driving: Frontiers and opportunities,” arXiv preprint arXiv:2505.08854 ,2025. [19] S. Zeng, X. Chang, M. Xie, X. Liu, Y. Bai, Z. Pan, M. Xu, X. Wei, and N. Guo, “Futuresightdrive: Thinking visually with spatio-temporal cot for autonomous driving,” arXiv preprint arXiv:2505.17685 , 2025. [20] C. Xu, Y. Cui, J. Liu, C. Qin, G. Zhang, X. Dong, S. Fang, Y. Guo, P. Hang, and J. Sun, “A survey on end-to-end autonomous driving training from the perspectives of data, strategy, and platform,” Authorea Preprints , 2025. [21] E. Pronovost, M. R. Ganesina, N. Hendy, Z. Wang, A. Morales, K. Wang, and N. Roy, “Scenario diffusion: Controllable driving scenario generation with diffusion,” Advances in Neural Infor-mation Processing Systems , vol. 36, pp. 68 873–68 894, 2023. [22] H. Ran, V. Guizilini, and Y. Wang, “Towards realistic scene generation with lidar diffusion models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recog-nition , 2024, pp. 14 738–14 748. [23] L. Rowe, R. Girgis, A. Gosselin, L. Paull, C. Pal, and F. Heide, “Scenario dreamer: Vectorized latent diffusion for generating driving simulation environments,” in Proceedings of the Com-puter Vision and Pattern Recognition Conference , 2025, pp. 17 207–17 218. [24] X. Li, Y. Zhang, and X. Ye, “Drivingdiffusion: layout-guided multi-view driving scenarios video generation with latent dif-fusion model,” in European Conference on Computer Vision .Springer, 2024, pp. 469–485. [25] H. Cao, C. Tan, Z. Gao, Y. Xu, G. Chen, P.-A. Heng, and S. Z. Li, “A survey on generative diffusion models,” IEEE transactions on knowledge and data engineering , vol. 36, no. 7, pp. 2814–2830, 2024. [26] D. Zhu, Q. Bu, Z. Zhu, Y. Zhang, and Z. Wang, “Advancing au-tonomy through lifelong learning: a survey of autonomous intel-ligent systems,” Frontiers in neurorobotics , vol. 18, p. 1385778, 2024. [27] Y. Guo, J. Liu, R. Yu, P. Hang, and J. Sun, “Mappo-pis: A multi-agent proximal policy optimization method with prior intent sharing for cavs’ cooperative decision-making,” in European Conference on Computer Vision . Springer, 2024, pp. 244–263. [28] P. Xia, K. Zeng, J. Liu, C. Qin, F. Wu, Y. Zhou, C. Xiong, and H. Yao, “Agent0: Unleashing self-evolving agents from zero data via tool-integrated reasoning,” arXiv preprint arXiv:2511.16043 ,2025. [29] H.-a. Gao, J. Geng, W. Hua, M. Hu, X. Juan, H. Liu, S. Liu, J. Qiu, X. Qi, Y. Wu et al. , “A survey of self-evolving agents: On path to artificial super intelligence,” arXiv preprint arXiv:2507.21046 , 2025. [30] Y. Meng, Z. Bing, X. Yao, K. Chen, K. Huang, Y. Gao, F. Sun, and A. Knoll, “Preserving and combining knowledge in robotic lifelong reinforcement learning,” Nature Machine Intelligence ,pp. 1–14, 2025. [31] H. Fu, D. Zhang, Z. Zhao, J. Cui, D. Liang, C. Zhang, D. Zhang, H. Xie, B. Wang, and X. Bai, “Orion: A holistic end-to-end autonomous driving framework by vision-language instructed action generation,” in Proceedings of the IEEE/CVF International Conference on Computer Vision , 2025. [32] H. Liu, T. Li, H. Yang, L. Chen, C. Wang, K. Guo, H. Tian, H. Li, H. Li, and C. Lv, “Reinforced refinement with self-aware expansion for end-to-end autonomous driving,” arXiv preprint arXiv:2506.09800 , 2025. [33] S. Xing, C. Qian, Y. Wang, H. Hua, K. Tian, Y. Zhou, and Z. Tu, “Openemma: Open-source multimodal model for end-to-end au-tonomous driving,” in Proceedings of the Winter Conference on Applications of Computer Vision , 2025, pp. 1001–1009. [34] J. Ho, A. Jain, and P. Abbeel, “Denoising diffusion probabilistic models,” Advances in neural information processing systems ,vol. 33, pp. 6840–6851, 2020. [35] D. Xu, Y. Chen, B. Ivanovic, and M. Pavone, “Bits: Bi-level imitation for traffic simulation,” in 2023 IEEE International Conference on Robotics and Automation (ICRA) . IEEE, 2023, pp. 2929–2936. [36] H. Caesar, V. Bankiti, A. H. Lang, S. Vora, V. E. Liong, Q. Xu, A. Krishnan, Y. Pan, G. Baldan, and O. Beijbom, “nuscenes: A multimodal dataset for autonomous driving,” in Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2020, pp. 11 621–11 631. [37] H. Caesar, J. Kabzan, K. S. Tan, W. K. Fong, E. Wolff, A. Lang, L. Fletcher, O. Beijbom, and S. Omari, “nuplan: A closed-loop ml-based planning benchmark for autonomous vehicles,” arXiv preprint arXiv:2106.11810 , 2021. [38] D. Rempe, J. Philion, L. J. Guibas, S. Fidler, and O. Litany, “Generating useful accident-prone driving scenarios via a learned traffic prior,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2022, pp. 17 305– 17 315. [39] M. Treiber, A. Hennecke, and D. Helbing, “Congested traffic states in empirical observations and microscopic simulations,” 
+
+Physical review E , vol. 62, no. 2, p. 1805, 2000. [40] Z. Zhong, D. Rempe, D. Xu, Y. Chen, S. Veer, T. Che, B. Ray, and M. Pavone, “Guided conditional diffusion for controllable traffic simulation,” in 2023 IEEE International Conference on Robotics and Automation (ICRA) . IEEE, 2023, pp. 3560–3566. [41] C. Xu, A. Petiushko, D. Zhao, and B. Li, “Diffscene: Diffusion-based safety-critical scenario generation for autonomous ve-hicles,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 39, no. 8, 2025, pp. 8797–8805. [42] H. Lin, X. Huang, T. Phan, D. Hayden, H. Zhang, D. Zhao, S. Srinivasa, E. Wolff, and H. Chen, “Causal composition diffu-sion model for closed-loop traffic generation,” in Proceedings of the Computer Vision and Pattern Recognition Conference , 2025, pp. 27 542–27 552. [43] W.-J. Chang, F. Pittaluga, M. Tomizuka, W. Zhan, and M. Chan-draker, “Safe-sim: Safety-critical closed-loop traffic simulation with diffusion-controllable adversaries,” in European Conference on Computer Vision . Springer, 2024, pp. 242–258. [44] S. Tan, B. Ivanovic, X. Weng, M. Pavone, and P. Kraehen-buehl, “Language conditioned traffic generation,” arXiv preprint arXiv:2307.07947 , 2023. [45] W. Ding, Y. Cao, D. Zhao, C. Xiao, and M. Pavone, “Realgen: Retrieval augmented generation for controllable traffic scenarios,” in European Conference on Computer Vision . Springer, 2024, pp. 93–110.

@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-001.webp",
+      "caption": "Figure 6: Validation domains: We validate our approach on a different embodiment (Kinova robotic arm) across two domains: Kitchen, where the arm must organize objects on a kitchen table, and Stacking, where it must stack cubes in the order of their size. The architecture mirrors the forklift domain, with the perception stack replaced by OWLv2 for object detection and depth data for 3D position estimation. From a single human demonstration, the agent extracts waypoints, projects them onto new object configurations, and executes the corresponding controls to complete each task end-to-end. We further validate a knowledge distillation pathway, OWLv2 supervising a lightweight YOLOv8 model, and demonstrated controls supervising compact diffusion policy networks, confirming that the architecture can be deployed on resource-constrained hardware without sacrificing task performance.",
+      "page": 25,
+      "index": 1,
+      "width": 986,
+      "height": 346
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-002.webp",
+      "caption": "Figure 12: Gallery of raw visual observations grouped by node. Each cell shows the set of demonstration frames the VLM merged into a single abstract state, illustrating the degree of intra-node visual variability handled by the matching mechanism.",
+      "page": 38,
+      "index": 2,
+      "width": 836,
+      "height": 682
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-003.webp",
+      "caption": "Figure 2: Training Pipeline. Two shared input columns feed three processing lanes, each producing one component of the learned system Φ (right). Shared input: Raw demonstrations (vision, proprioception, vocabulary Λ, change-point breakpoints T̂ ) are augmented by projecting waypoint skeletons onto all scene objects (N → N × K trajectories). Augmented data feeds all three lanes. Lane A (object detection): OWLv2 distills a compact YOLOv8 student online. Detections are lifted to 3D and combined with proprioception to form ego-centric trajectories τ = {pobj − pee, at}, tracked across time. Delivers the YOLOv8 Detector. La B (symbolic abstra tion): A VLM classifies each skill segment by com-",
+      "page": 10,
+      "index": 3,
+      "width": 986,
+      "height": 317
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-004.webp",
+      "caption": "Figure 1: Our forklift system loading two pallets from the ground and unloading them onto a truck. Such system builds on priors (perception, VLM for annotation and controls) to imitate long-horizon and complex task planning and acting from only 10 base skills demonstrations and 1 extra adaptation skill trajectory.",
+      "page": 3,
+      "index": 4,
+      "width": 986,
+      "height": 436
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-005.webp",
+      "caption": "Figure 8: VLM-constructed state-transition graph with three added nodes for visual completeness (left) and its bisimulation reduction (right), used as input to the ASP solver for automated action model induction. A bigger version of both graphs is attached in Appendix. A.",
+      "page": 28,
+      "index": 5,
+      "width": 939,
+      "height": 307
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-006.webp",
+      "caption": "Figure 7: Success rate of the neurosymbolic approach as a function of the number of demonstrations for real-world forklift pallet management. The task consists of loading a pallet, navigating to a target area, and unloading it under randomized relative position to the pallet. We report two criteria: Strong SR (no significant collisions or pallet displacement) and Soft SR (task completed but minor collisions or pallet pushing allowed). The dashed line indicates the classical control baseline, which achieves 98% under both criteria. Performance improves monotonically with additional demonstrations, with Soft SR approaching the baseline at 30 demonstrations.",
+      "page": 27,
+      "index": 6,
+      "width": 724,
+      "height": 396
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-007.webp",
+      "caption": "Figure 5: Main evaluation domain: an automated forklift for managing multiple pallets in outdoor scenario. The pallets can be stored on the ground or on a truck platform. Image credit: © AIT/tm-photography.",
+      "page": 24,
+      "index": 7,
+      "width": 486,
+      "height": 332
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-008.webp",
+      "caption": "Figure 11: State-transition graph constructed by Gemini 3 Flash over 5 demonstrations per skill. Nodes represent clusters of visually equivalent high-level states (boolean VLM matching); edges are annotated with single-word skill labels. Three nodes were manually completed to ensure full connectivity.",
+      "page": 37,
+      "index": 8,
+      "width": 718,
+      "height": 807
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-009.webp",
+      "caption": "Figure 9: Distribution of performance (success/failure) of the forklift pallet loading task over the forklift reset region of the state. Each episode reset pose is represented by an arrow parametrized with origin (xinit, yinit, yawinit) relative to the pallet location. Blue arrows represent successes, while Red arrows represent failures. Reset configurations are sampled from a Gaussian distribution around a nominal pose. The three subfigures correspond to policies trained with 30, 10, and 5 demonstrations, respectively. No strong global correlation is observed between task success and initial pose. In the 5-demonstration setting, performance shows higher sensitivity to x, with a smooth success region of approximately 50 cm. Failures are primarily correlated with perception noise (lightning notably impacts the detections) and the number of demonstrations.",
+      "page": 31,
+      "index": 9,
+      "width": 986,
+      "height": 253
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-010.webp",
+      "caption": "Figure 4: Pallet alignment problem with respect to ADAPT kinematics. Relevant states include: rear body pose qR = [xR, yR, θR]T, fork tip pose qT = [xT , yT , θT , zT ]T, and target pallet pose qP = [xP , yP , θP , zP ]T, along with the articulation angle γ and control inputs v and γ̇.",
+      "page": 20,
+      "index": 10,
+      "width": 917,
+      "height": 372
+    },
+    {
+      "url": "assets/figures/arxiv/2604.03759v1/fig-011.webp",
+      "caption": "Figure 3: Execution Pipeline. At execution time, the system proceeds through five stages. (1) Scene grounding: YOLOv8 detects task-relevant objects, 3D positions are estimated, and relational predicates are evaluated to construct the initial symbolic state s0. The user specifies a goal sg as a partial state. (2) Symbolic planning: MetricFF solves the PDDL instance T = ⟨E ,F ,O, s0, sg⟩ in milliseconds, producing a human-readable, inspectable plan P . (3) Hierarchical skill execution: For each operator oi, the Oracle ϕ resolves symbolic entity bindings to physical detections and constructs the ego-centric observation. Diffusion sub-policies execute closed-loop at ∼20 Hz; a Transformer termination predictor βi,j gates transitions between action steps. The tracker updates the symbolic state after each operator completes. (4) Generalization: Three levels of generalization are handled by distinct mechanisms—relative observations for intra-task generalization, replanning for inter-task generalization, and on-the-fly OWLv2 distillation for cross-object transfer. (5) Termination: Execution terminates when st |= sg.",
+      "page": 16,
+      "index": 11,
+      "width": 989,
+      "height": 334
+    }
+  ]
+}

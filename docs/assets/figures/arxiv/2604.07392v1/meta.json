@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.07392v1/fig-001.webp",
+      "caption": "Figure 1: The workflow of the proposed framework, highlighting the transition from high-dimensional events to weighted latent retrieval.",
+      "page": 2,
+      "index": 1,
+      "width": 359,
+      "height": 606
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07392v1/fig-002.webp",
+      "caption": "Figure 2: Training loss over time during adversarial curriculum learning.",
+      "page": 5,
+      "index": 2,
+      "width": 525,
+      "height": 393
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07392v1/fig-003.webp",
+      "caption": "Figure 4: Distribution of training loss values across all episodes.",
+      "page": 6,
+      "index": 3,
+      "width": 525,
+      "height": 396
+    },
+    {
+      "url": "assets/figures/arxiv/2604.07392v1/fig-004.webp",
+      "caption": "Figure 3: Smoothed loss curve showing overall convergence trend.",
+      "page": 6,
+      "index": 4,
+      "width": 525,
+      "height": 395
+    }
+  ]
+}

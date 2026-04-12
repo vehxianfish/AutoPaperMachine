@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "extractor": "pdffigures2",
+  "figures": [
+    {
+      "url": "assets/figures/arxiv/2604.04564v1/fig-001.webp",
+      "caption": "Figure 3: The pre-processing interface at three states from left to right. (i) The initial state. (ii) After addition of drivable masks 4, 5 and 6. (iii) After subtraction of masks 6 and 7.",
+      "page": 6,
+      "index": 1,
+      "width": 960,
+      "height": 364
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04564v1/fig-002.webp",
+      "caption": "Figure 4: Qualitative comparison of Mask Generation vs Point Prompting on frame 88.",
+      "page": 7,
+      "index": 2,
+      "width": 976,
+      "height": 301
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04564v1/fig-003.webp",
+      "caption": "Figure 1: Overview of the off-road framework: (i) Simulation Module using NVIDIA Isaac Sim, (ii) Segmentation Module with SAM2 to for mask generation and tracking, (iii) VLM Inference Module to detect drivable area based on segmented masks and textual prompts, (iv) Mapping, planning, and control for environment mapping, path generation, and path following and velocity tracking respectively.",
+      "page": 3,
+      "index": 3,
+      "width": 974,
+      "height": 473
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04564v1/fig-004.webp",
+      "caption": "Figure 5: Samples of drivable areas detected by evaluated VLMs. GT refers to Ground Truth, while the remaining columns display the outputs of each model: ChatGPT-4o, Aquila, Ivy-VL and MiniCPM.",
+      "page": 8,
+      "index": 4,
+      "width": 946,
+      "height": 383
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04564v1/fig-005.webp",
+      "caption": "Figure 6: Examples from the scoring process: in the first column, a VLM selected mask indices that perfectly aligned with the Ground Truth (GT) drivable area, earning a score of 1; in the second column, a model selected indices corresponding to both a drivable area (an open trail) and a non-drivable area (a small hill of rocks), resulting in a score of 0.5; and in the third column, a model selected only mask indices corresponding to clouds, leading to a score of 0.",
+      "page": 9,
+      "index": 5,
+      "width": 979,
+      "height": 596
+    },
+    {
+      "url": "assets/figures/arxiv/2604.04564v1/fig-006.webp",
+      "caption": "Figure 2: Simulation Setup: Bottom left: Simulation environment created in Unreal Engine. Top left: Simulation environment imported into Isaac Sim. Center: Top view of the open trail created using the spline creation tools, where the letters (A,B and C) indicate the goals in the reachability test. Right: Polaris RZR Sport 2022 imported using PhysX vehicle api.",
+      "page": 5,
+      "index": 6,
+      "width": 968,
+      "height": 318
+    }
+  ]
+}
