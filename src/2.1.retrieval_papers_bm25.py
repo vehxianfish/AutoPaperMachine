@@ -231,6 +231,23 @@ def _query_text_for_supabase_bm25(q: dict) -> str:
   return q_text
 
 
+def _filter_supabase_rows_by_boolean_expr(rows: List[Dict[str, Any]], expr: str) -> List[Dict[str, Any]]:
+  parsed = parse_boolean_expr(expr)
+  if parsed is None:
+    return rows
+
+  filtered: List[Dict[str, Any]] = []
+  for row in rows:
+    if not isinstance(row, dict):
+      continue
+    title = str(row.get("title") or "")
+    abstract = str(row.get("abstract") or "")
+    authors = [str(a) for a in (row.get("authors") or [])]
+    if evaluate_expr(parsed, title, abstract, authors):
+      filtered.append(row)
+  return filtered
+
+
 def _format_supabase_window_for_log(
   start_dt: datetime | None,
   end_dt: datetime | None,
@@ -666,6 +683,7 @@ def rank_papers_for_queries_via_supabase(
   for q_idx, q in enumerate(queries, start=1):
     q_text = _query_text_for_supabase_bm25(q)
     paper_tag = str(q.get("paper_tag") or "").strip()
+    boolean_expr = str(q.get("boolean_expr") or "").strip()
     if not q_text:
       continue
 
@@ -696,6 +714,14 @@ def rank_papers_for_queries_via_supabase(
       filter_sources=normalize_source_list(q.get("paper_sources")) if query_filter_sources else None,
     )
     log(f"[Supabase BM25] {msg} | tag={q.get('tag') or ''}")
+    if boolean_expr:
+      original_count = len(rows)
+      rows = _filter_supabase_rows_by_boolean_expr(rows, boolean_expr)
+      log(
+        "[Supabase BM25] "
+        f"boolean filter applied: kept={len(rows)}/{original_count} "
+        f"| tag={q.get('tag') or ''}"
+      )
 
     sim_scores: Dict[str, Dict[str, float | int]] = {}
     for rank_idx, row in enumerate(rows, start=1):
@@ -729,7 +755,7 @@ def rank_papers_for_queries_via_supabase(
         "paper_sources": q.get("paper_sources") or [q.get("active_source") or ARXIV_SOURCE_KEY],
         "query_text": q_text,
         "logic_cn": q.get("logic_cn") or "",
-        "boolean_expr": q.get("boolean_expr") or "",
+        "boolean_expr": boolean_expr,
         "bm25_mode": "supabase",
         "sim_scores": sim_scores,
       }
@@ -849,6 +875,7 @@ def rank_papers_for_queries(
   for q in queries:
     q_text = _query_text_for_supabase_bm25(q)
     paper_tag = q.get("paper_tag") or ""
+    boolean_expr = str(q.get("boolean_expr") or "").strip()
     if not q_text:
       continue
 
@@ -859,7 +886,16 @@ def rank_papers_for_queries(
     query_terms = q.get("query_terms") or []
     query_mode = "normal"
 
-    if isinstance(query_terms, list) and query_terms:
+    if boolean_expr:
+      scores = score_boolean_mixed_for_query(
+        bm25=bm25,
+        papers=papers,
+        expr=boolean_expr,
+        or_soft_weight=float(q.get("or_soft_weight") or DEFAULT_OR_SOFT_WEIGHT),
+      )
+      total_weight = 1.0
+      query_mode = "boolean_mixed"
+    elif isinstance(query_terms, list) and query_terms:
       for term in query_terms:
         if not isinstance(term, dict):
           continue
@@ -881,6 +917,8 @@ def rank_papers_for_queries(
     if total_weight > 0:
       scores = [s / total_weight for s in scores]
     candidate_indices = list(range(len(scores)))
+    if boolean_expr:
+      candidate_indices = [i for i in candidate_indices if float(scores[i]) >= 0.0]
 
     if top_k <= 0 or top_k > len(candidate_indices):
       k = len(candidate_indices)
@@ -904,7 +942,7 @@ def rank_papers_for_queries(
         "paper_sources": q.get("paper_sources") or [ARXIV_SOURCE_KEY],
         "query_text": q_text,
         "logic_cn": q.get("logic_cn") or "",
-        "boolean_expr": "",
+        "boolean_expr": boolean_expr,
         "bm25_mode": query_mode,
         "sim_scores": sim_scores,
       }

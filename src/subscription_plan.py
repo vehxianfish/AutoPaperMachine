@@ -324,6 +324,7 @@ def _normalize_profile(profile: Dict[str, Any], idx: int, known_sources: List[st
 
 def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict[str, Any]:
   raw_profiles = subs.get("intent_profiles") or []
+  keyword_recall_mode = get_keyword_recall_mode(subs)
   runtime_tag_filters = _runtime_profile_tag_filters()
   profiles: List[Dict[str, Any]] = []
   if isinstance(raw_profiles, list):
@@ -379,25 +380,26 @@ def _build_from_profiles(subs: Dict[str, Any], known_sources: List[str]) -> Dict
           "paper_sources": copy.deepcopy(paper_sources),
           "query_text": expr,
           "query_terms": [{"text": expr, "weight": MAIN_TERM_WEIGHT}],
-          "boolean_expr": "",
+          "boolean_expr": raw_text if keyword_recall_mode == "boolean_mixed" else "",
           "logic_cn": logic_cn,
           "source": source,
           "or_soft_weight": OR_SOFT_WEIGHT,
         }
       )
-      embedding_queries.append(
-        {
-          "type": "keyword",
-          "tag": tag,
-          "paper_tag": paper_tag_keyword,
-          "paper_sources": copy.deepcopy(paper_sources),
-          "query_text": raw_query,
-          "logic_cn": logic_cn,
-          "source": source,
-          "embedding_cache": copy.deepcopy(normalized.get("embedding_cache")) if isinstance(normalized.get("embedding_cache"), dict) else None,
-          "cache_ref": copy.deepcopy(normalized.get("_cache_ref")) if isinstance(normalized.get("_cache_ref"), dict) else None,
-        }
-      )
+      if keyword_recall_mode != "boolean_mixed":
+        embedding_queries.append(
+          {
+            "type": "keyword",
+            "tag": tag,
+            "paper_tag": paper_tag_keyword,
+            "paper_sources": copy.deepcopy(paper_sources),
+            "query_text": raw_query,
+            "logic_cn": logic_cn,
+            "source": source,
+            "embedding_cache": copy.deepcopy(normalized.get("embedding_cache")) if isinstance(normalized.get("embedding_cache"), dict) else None,
+            "cache_ref": copy.deepcopy(normalized.get("_cache_ref")) if isinstance(normalized.get("_cache_ref"), dict) else None,
+          }
+        )
       context_keywords.append({"tag": paper_tag_keyword, "keyword": raw_text, "logic_cn": logic_cn})
       context_queries.append(
         {
