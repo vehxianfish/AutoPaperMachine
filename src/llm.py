@@ -603,6 +603,11 @@ class OllamaClient(LLMClient):
         super().__init__(api_key=api_key, model=model, base_url=base_url)
 
 
+class OpenAIClient(LLMClient):
+    def __init__(self, api_key: str, model: str, base_url: str = "https://api.openai.com/v1"):
+        super().__init__(api_key=api_key, model=model, base_url=base_url)
+
+
 class BltClient(LLMClient):
     """BLT（柏拉图）网关，OpenAI Chat Completions 兼容接口。"""
     def __init__(self, api_key: str, model: str, base_url: str = None):
@@ -750,6 +755,9 @@ class ClientFactory:
         if provider == 'ollama':
             base_url = base_url or "http://localhost:11111/v1"
             return OllamaClient(api_key=api_key or '', model=model, base_url=base_url)
+        if provider in ('openai', 'openai-compatible', 'generic-openai'):
+            base_url = base_url or "https://api.openai.com/v1"
+            return OpenAIClient(api_key=api_key or os.getenv('OPENAI_API_KEY', ''), model=model, base_url=base_url)
         if provider in ('blt', 'bltcy', 'plato'):
             return BltClient(api_key=api_key or os.getenv('BLT_API_KEY', ''), model=model, base_url=base_url or os.getenv('BLT_API_BASE', 'https://api.bltcy.ai/v1'))
         if provider in ('cstcloud', 'cst', 'cst-cloud', 'keji', 'keji-yun'):
@@ -762,3 +770,60 @@ class ClientFactory:
         兼容旧调用入口，但不再读取 config 文件，统一从环境变量读取。
         """
         return ClientFactory.from_env()
+
+
+def _first_env_text(*names: str) -> str:
+    for name in names:
+        value = str(os.getenv(name) or "").strip()
+        if value:
+            return value
+    return ""
+
+
+def resolve_openai_compatible_runtime_config(
+    *,
+    api_key_names: List[str] | None = None,
+    base_url_names: List[str] | None = None,
+    model_names: List[str] | None = None,
+    default_model: str = "",
+    default_base_url: str = "https://api.openai.com/v1",
+) -> Dict[str, str]:
+    api_key = _first_env_text(*(api_key_names or ["LLM_API_KEY", "OPENAI_API_KEY", "BLT_API_KEY"]))
+    base_url = _first_env_text(*(base_url_names or ["LLM_BASE_URL", "OPENAI_BASE_URL", "LLM_PRIMARY_BASE_URL", "BLT_PRIMARY_BASE_URL", "BLT_API_BASE"]))
+    model = _first_env_text(*(model_names or ["LLM_MODEL_NAME", "OPENAI_MODEL", "BLT_FILTER_MODEL", "BLT_SUMMARY_MODEL"]))
+
+    if not base_url:
+        base_url = str(default_base_url or "").strip()
+    if not model:
+        model = str(default_model or "").strip()
+
+    return {
+        "api_key": api_key,
+        "base_url": base_url,
+        "model": model,
+    }
+
+
+def create_openai_compatible_client_from_env(
+    *,
+    api_key_names: List[str] | None = None,
+    base_url_names: List[str] | None = None,
+    model_names: List[str] | None = None,
+    default_model: str = "",
+    default_base_url: str = "https://api.openai.com/v1",
+) -> LLMClient:
+    runtime = resolve_openai_compatible_runtime_config(
+        api_key_names=api_key_names,
+        base_url_names=base_url_names,
+        model_names=model_names,
+        default_model=default_model,
+        default_base_url=default_base_url,
+    )
+    api_key = runtime.get("api_key") or ""
+    base_url = runtime.get("base_url") or str(default_base_url or "").strip()
+    model = runtime.get("model") or str(default_model or "").strip()
+    if not api_key:
+        raise RuntimeError("missing API key for OpenAI-compatible runtime client")
+    if not model:
+        raise RuntimeError("missing model for OpenAI-compatible runtime client")
+    return LLMClient(api_key=api_key, model=model, base_url=base_url)

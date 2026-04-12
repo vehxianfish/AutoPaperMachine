@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Tuple
 
 import fitz  # PyMuPDF
 import requests
-from llm import BltClient
+from llm import LLMClient, create_openai_compatible_client_from_env
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
@@ -34,18 +34,23 @@ CONFIG_FILE = os.path.join(ROOT_DIR, "config.yaml")
 TODAY_STR = str(os.getenv("DPR_RUN_DATE") or "").strip() or datetime.now(timezone.utc).strftime("%Y%m%d")
 RANGE_DATE_RE = re.compile(r"^(\d{8})-(\d{8})$")
 
-# LLM 配置（使用 llm.py 内的 BLT 客户端）
-BLT_API_KEY = os.getenv("BLT_API_KEY")
-BLT_MODEL = os.getenv("BLT_SUMMARY_MODEL", "gemini-3-flash-preview")
+# LLM 配置（支持 OpenAI-compatible 与 BLT）
 LLM_CLIENT = None
-if BLT_API_KEY:
-    LLM_CLIENT = BltClient(api_key=BLT_API_KEY, model=BLT_MODEL)
+try:
+    LLM_CLIENT = create_openai_compatible_client_from_env(
+        api_key_names=["SUMMARY_API_KEY", "LLM_API_KEY", "OPENAI_API_KEY", "BLT_API_KEY"],
+        base_url_names=["SUMMARY_BASE_URL", "LLM_BASE_URL", "OPENAI_BASE_URL", "LLM_PRIMARY_BASE_URL", "BLT_PRIMARY_BASE_URL", "BLT_API_BASE"],
+        model_names=["SUMMARY_MODEL", "LLM_MODEL_NAME", "OPENAI_MODEL", "BLT_SUMMARY_MODEL"],
+        default_model="gpt-4.1-mini",
+    )
+except Exception:
+    LLM_CLIENT = None
 
 DEFAULT_DOCS_CONCURRENCY = 4
 
 
 def call_blt_text(
-    client: BltClient,
+    client: LLMClient,
     messages: List[Dict[str, str]],
     temperature: float,
     max_tokens: int,
@@ -62,7 +67,7 @@ def call_blt_text(
 
 
 def call_blt_structured_json(
-    client: BltClient,
+    client: LLMClient,
     messages: List[Dict[str, str]],
     schema_name: str,
     schema: Dict[str, Any],

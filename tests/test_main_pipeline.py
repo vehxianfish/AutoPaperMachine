@@ -72,6 +72,12 @@ class MainPipelineTest(unittest.TestCase):
         self.assertEqual(env["BLT_API_BASE"], "https://summary.example.com/v1")
         self.assertEqual(env["BLT_PRIMARY_BASE_URL"], "https://summary.example.com/v1")
         self.assertEqual(env["LLM_PRIMARY_BASE_URL"], "https://summary.example.com/v1")
+        self.assertEqual(env["LLM_API_KEY"], "summary-key")
+        self.assertEqual(env["OPENAI_API_KEY"], "summary-key")
+        self.assertEqual(env["LLM_BASE_URL"], "https://summary.example.com/v1")
+        self.assertEqual(env["OPENAI_BASE_URL"], "https://summary.example.com/v1")
+        self.assertEqual(env["LLM_MODEL_NAME"], "gpt-4.1-mini")
+        self.assertEqual(env["OPENAI_MODEL"], "gpt-4.1-mini")
         self.assertEqual(env["BLT_SUMMARY_MODEL"], "gpt-4.1-mini")
 
     def test_main_skips_rerank_for_non_blt_base_and_builds_fallback(self):
@@ -143,13 +149,29 @@ class MainPipelineTest(unittest.TestCase):
                 sys, "argv", ["main.py"]
             ), patch.dict(
                 os.environ,
-                {"LLM_PRIMARY_BASE_URL": "https://api.bltcy.ai/v1"},
+                {
+                    "LLM_PRIMARY_BASE_URL": "https://api.bltcy.ai/v1",
+                    "BLT_API_KEY": "blt-key",
+                },
                 clear=True,
             ):
                 self.mod.main()
 
             labels = [item[0] for item in calls]
             self.assertIn("Step 3 - Rerank", labels)
+
+    def test_main_skips_rerank_for_openai_env_without_blt_key(self):
+        with patch.dict(
+            os.environ,
+            {
+                "OPENAI_API_KEY": "openai-key",
+                "OPENAI_BASE_URL": "https://api.openai.com/v1",
+            },
+            clear=True,
+        ):
+            skip, base = self.mod.should_skip_rerank()
+        self.assertTrue(skip)
+        self.assertEqual(base, "https://api.openai.com/v1")
 
 
 if __name__ == "__main__":

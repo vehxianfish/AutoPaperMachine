@@ -195,15 +195,22 @@ def _looks_like_blt_base(base_url: str) -> bool:
 
 def should_skip_rerank() -> tuple[bool, str]:
     primary_base = _read_env_text(
+        "LLM_BASE_URL",
+        "OPENAI_BASE_URL",
         "LLM_PRIMARY_BASE_URL",
         "BLT_PRIMARY_BASE_URL",
         "GPTBEST_BASE_URL",
         "BLT_API_BASE",
     )
+    runtime_api_key = _read_env_text("LLM_API_KEY", "OPENAI_API_KEY", "BLT_API_KEY")
     if not primary_base:
+        if not _read_env_text("BLT_API_KEY"):
+            return True, ""
         return False, ""
     if _looks_like_blt_base(primary_base):
-        return False, primary_base
+        if runtime_api_key:
+            return False, primary_base
+        return True, primary_base
     return True, primary_base
 
 
@@ -307,12 +314,18 @@ def resolve_summary_step_env() -> dict[str, str]:
 
     if summary_api_key:
         env["BLT_API_KEY"] = summary_api_key
+        env["LLM_API_KEY"] = summary_api_key
+        env["OPENAI_API_KEY"] = summary_api_key
     if summary_base_url:
         env["LLM_PRIMARY_BASE_URL"] = summary_base_url
         env["BLT_PRIMARY_BASE_URL"] = summary_base_url
         env["BLT_API_BASE"] = summary_base_url
+        env["LLM_BASE_URL"] = summary_base_url
+        env["OPENAI_BASE_URL"] = summary_base_url
     if summary_model:
         env["BLT_SUMMARY_MODEL"] = summary_model
+        env["LLM_MODEL_NAME"] = summary_model
+        env["OPENAI_MODEL"] = summary_model
     return env
 
 

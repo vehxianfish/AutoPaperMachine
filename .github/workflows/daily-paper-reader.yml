@@ -40,6 +40,12 @@ jobs:
       BLT_FILTER_MODEL: ${{ secrets.BLT_FILTER_MODEL }}
       DPR_EMBED_API_TIMEOUT: "60"
       LLM_PRIMARY_BASE_URL: ${{ secrets.LLM_PRIMARY_BASE_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      LLM_MODEL_NAME: ${{ secrets.LLM_MODEL_NAME }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+      OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
       BLT_PRIMARY_BASE_URL: ${{ secrets.BLT_PRIMARY_BASE_URL }}
       BLT_API_BASE: ${{ secrets.BLT_PRIMARY_BASE_URL }}
       SUMMARY_API_KEY: ${{ secrets.SUMMARY_API_KEY }}
